@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
@@ -18,6 +19,8 @@ import 'document_detail_screen.dart';
 LibraryController _buildLibraryController() {
   final LibraryRepository repository = LibraryRepositoryImpl(
     dataSource: const LocalLegalDocumentDataSource(),
+    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
+    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
   );
   return LibraryController(
     searchUseCase: SearchLegalDocumentsUseCase(repository: repository),

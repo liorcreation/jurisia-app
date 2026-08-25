@@ -25,6 +25,16 @@ class SupabaseConfig {
 
   static bool get isConfigured => projectUrl.isNotEmpty && publishableKey.isNotEmpty;
 
+  static bool _initialized = false;
+
+  /// `true` seulement après un appel réussi à [initialize] — contrairement à
+  /// [isConfigured] (qui ne reflète que la présence d'identifiants valides à
+  /// la compilation), cette valeur reflète l'état réel du SDK. Tout code qui
+  /// touche à [client] doit tester [isReady], pas [isConfigured], pour
+  /// rester utilisable dans un contexte où `initialize` n'a jamais tourné
+  /// (un test de widget, par exemple) sans planter.
+  static bool get isReady => _initialized;
+
   /// À appeler une fois, avant `runApp`. N'a aucun effet si le projet n'est
   /// pas encore configuré (voir `isConfigured`) : l'application démarre
   /// quand même, l'écran de connexion affichera un message explicite plutôt
@@ -32,6 +42,7 @@ class SupabaseConfig {
   static Future<void> initialize() async {
     if (!isConfigured) return;
     await Supabase.initialize(url: projectUrl, publishableKey: publishableKey);
+    _initialized = true;
   }
 
   static SupabaseClient get client => Supabase.instance.client;

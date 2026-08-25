@@ -17,6 +17,7 @@ class LibraryController extends ChangeNotifier {
     required this.repository,
   }) {
     _runSearch();
+    repository.hydrate().then((_) => _runSearch());
   }
 
   final SearchLegalDocumentsUseCase searchUseCase;

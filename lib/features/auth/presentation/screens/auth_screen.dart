@@ -14,7 +14,7 @@ import '../controllers/auth_controller.dart';
 
 AuthController _buildAuthController() {
   return AuthController(
-    repository: SupabaseConfig.isConfigured
+    repository: SupabaseConfig.isReady
         ? SupabaseAuthRepository(client: SupabaseConfig.client)
         : const _UnconfiguredAuthRepository(),
   );
@@ -109,13 +109,13 @@ class _AuthViewState extends State<_AuthView> {
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: AppSpacing.lg),
-                          if (!SupabaseConfig.isConfigured) ...[
+                          if (!SupabaseConfig.isReady) ...[
                             _ConfigWarning(),
                             const SizedBox(height: AppSpacing.md),
                           ],
                           TextField(
                             controller: _emailController,
-                            enabled: SupabaseConfig.isConfigured && !controller.isSubmitting,
+                            enabled: SupabaseConfig.isReady && !controller.isSubmitting,
                             keyboardType: TextInputType.emailAddress,
                             autofillHints: const [AutofillHints.email],
                             decoration: const InputDecoration(labelText: 'E-mail'),
@@ -123,7 +123,7 @@ class _AuthViewState extends State<_AuthView> {
                           const SizedBox(height: AppSpacing.md),
                           TextField(
                             controller: _passwordController,
-                            enabled: SupabaseConfig.isConfigured && !controller.isSubmitting,
+                            enabled: SupabaseConfig.isReady && !controller.isSubmitting,
                             obscureText: true,
                             autofillHints: const [AutofillHints.password],
                             decoration: const InputDecoration(labelText: 'Mot de passe'),
@@ -141,7 +141,7 @@ class _AuthViewState extends State<_AuthView> {
                           ],
                           const SizedBox(height: AppSpacing.lg),
                           LuxuryElevatedButton(
-                            onPressed: SupabaseConfig.isConfigured && !controller.isSubmitting
+                            onPressed: SupabaseConfig.isReady && !controller.isSubmitting
                                 ? () => _submit(controller)
                                 : null,
                             child: controller.isSubmitting

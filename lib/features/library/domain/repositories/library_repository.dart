@@ -18,4 +18,10 @@ abstract class LibraryRepository {
   /// Incrémente le compteur de téléchargement d'un document et retourne sa
   /// version mise à jour.
   LegalDocument recordDownload(String documentId);
+
+  /// Charge l'état déjà connu d'une source de persistance (favoris,
+  /// compteurs de téléchargement partagés) avant la première recherche.
+  /// Sans effet par défaut : seules les implémentations adossées à une
+  /// persistance réelle le redéfinissent.
+  Future<void> hydrate() async {}
 }

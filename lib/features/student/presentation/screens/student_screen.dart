@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/student_level.dart';
@@ -25,6 +26,8 @@ StudentController _buildStudentController() {
     curriculumDataSource: const LocalStudentCurriculumDataSource(),
     questionBank: const LocalEvaluationQuestionBank(),
     aiGenerator: AiEvaluationGenerator(dataSource: GroqDataSource()),
+    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
+    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
   );
 
   return StudentController(

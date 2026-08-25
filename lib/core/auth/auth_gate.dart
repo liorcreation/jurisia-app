@@ -8,7 +8,7 @@ import '../widgets/luxury_scaffold_background.dart';
 
 /// Porte d'authentification : affiche [AuthScreen] tant qu'aucune session
 /// Supabase n'est active, [HomeNavigation] une fois connecté. Si Supabase
-/// n'est pas configuré (voir [SupabaseConfig.isConfigured]), affiche
+/// n'est pas configuré (voir [SupabaseConfig.isReady]), affiche
 /// directement l'écran de connexion, qui explique alors pourquoi il ne peut
 /// rien faire, plutôt que de planter au démarrage.
 class AuthGate extends StatelessWidget {
@@ -16,7 +16,7 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!SupabaseConfig.isConfigured) {
+    if (!SupabaseConfig.isReady) {
       return const AuthScreen();
     }
 

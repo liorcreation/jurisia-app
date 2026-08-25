@@ -128,6 +128,18 @@ create policy "Tout utilisateur authentifié peut mettre à jour les télécharg
   on public.library_document_stats for update
   using (auth.uid() is not null);
 
+-- Incrément atomique (évite la course entre deux appareils qui liraient puis
+-- réécriraient la même valeur de compteur en parallèle).
+create or replace function public.increment_download_count(doc_id text)
+returns void as $$
+begin
+  insert into public.library_document_stats (document_id, download_count)
+  values (doc_id, 1)
+  on conflict (document_id)
+  do update set download_count = public.library_document_stats.download_count + 1;
+end;
+$$ language plpgsql security invoker set search_path = public;
+
 -- ---------------------------------------------------------------------
 -- Module 03 — Espace étudiant
 -- ---------------------------------------------------------------------
@@ -175,6 +187,8 @@ create table if not exists public.professional_drafting_results (
   mode text not null check (mode in ('redaction', 'audit', 'consultation')),
   title text not null,
   content text not null,
+  risks jsonb not null default '[]'::jsonb,
+  cited_sources jsonb not null default '[]'::jsonb,
   is_favorite boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

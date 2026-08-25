@@ -18,7 +18,9 @@ class StudentController extends ChangeNotifier {
     required this.getModulesUseCase,
     required this.validateModuleUseCase,
     required this.generateEvaluationUseCase,
-  });
+  }) {
+    repository.hydrate().then((_) => notifyListeners());
+  }
 
   final StudentRepository repository;
   final GetStudentModulesUseCase getModulesUseCase;

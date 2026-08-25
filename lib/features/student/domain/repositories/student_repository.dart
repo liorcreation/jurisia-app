@@ -39,4 +39,9 @@ abstract class StudentRepository {
   /// module suivant du niveau si la note est suffisante, et signale si le
   /// niveau supérieur vient d'être débloqué.
   ModuleValidationResult validateModule({required String moduleId, required double score});
+
+  /// Charge la progression déjà connue d'une source de persistance
+  /// (déblocage, validation, meilleure note, nombre de tentatives) avant la
+  /// première consultation. Sans effet par défaut.
+  Future<void> hydrate() async {}
 }
