@@ -13,7 +13,10 @@ import '../../../../core/widgets/markdown_text.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/supabase/supabase_config.dart';
 import '../../data/repositories/litigation_repository_impl.dart';
+import '../../data/repositories/supabase_litigation_conversation_store.dart';
+import '../../domain/repositories/litigation_conversation_store.dart';
 import '../../domain/usecases/analyze_litigation_usecase.dart';
 import '../controllers/litigation_chat_controller.dart';
 
@@ -21,6 +24,13 @@ AnalyzeLitigationUseCase _buildAnalyzeLitigationUseCase() {
   final dataSource = GroqDataSource();
   final repository = LitigationRepositoryImpl(dataSource: dataSource);
   return AnalyzeLitigationUseCase(repository: repository);
+}
+
+LitigationConversationStore? _buildConversationStore() {
+  if (!SupabaseConfig.isReady) return null;
+  final userId = SupabaseConfig.client.auth.currentUser?.id;
+  if (userId == null) return null;
+  return SupabaseLitigationConversationStore(client: SupabaseConfig.client, userId: userId);
 }
 
 /// Section 1 — Litiges et consultations : interface de chat naturel avec
@@ -31,7 +41,10 @@ class LitigationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<LitigationChatController>(
-      create: (_) => LitigationChatController(useCase: _buildAnalyzeLitigationUseCase()),
+      create: (_) => LitigationChatController(
+        useCase: _buildAnalyzeLitigationUseCase(),
+        conversationStore: _buildConversationStore(),
+      ),
       child: const _LitigationView(),
     );
   }

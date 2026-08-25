@@ -8,6 +8,9 @@ alter table public.professional_drafting_results
 alter table public.professional_drafting_results
   add column if not exists cited_sources jsonb not null default '[]'::jsonb;
 
+alter table public.litigation_messages
+  add column if not exists suggested_professional text;
+
 create or replace function public.increment_download_count(doc_id text)
 returns void as $$
 begin

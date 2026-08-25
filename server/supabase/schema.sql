@@ -64,6 +64,7 @@ create table if not exists public.litigation_messages (
   conversation_id uuid not null references public.litigation_conversations (id) on delete cascade,
   sender text not null check (sender in ('user', 'assistant')),
   content text not null,
+  suggested_professional text,
   created_at timestamptz not null default now()
 );
 
