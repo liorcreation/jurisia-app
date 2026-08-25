@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jurisia_app/core/navigation/home_navigation.dart';
-import 'package:jurisia_app/main.dart';
 import 'package:jurisia_app/theme/app_theme.dart';
 
 Widget _wrapHomeNavigation() {
@@ -53,19 +52,10 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('App shows the auth screen when no Supabase project is configured', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(400, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(const JurisIAApp());
-    await tester.pumpAndSettle();
-
-    expect(find.text('Connexion'), findsOneWidget);
-    expect(find.textContaining('Aucun projet Supabase configuré'), findsOneWidget);
-    expect(find.text('Litiges'), findsNothing);
-  });
+  // Pas de test end-to-end pumpant JurisIAApp directement : avec un projet
+  // Supabase réellement configuré par défaut, AuthGate a besoin que
+  // Supabase.initialize() ait tourné (fait dans main(), jamais dans un test
+  // de widget) avant de toucher SupabaseConfig.client. Tester le flux
+  // d'authentification proprement demanderait d'injecter le SupabaseClient
+  // plutôt que de le lire depuis un singleton global — hors scope ici.
 }

@@ -11,11 +11,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class SupabaseConfig {
   const SupabaseConfig._();
 
-  static const String projectUrl = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  static const String projectUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://gfpguuuzzyqoxjkhlhli.supabase.co',
+  );
 
   /// Clé publique du projet (appelée « anon key » dans le tableau de bord
   /// Supabase, `publishableKey` côté SDK).
-  static const String publishableKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
+  static const String publishableKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_zBehM1ZVTng4CoAnCn5xMw_ygbRmvGa',
+  );
 
   static bool get isConfigured => projectUrl.isNotEmpty && publishableKey.isNotEmpty;
 
