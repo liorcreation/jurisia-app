@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/chat_bubble.dart';
 import '../../../../core/widgets/chat_composer.dart';
+import '../../../../core/widgets/gold_fab.dart';
+import '../../../../core/widgets/ios_large_title_bar.dart';
+import '../../../../core/widgets/ios_new_consultation_sheet.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/markdown_text.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../data/repositories/litigation_repository_impl.dart';
 import '../../domain/usecases/analyze_litigation_usecase.dart';
 import '../controllers/litigation_chat_controller.dart';
 
 AnalyzeLitigationUseCase _buildAnalyzeLitigationUseCase() {
-  final dataSource = AnthropicClaudeDataSource();
+  final dataSource = GroqDataSource();
   final repository = LitigationRepositoryImpl(dataSource: dataSource);
   return AnalyzeLitigationUseCase(repository: repository);
 }
 
 /// Section 1 — Litiges et consultations : interface de chat naturel avec
-/// l'IA juridique, connectée à l'API Claude via [LitigationChatController].
+/// l'IA juridique, connectée à l'API Groq via [LitigationChatController].
 class LitigationScreen extends StatelessWidget {
   const LitigationScreen({super.key});
 
@@ -66,6 +70,7 @@ class _LitigationViewState extends State<_LitigationView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<LitigationChatController>();
+    final platformStyle = AppPlatformStyle.of(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
 
@@ -73,19 +78,35 @@ class _LitigationViewState extends State<_LitigationView> {
     final itemCount =
         messages.length + (controller.isSending ? 1 : 0) + (controller.errorMessage != null ? 1 : 0);
 
+    // iOS propose l'action dans une feuille modale (registre « Verre
+    // glacé ») ; Android la propose via un bouton d'action flottant
+    // (registre « Or expressif ») ; le desktop garde l'icône directe.
+    final newConsultationAction = IconButton(
+      tooltip: 'Nouvelle consultation',
+      icon: const Icon(Icons.add_comment_outlined),
+      onPressed: controller.isSending
+          ? null
+          : platformStyle == AppPlatformStyle.ios
+              ? () => showIosNewConsultationSheet(context, onConfirm: controller.startNewConsultation)
+              : controller.startNewConsultation,
+    );
+
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Litiges et consultations'),
-          actions: [
-            IconButton(
-              tooltip: 'Nouvelle consultation',
-              icon: const Icon(Icons.add_comment_outlined),
-              onPressed: controller.isSending ? null : controller.startNewConsultation,
-            ),
-          ],
-        ),
+        appBar: platformStyle == AppPlatformStyle.ios
+            ? IosLargeTitleBar(title: 'Litiges et consultations', actions: [newConsultationAction])
+            : AppBar(
+                title: const Text('Litiges et consultations'),
+                actions: platformStyle == AppPlatformStyle.android ? null : [newConsultationAction],
+              ),
+        floatingActionButton: platformStyle == AppPlatformStyle.android
+            ? GoldFab(
+                tooltip: 'Nouvelle consultation',
+                icon: Icons.add_comment_rounded,
+                onPressed: controller.isSending ? null : controller.startNewConsultation,
+              )
+            : null,
         body: SafeArea(
           child: Column(
             children: [

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
@@ -53,6 +54,30 @@ class ProfessionalScreen extends StatelessWidget {
                 "approfondie, enrichis par les textes de la bibliothèque juridique.",
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
+              if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: AppColors.textSecondary.withValues(alpha: 0.12),
+                      ),
+                      child: Text(
+                        '⌘K',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Text('Palette de commandes', style: Theme.of(context).textTheme.labelSmall),
+                  ],
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               _ActionCard(
                 icon: Icons.edit_document,
