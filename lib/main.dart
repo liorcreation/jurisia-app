@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'core/navigation/home_navigation.dart';
+import 'core/auth/auth_gate.dart';
+import 'core/supabase/supabase_config.dart';
 import 'core/widgets/splash_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SupabaseConfig.initialize();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -32,7 +34,7 @@ class JurisIAApp extends StatelessWidget {
       theme: AppTheme.darkTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,
-      home: const JurisIASplashScreen(child: HomeNavigation()),
+      home: const JurisIASplashScreen(child: AuthGate()),
     );
   }
 }

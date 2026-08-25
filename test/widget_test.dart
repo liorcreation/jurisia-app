@@ -1,11 +1,21 @@
-import 'dart:ui';
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:jurisia_app/core/navigation/home_navigation.dart';
 import 'package:jurisia_app/main.dart';
+import 'package:jurisia_app/theme/app_theme.dart';
+
+Widget _wrapHomeNavigation() {
+  return MaterialApp(
+    theme: AppTheme.darkTheme,
+    darkTheme: AppTheme.darkTheme,
+    themeMode: ThemeMode.dark,
+    home: const HomeNavigation(),
+  );
+}
 
 void main() {
-  testWidgets('JurisIA app boots and shows the four navigation destinations', (
+  testWidgets('HomeNavigation shows the four navigation destinations', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(400, 800);
@@ -13,7 +23,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const JurisIAApp());
+    await tester.pumpWidget(_wrapHomeNavigation());
     await tester.pumpAndSettle();
 
     expect(find.text('Litiges'), findsOneWidget);
@@ -36,10 +46,26 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const JurisIAApp());
+    await tester.pumpWidget(_wrapHomeNavigation());
     await tester.pumpAndSettle();
 
     expect(find.text('JurisIA'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('App shows the auth screen when no Supabase project is configured', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const JurisIAApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Connexion'), findsOneWidget);
+    expect(find.textContaining('Aucun projet Supabase configuré'), findsOneWidget);
+    expect(find.text('Litiges'), findsNothing);
   });
 }

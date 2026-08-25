@@ -49,6 +49,7 @@ dependencies:
 
   # Lightweight state management / dependency injection for the chat controller.
   provider: ^6.1.2
+  supabase_flutter: ^2.17.2
 
 dev_dependencies:
   flutter_test:
