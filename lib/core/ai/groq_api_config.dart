@@ -9,11 +9,14 @@
 class GroqApiConfig {
   const GroqApiConfig._();
 
-  /// URL du relais, surchargeable via `--dart-define=GROQ_PROXY_URL=...`.
-  /// Ce n'est PAS un secret : une fois le relais déployé, cette URL peut
-  /// être commitée sans risque (c'est une valeur par défaut raisonnable,
-  /// contrairement à une clé API).
-  static const String endpoint = String.fromEnvironment('GROQ_PROXY_URL', defaultValue: '');
+  /// URL du relais Cloudflare Worker déployé (`server/groq-proxy/`),
+  /// surchargeable via `--dart-define=GROQ_PROXY_URL=...` si vous déployez
+  /// votre propre instance. Ce n'est PAS un secret : c'est une URL publique,
+  /// commitée sans risque, contrairement à une clé API.
+  static const String endpoint = String.fromEnvironment(
+    'GROQ_PROXY_URL',
+    defaultValue: 'https://jurisia-groq-proxy.jurisia-api.workers.dev/v1/chat/completions',
+  );
 
   static bool get hasEndpoint => endpoint.isNotEmpty;
 
