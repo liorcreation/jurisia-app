@@ -1,0 +1,6 @@
+name = "jurisia-groq-proxy"
+main = "src/index.js"
+compatibility_date = "2026-08-25"
+
+# La clé Groq n'est JAMAIS mise ici ni dans aucun fichier versionné : elle est
+# fournie via un secret Cloudflare, voir README.md ("wrangler secret put").

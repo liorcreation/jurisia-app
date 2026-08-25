@@ -33,9 +33,15 @@ migrate_working_dir/
 /build/
 /coverage/
 
-# Local secrets (API keys). Copy .env.example to .env and fill in your own
-# values ; .env itself must never be committed.
+# The Flutter app no longer reads a local .env (the Groq key now lives in
+# server/groq-proxy/ as a Cloudflare secret) ; ignored here defensively in
+# case one is kept around locally for reference. Never commit it.
 .env
+
+# Cloudflare Worker — local dev state, never commit.
+server/groq-proxy/node_modules/
+server/groq-proxy/.wrangler/
+server/groq-proxy/.dev.vars
 
 # Symbolication related
 app.*.symbols

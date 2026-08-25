@@ -72,13 +72,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Fichier de configuration local (clés API pour le développement), voir
-  # lib/core/ai/groq_api_config.dart. Non suivi par Git (.gitignore) ; un
-  # modèle .env.example est fourni. Doit exister sur le disque pour que
-  # `flutter run`/`build` réussisse : copiez .env.example vers .env si ce
-  # fichier venait à manquer.
-  assets:
-    - .env
+  # Aucun fichier de configuration local requis : la clé Groq est détenue par
+  # le relais server/groq-proxy/ (voir lib/core/ai/groq_api_config.dart et
+  # server/groq-proxy/README.md), jamais par le client Flutter.
 
   # To add assets to your application, add an assets section, like this:
   # assets:

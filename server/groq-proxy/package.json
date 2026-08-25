@@ -1,0 +1,13 @@
+{
+  "name": "jurisia-groq-proxy",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Relais Cloudflare Worker vers l'API Groq — détient la clé API côté serveur pour l'application JurisIA.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.126.0"
+  }
+}

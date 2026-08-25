@@ -24,9 +24,11 @@ abstract class LlmDataSource {
   void dispose();
 }
 
-/// Implémentation appelant directement l'API Groq, compatible OpenAI
-/// (`POST /openai/v1/chat/completions`, `stream: true`), et transformant le
-/// flux SSE brut en une simple séquence de fragments de texte.
+/// Implémentation appelant le relais JurisIA (voir `server/groq-proxy/`),
+/// lui-même compatible OpenAI (`POST /v1/chat/completions`, `stream: true`)
+/// et transformant le flux SSE brut en une simple séquence de fragments de
+/// texte. Le relais détient la clé Groq côté serveur — ce datasource n'en
+/// manipule aucune.
 class GroqDataSource implements LlmDataSource {
   GroqDataSource({http.Client? client}) : _client = client ?? http.Client();
 
@@ -38,18 +40,16 @@ class GroqDataSource implements LlmDataSource {
     required List<Map<String, String>> messages,
     int maxTokens = GroqApiConfig.defaultMaxTokens,
   }) async* {
-    if (!GroqApiConfig.hasApiKey) {
+    if (!GroqApiConfig.hasEndpoint) {
       throw const LlmApiException(
-        "Aucune clé API Groq n'est configurée. Relancez l'application avec "
-        "--dart-define=GROQ_API_KEY=votre_cle pour activer l'assistant.",
+        "Aucun relais IA n'est configuré. Déployez server/groq-proxy/ (voir son "
+        'README) puis relancez avec --dart-define=GROQ_PROXY_URL=... pour '
+        'activer l\'assistant.',
       );
     }
 
     final request = http.Request('POST', Uri.parse(GroqApiConfig.endpoint))
-      ..headers.addAll({
-        'content-type': 'application/json',
-        'Authorization': 'Bearer ${GroqApiConfig.apiKey}',
-      })
+      ..headers.addAll({'content-type': 'application/json'})
       ..body = jsonEncode({
         'model': GroqApiConfig.model,
         'messages': [

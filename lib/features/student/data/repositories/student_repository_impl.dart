@@ -94,7 +94,7 @@ class StudentRepositoryImpl implements StudentRepository {
     }
 
     List<EvaluationQuestion> questions;
-    if (aiGenerator != null && GroqApiConfig.hasApiKey) {
+    if (aiGenerator != null && GroqApiConfig.hasEndpoint) {
       try {
         questions = await aiGenerator!.generate(module: module, questionCount: questionsPerAttempt);
       } catch (_) {
