@@ -452,8 +452,8 @@ class AppTheme {
   }
 
   static TextTheme _buildTextTheme(TextTheme base) {
-    final serif = GoogleFonts.cinzelTextTheme(base);
-    final sans = GoogleFonts.plusJakartaSansTextTheme(base);
+    final serif = GoogleFonts.libreCaslonDisplayTextTheme(base);
+    final sans = GoogleFonts.publicSansTextTheme(base);
 
     return sans
         .copyWith(
