@@ -29,5 +29,9 @@ abstract class ProfessionalRepository {
 
   LegalDraftingResult toggleFavorite(String resultId);
 
+  /// Charge les résultats déjà connus d'une source de persistance avant la
+  /// première consultation. Sans effet par défaut.
+  Future<void> hydrate() async {}
+
   void dispose();
 }

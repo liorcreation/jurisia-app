@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
@@ -19,27 +20,57 @@ import '../datasources/professional_template_local_datasource.dart';
 
 /// Implémentation du [ProfessionalRepository] : enrichit chaque requête du
 /// contexte de la bibliothèque juridique avant de l'adresser au client
-/// Groq partagé, et conserve les résultats générés en mémoire pour la
-/// durée de la session (favoris, ajustements rapides).
+/// Groq partagé, et conserve les résultats générés en mémoire pour une
+/// réactivité immédiate (favoris, ajustements rapides), synchronisés en
+/// arrière-plan avec Supabase quand [supabaseClient] et [userId] sont
+/// fournis.
 class ProfessionalRepositoryImpl implements ProfessionalRepository {
   ProfessionalRepositoryImpl({
     required this.dataSource,
     required this.libraryRepository,
     required this.templateDataSource,
+    this.supabaseClient,
+    this.userId,
     Uuid? uuid,
   }) : _uuid = uuid ?? const Uuid();
 
   final LlmDataSource dataSource;
   final LibraryRepository libraryRepository;
   final ProfessionalTemplateDataSource templateDataSource;
+  final SupabaseClient? supabaseClient;
+  final String? userId;
   final Uuid _uuid;
 
   final Map<String, LegalDraftingResult> _resultsById = {};
 
   static const int _contextSize = 3;
 
+  bool get _persistenceEnabled => supabaseClient != null && userId != null;
+
   @override
   List<ProfessionalTemplate> get templates => templateDataSource.getAll();
+
+  @override
+  Future<void> hydrate() async {
+    if (!_persistenceEnabled) return;
+
+    try {
+      final rows = await supabaseClient!
+          .from('professional_drafting_results')
+          .select()
+          .eq('user_id', userId!)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      for (final row in rows as List) {
+        final result = _resultFromRow(row as Map<String, dynamic>);
+        _resultsById[result.id] = result;
+      }
+    } catch (error) {
+      // ignore: avoid_print
+      print('Échec du chargement des documents professionnels Supabase : $error');
+    }
+  }
 
   @override
   Stream<DraftingChunk> draftDocument(DraftingRequest request) async* {
@@ -128,6 +159,7 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     );
 
     _resultsById[result.id] = result;
+    _persistNewResult(result);
     yield DraftingDoneChunk(result);
   }
 
@@ -159,6 +191,7 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
 
     final updated = current.copyWith(content: buffer.toString().trim(), generatedAt: DateTime.now());
     _resultsById[resultId] = updated;
+    _persistContentUpdate(updated);
     yield DraftingDoneChunk(updated);
   }
 
@@ -191,6 +224,7 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     );
 
     _resultsById[result.id] = result;
+    _persistNewResult(result);
     yield DraftingDoneChunk(result);
   }
 
@@ -248,7 +282,104 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     }
     final updated = current.copyWith(isFavorite: !current.isFavorite);
     _resultsById[resultId] = updated;
+    _persistFavorite(updated);
     return updated;
+  }
+
+  // -- Persistance Supabase (meilleur effort, en arrière-plan) -------------
+
+  void _persistNewResult(LegalDraftingResult result) {
+    if (!_persistenceEnabled) return;
+
+    supabaseClient!.from('professional_drafting_results').insert({
+      'id': result.id,
+      'user_id': userId,
+      'mode': result.mode.name,
+      'title': result.title,
+      'content': result.content,
+      'risks': result.risks.map(_riskToJson).toList(),
+      'cited_sources': result.citedSources.map(_sourceToJson).toList(),
+      'is_favorite': result.isFavorite,
+    }).catchError((Object error) {
+      // ignore: avoid_print
+      print("Échec de l'enregistrement du document ${result.id} : $error");
+    });
+  }
+
+  void _persistContentUpdate(LegalDraftingResult result) {
+    if (!_persistenceEnabled) return;
+
+    supabaseClient!
+        .from('professional_drafting_results')
+        .update({
+          'content': result.content,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', result.id)
+        .catchError((Object error) {
+          // ignore: avoid_print
+          print('Échec de synchronisation du document ${result.id} : $error');
+        });
+  }
+
+  void _persistFavorite(LegalDraftingResult result) {
+    if (!_persistenceEnabled) return;
+
+    supabaseClient!
+        .from('professional_drafting_results')
+        .update({'is_favorite': result.isFavorite})
+        .eq('id', result.id)
+        .catchError((Object error) {
+          // ignore: avoid_print
+          print('Échec de synchronisation du favori ${result.id} : $error');
+        });
+  }
+
+  Map<String, dynamic> _riskToJson(ClauseRisk risk) => {
+        'clauseExcerpt': risk.clauseExcerpt,
+        'riskLevel': risk.riskLevel.name,
+        'explanation': risk.explanation,
+        'suggestedRewrite': risk.suggestedRewrite,
+      };
+
+  Map<String, dynamic> _sourceToJson(CitedLegalSource source) => {
+        'title': source.title,
+        'reference': source.reference,
+      };
+
+  LegalDraftingResult _resultFromRow(Map<String, dynamic> row) {
+    final risksJson = row['risks'] as List<dynamic>? ?? const [];
+    final sourcesJson = row['cited_sources'] as List<dynamic>? ?? const [];
+
+    return LegalDraftingResult(
+      id: row['id'] as String,
+      mode: DraftingMode.values.firstWhere(
+        (value) => value.name == row['mode'],
+        orElse: () => DraftingMode.consultation,
+      ),
+      title: row['title'] as String,
+      content: row['content'] as String,
+      generatedAt: DateTime.parse((row['updated_at'] ?? row['created_at']) as String),
+      risks: risksJson
+          .map(
+            (json) => ClauseRisk(
+              clauseExcerpt: (json as Map<String, dynamic>)['clauseExcerpt'] as String? ?? '',
+              riskLevel: RiskLevel.fromName(json['riskLevel'] as String? ?? 'moyen'),
+              explanation: json['explanation'] as String? ?? '',
+              suggestedRewrite: json['suggestedRewrite'] as String? ?? '',
+            ),
+          )
+          .toList(),
+      citedSources: sourcesJson
+          .map(
+            (json) => CitedLegalSource(
+              title: (json as Map<String, dynamic>)['title'] as String? ?? '',
+              reference: json['reference'] as String? ?? '',
+            ),
+          )
+          .toList(),
+      isFavorite: row['is_favorite'] as bool? ?? false,
+    );
   }
 
   @override

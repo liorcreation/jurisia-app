@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -26,6 +27,8 @@ DraftingWorkspaceController _buildController(DraftingRequest request) {
     dataSource: dataSource,
     libraryRepository: libraryRepository,
     templateDataSource: const LocalProfessionalTemplateDataSource(),
+    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
+    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
   );
 
   return DraftingWorkspaceController(
