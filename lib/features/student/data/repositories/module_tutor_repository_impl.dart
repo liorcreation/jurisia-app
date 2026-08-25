@@ -1,19 +1,19 @@
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../models/student/course_module.dart';
 import '../../domain/entities/module_tutor_chunk.dart';
 import '../../domain/repositories/module_tutor_repository.dart';
 import '../datasources/student_ai_prompts.dart';
 
-/// Implémentation du [ModuleTutorRepository] s'appuyant sur le client
-/// Claude partagé, avec un system prompt restreignant l'assistant au
+/// Implémentation du [ModuleTutorRepository] s'appuyant sur le client IA
+/// partagé (Groq), avec un system prompt restreignant l'assistant au
 /// contenu du module.
 class ModuleTutorRepositoryImpl implements ModuleTutorRepository {
   ModuleTutorRepositoryImpl({required this.dataSource, Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
-  final ClaudeApiDataSource dataSource;
+  final LlmDataSource dataSource;
   final Uuid _uuid;
 
   @override

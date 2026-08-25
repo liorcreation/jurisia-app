@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
 import 'student_ai_prompts.dart';
@@ -14,7 +14,7 @@ import 'student_ai_prompts.dart';
 class AiEvaluationGenerator {
   AiEvaluationGenerator({required this.dataSource, Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
-  final ClaudeApiDataSource dataSource;
+  final LlmDataSource dataSource;
   final Uuid _uuid;
 
   Future<List<EvaluationQuestion>> generate({

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/student_level.dart';
@@ -24,7 +24,7 @@ StudentController _buildStudentController() {
   final StudentRepository repository = StudentRepositoryImpl(
     curriculumDataSource: const LocalStudentCurriculumDataSource(),
     questionBank: const LocalEvaluationQuestionBank(),
-    aiGenerator: AiEvaluationGenerator(dataSource: AnthropicClaudeDataSource()),
+    aiGenerator: AiEvaluationGenerator(dataSource: GroqDataSource()),
   );
 
   return StudentController(

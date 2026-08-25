@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/ai/claude_api_config.dart';
+import '../../../../core/ai/groq_api_config.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
 import '../../../../models/student/student_level.dart';
@@ -94,7 +94,7 @@ class StudentRepositoryImpl implements StudentRepository {
     }
 
     List<EvaluationQuestion> questions;
-    if (aiGenerator != null && ClaudeApiConfig.hasApiKey) {
+    if (aiGenerator != null && GroqApiConfig.hasApiKey) {
       try {
         questions = await aiGenerator!.generate(module: module, questionCount: questionsPerAttempt);
       } catch (_) {

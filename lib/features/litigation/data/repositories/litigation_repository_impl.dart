@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/ai/hidden_block_stream_splitter.dart';
 import '../../../../models/chat/conversation_model.dart';
 import '../../../../models/chat/message_model.dart';
@@ -12,14 +12,14 @@ import '../../domain/repositories/litigation_repository.dart';
 import '../datasources/litigation_system_prompt.dart';
 
 /// Implémentation du [LitigationRepository] s'appuyant sur un
-/// [ClaudeApiDataSource]. Sépare, dans le flux brut renvoyé par le modèle,
+/// [LlmDataSource]. Sépare, dans le flux brut renvoyé par le modèle,
 /// le texte visible destiné à l'utilisateur du bloc caché contenant la mise
 /// à jour de la grille d'analyse interne, en gérant le cas où le marqueur
 /// de séparation est lui-même fragmenté entre deux paquets du flux.
 class LitigationRepositoryImpl implements LitigationRepository {
   LitigationRepositoryImpl({required this.dataSource, Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
-  final ClaudeApiDataSource dataSource;
+  final LlmDataSource dataSource;
   final Uuid _uuid;
 
   static const _markerStart = LitigationSystemPrompt.gridMarkerStart;

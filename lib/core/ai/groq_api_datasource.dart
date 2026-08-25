@@ -2,32 +2,33 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import 'claude_api_config.dart';
-import 'claude_api_exception.dart';
+import 'groq_api_config.dart';
+import 'llm_api_exception.dart';
 
 /// Frontière data vers un fournisseur de complétion de texte en streaming,
 /// partagée par toutes les fonctionnalités IA de l'application. Permet de
-/// substituer, plus tard, un backend propriétaire à l'appel direct de
-/// l'API Anthropic sans toucher au reste de l'architecture.
-abstract class ClaudeApiDataSource {
+/// substituer, plus tard, un backend propriétaire — ou un autre fournisseur
+/// de modèle — à l'appel direct de l'API Groq sans toucher au reste de
+/// l'architecture.
+abstract class LlmDataSource {
   /// Diffuse la réponse du modèle fragment de texte par fragment de texte,
   /// à partir d'un system prompt et d'un historique de messages au format
   /// `{'role': 'user'|'assistant', 'content': '...'}`.
   Stream<String> streamCompletion({
     required String system,
     required List<Map<String, String>> messages,
-    int maxTokens = ClaudeApiConfig.defaultMaxTokens,
+    int maxTokens = GroqApiConfig.defaultMaxTokens,
   });
 
   /// Libère les ressources réseau (connexion HTTP persistante).
   void dispose();
 }
 
-/// Implémentation appelant directement l'API Messages d'Anthropic
-/// (`POST /v1/messages`, `stream: true`) et transformant le flux SSE brut
-/// en une simple séquence de fragments de texte.
-class AnthropicClaudeDataSource implements ClaudeApiDataSource {
-  AnthropicClaudeDataSource({http.Client? client}) : _client = client ?? http.Client();
+/// Implémentation appelant directement l'API Groq, compatible OpenAI
+/// (`POST /openai/v1/chat/completions`, `stream: true`), et transformant le
+/// flux SSE brut en une simple séquence de fragments de texte.
+class GroqDataSource implements LlmDataSource {
+  GroqDataSource({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
@@ -35,27 +36,27 @@ class AnthropicClaudeDataSource implements ClaudeApiDataSource {
   Stream<String> streamCompletion({
     required String system,
     required List<Map<String, String>> messages,
-    int maxTokens = ClaudeApiConfig.defaultMaxTokens,
+    int maxTokens = GroqApiConfig.defaultMaxTokens,
   }) async* {
-    if (!ClaudeApiConfig.hasApiKey) {
-      throw const ClaudeApiException(
-        "Aucune clé API Anthropic n'est configurée. Relancez l'application avec "
-        "--dart-define=ANTHROPIC_API_KEY=votre_cle pour activer l'assistant.",
+    if (!GroqApiConfig.hasApiKey) {
+      throw const LlmApiException(
+        "Aucune clé API Groq n'est configurée. Relancez l'application avec "
+        "--dart-define=GROQ_API_KEY=votre_cle pour activer l'assistant.",
       );
     }
 
-    final request = http.Request('POST', Uri.parse(ClaudeApiConfig.baseUrl))
+    final request = http.Request('POST', Uri.parse(GroqApiConfig.endpoint))
       ..headers.addAll({
         'content-type': 'application/json',
-        'x-api-key': ClaudeApiConfig.apiKey,
-        'anthropic-version': ClaudeApiConfig.anthropicVersion,
-        'anthropic-dangerous-direct-browser-access': 'true',
+        'Authorization': 'Bearer ${GroqApiConfig.apiKey}',
       })
       ..body = jsonEncode({
-        'model': ClaudeApiConfig.model,
+        'model': GroqApiConfig.model,
+        'messages': [
+          {'role': 'system', 'content': system},
+          ...messages,
+        ],
         'max_tokens': maxTokens,
-        'system': system,
-        'messages': messages,
         'stream': true,
       });
 
@@ -63,7 +64,7 @@ class AnthropicClaudeDataSource implements ClaudeApiDataSource {
     try {
       response = await _client.send(request);
     } catch (error) {
-      throw ClaudeApiException(
+      throw LlmApiException(
         "Impossible de contacter le service JurisIA. Vérifiez votre connexion internet. "
         '($error)',
       );
@@ -71,7 +72,9 @@ class AnthropicClaudeDataSource implements ClaudeApiDataSource {
 
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
-      throw ClaudeApiException(
+      // ignore: avoid_print
+      print('Groq API error — statusCode: ${response.statusCode}, body: $body');
+      throw LlmApiException(
         _extractErrorMessage(body) ?? 'Le service a répondu avec une erreur (${response.statusCode}).',
         statusCode: response.statusCode,
       );
@@ -83,6 +86,7 @@ class AnthropicClaudeDataSource implements ClaudeApiDataSource {
       if (!line.startsWith('data:')) continue;
       final payload = line.substring(5).trim();
       if (payload.isEmpty) continue;
+      if (payload == '[DONE]') return;
 
       Map<String, dynamic> event;
       try {
@@ -91,20 +95,17 @@ class AnthropicClaudeDataSource implements ClaudeApiDataSource {
         continue;
       }
 
-      final type = event['type'] as String?;
-
-      if (type == 'content_block_delta') {
-        final delta = event['delta'] as Map<String, dynamic>?;
-        if (delta != null && delta['type'] == 'text_delta') {
-          final text = delta['text'] as String?;
-          if (text != null && text.isNotEmpty) yield text;
-        }
-      } else if (type == 'error') {
-        final error = event['error'] as Map<String, dynamic>?;
-        throw ClaudeApiException(error?['message'] as String? ?? "Erreur inconnue de l'API Claude.");
-      } else if (type == 'message_stop') {
-        return;
+      final error = event['error'] as Map<String, dynamic>?;
+      if (error != null) {
+        throw LlmApiException(error['message'] as String? ?? "Erreur inconnue de l'API Groq.");
       }
+
+      final choices = event['choices'] as List<dynamic>?;
+      if (choices == null || choices.isEmpty) continue;
+
+      final delta = (choices.first as Map<String, dynamic>)['delta'] as Map<String, dynamic>?;
+      final text = delta?['content'] as String?;
+      if (text != null && text.isNotEmpty) yield text;
     }
   }
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/ai/hidden_block_stream_splitter.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
@@ -19,7 +19,7 @@ import '../datasources/professional_template_local_datasource.dart';
 
 /// Implémentation du [ProfessionalRepository] : enrichit chaque requête du
 /// contexte de la bibliothèque juridique avant de l'adresser au client
-/// Claude partagé, et conserve les résultats générés en mémoire pour la
+/// Groq partagé, et conserve les résultats générés en mémoire pour la
 /// durée de la session (favoris, ajustements rapides).
 class ProfessionalRepositoryImpl implements ProfessionalRepository {
   ProfessionalRepositoryImpl({
@@ -29,7 +29,7 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     Uuid? uuid,
   }) : _uuid = uuid ?? const Uuid();
 
-  final ClaudeApiDataSource dataSource;
+  final LlmDataSource dataSource;
   final LibraryRepository libraryRepository;
   final ProfessionalTemplateDataSource templateDataSource;
   final Uuid _uuid;

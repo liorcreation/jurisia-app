@@ -44,7 +44,7 @@ dependencies:
   # Unique identifiers for conversations, documents, modules, etc.
   uuid: ^4.5.1
 
-  # HTTP client used for the streaming Anthropic Claude API integration.
+  # HTTP client used for the streaming Groq API integration.
   http: ^1.2.2
 
   # Lightweight state management / dependency injection for the chat controller.
@@ -71,6 +71,14 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Fichier de configuration local (clés API pour le développement), voir
+  # lib/core/ai/groq_api_config.dart. Non suivi par Git (.gitignore) ; un
+  # modèle .env.example est fourni. Doit exister sur le disque pour que
+  # `flutter run`/`build` réussisse : copiez .env.example vers .env si ce
+  # fichier venait à manquer.
+  assets:
+    - .env
 
   # To add assets to your application, add an assets section, like this:
   # assets:

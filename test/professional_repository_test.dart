@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jurisia_app/core/ai/claude_api_datasource.dart';
+import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
 import 'package:jurisia_app/features/library/data/datasources/legal_document_local_datasource.dart';
 import 'package:jurisia_app/features/library/data/repositories/library_repository_impl.dart';
 import 'package:jurisia_app/features/professional/data/datasources/professional_template_local_datasource.dart';
@@ -15,7 +15,7 @@ import 'package:jurisia_app/features/professional/domain/usecases/draft_legal_do
 import 'package:jurisia_app/features/professional/domain/usecases/search_professional_precedents_usecase.dart';
 import 'package:jurisia_app/models/legal_document/legal_domain.dart';
 
-class _FakeDataSource implements ClaudeApiDataSource {
+class _FakeDataSource implements LlmDataSource {
   _FakeDataSource(this._responses);
 
   final List<List<String>> _responses;

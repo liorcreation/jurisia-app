@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ai/claude_api_datasource.dart';
+import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -20,7 +20,7 @@ import '../../domain/usecases/draft_legal_document_usecase.dart';
 import '../controllers/drafting_workspace_controller.dart';
 
 DraftingWorkspaceController _buildController(DraftingRequest request) {
-  final dataSource = AnthropicClaudeDataSource();
+  final dataSource = GroqDataSource();
   final libraryRepository = LibraryRepositoryImpl(dataSource: const LocalLegalDocumentDataSource());
   final professionalRepository = ProfessionalRepositoryImpl(
     dataSource: dataSource,

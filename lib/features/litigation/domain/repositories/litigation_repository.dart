@@ -3,7 +3,7 @@ import '../../../../models/chat/message_model.dart';
 import '../entities/litigation_response_chunk.dart';
 
 /// Frontière du domaine vers le service d'intelligence artificielle chargé
-/// d'analyser les consultations. L'implémentation concrète (API Claude,
+/// d'analyser les consultations. L'implémentation concrète (API Groq,
 /// backend propriétaire, etc.) vit dans la couche data et reste invisible
 /// depuis le domaine et la présentation.
 abstract class LitigationRepository {

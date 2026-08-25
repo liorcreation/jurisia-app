@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:jurisia_app/core/ai/claude_api_datasource.dart';
+import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
 import 'package:jurisia_app/features/litigation/data/repositories/litigation_repository_impl.dart';
 import 'package:jurisia_app/features/litigation/domain/entities/litigation_response_chunk.dart';
 import 'package:jurisia_app/models/chat/conversation_model.dart';
 import 'package:jurisia_app/models/chat/message_model.dart';
 import 'package:jurisia_app/models/legal_document/legal_domain.dart';
 
-class _FakeDataSource implements ClaudeApiDataSource {
+class _FakeDataSource implements LlmDataSource {
   _FakeDataSource(this.chunks);
 
   final List<String> chunks;
