@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/validation/input_limits.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/smoked_glass_surface.dart';
@@ -213,12 +214,14 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
                   child: TextField(
                     controller: _controllerFor(field),
                     onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(labelText: field, filled: false),
+                    maxLength: AppInputLimits.shortField,
+                    decoration: InputDecoration(labelText: field, filled: false, counterText: ''),
                   ),
                 ),
               TextField(
                 controller: _instructionsController,
                 maxLines: 3,
+                maxLength: AppInputLimits.instructions,
                 decoration: const InputDecoration(
                   labelText: 'Instructions complémentaires (facultatif)',
                   filled: false,
@@ -241,6 +244,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
               controller: _mainTextController,
               onChanged: (_) => setState(() {}),
               maxLines: 10,
+              maxLength: AppInputLimits.contractText,
               decoration: const InputDecoration(
                 labelText: 'Collez le texte du contrat à auditer',
                 alignLabelWithHint: true,
@@ -251,6 +255,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
             TextField(
               controller: _instructionsController,
               maxLines: 2,
+              maxLength: AppInputLimits.instructions,
               decoration: const InputDecoration(
                 labelText: "Points d'attention (facultatif)",
                 filled: false,
@@ -274,6 +279,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
           controller: _mainTextController,
           onChanged: (_) => setState(() {}),
           maxLines: 8,
+          maxLength: AppInputLimits.consultationQuestion,
           decoration: const InputDecoration(
             labelText: 'Décrivez la question juridique à traiter',
             alignLabelWithHint: true,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../validation/input_limits.dart';
 import 'glass_container.dart';
 
 /// Barre de saisie de chat partagée par l'assistant juridique (Section 1)
@@ -80,8 +81,13 @@ class _ChatComposerState extends State<ChatComposer> {
                   enabled: widget.enabled,
                   minLines: 1,
                   maxLines: 5,
+                  maxLength: AppInputLimits.chatMessage,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
-                  decoration: InputDecoration(border: InputBorder.none, hintText: widget.hintText),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: widget.hintText,
+                    counterText: '',
+                  ),
                   onSubmitted: (_) => widget.onSend(),
                   textInputAction: TextInputAction.send,
                 ),
