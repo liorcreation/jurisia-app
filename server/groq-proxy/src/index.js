@@ -22,12 +22,15 @@ const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 // Origines navigateur autorisées à appeler ce Worker depuis du JavaScript
 // (fetch/XHR). Ne concerne QUE les clients navigateur : les apps Flutter
 // mobile/desktop natives n'envoient pas d'en-tête Origin et ne sont donc
-// jamais concernées par cette liste. Aucune app web n'est encore déployée
-// en production — seules les origines de développement local sont
-// autorisées pour l'instant. Ajouter ici l'origine de production dès que
-// l'app web JurisIA est déployée, par ex. :
-//   /^https:\/\/app\.jurisia\.[a-z]+$/,
-const ALLOWED_ORIGIN_PATTERNS = [/^https?:\/\/localhost(:\d+)?$/, /^https?:\/\/127\.0\.0\.1(:\d+)?$/];
+// jamais concernées par cette liste.
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  // App web JurisIA sur Cloudflare Pages : le domaine de production
+  // (jurisia-app.pages.dev) et chaque déploiement de prévisualisation
+  // (<hash>.jurisia-app.pages.dev), tous deux servant le même build.
+  /^https:\/\/([a-z0-9-]+\.)?jurisia-app\.pages\.dev$/,
+];
 
 function isAllowedOrigin(origin) {
   return ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(origin));
