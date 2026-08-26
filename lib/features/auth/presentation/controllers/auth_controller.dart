@@ -23,9 +23,17 @@ class AuthController extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  bool _termsAccepted = false;
+  bool get termsAccepted => _termsAccepted;
+
   void toggleMode() {
     _mode = _mode == AuthMode.signIn ? AuthMode.signUp : AuthMode.signIn;
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  void setTermsAccepted(bool value) {
+    _termsAccepted = value;
     notifyListeners();
   }
 
@@ -45,6 +53,12 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    if (_mode == AuthMode.signUp && !_termsAccepted) {
+      _status = AuthStatus.error;
+      _errorMessage = "Vous devez accepter les CGU et la politique de confidentialité pour créer un compte.";
+      notifyListeners();
+      return;
+    }
 
     _status = AuthStatus.submitting;
     _errorMessage = null;
@@ -55,6 +69,7 @@ class AuthController extends ChangeNotifier {
         await repository.signIn(email: trimmedEmail, password: password);
       } else {
         await repository.signUp(email: trimmedEmail, password: password);
+        await repository.recordTermsAcceptance();
       }
       _status = AuthStatus.idle;
       notifyListeners();

@@ -31,6 +31,7 @@ class MarkdownText extends StatelessWidget {
 
   static final _bulletRegex = RegExp(r'^\s*[-•]\s+(.*)$');
   static final _orderedRegex = RegExp(r'^\s*\d+[.)]\s+(.*)$');
+  static final _headingRegex = RegExp(r'^(#{1,3})\s+(.*)$');
 
   List<_MdBlock> _parseBlocks(String text) {
     final lines = text.split('\n');
@@ -59,6 +60,14 @@ class MarkdownText extends StatelessWidget {
       if (line.trim().isEmpty) {
         flushParagraph();
         flushList();
+        continue;
+      }
+
+      final headingMatch = _headingRegex.firstMatch(line);
+      if (headingMatch != null) {
+        flushParagraph();
+        flushList();
+        blocks.add(_HeadingBlock(headingMatch.group(2)!.trim(), level: headingMatch.group(1)!.length));
         continue;
       }
 
@@ -91,6 +100,34 @@ abstract class _MdBlock {
   const _MdBlock();
 
   Widget build(TextStyle? baseStyle);
+}
+
+class _HeadingBlock extends _MdBlock {
+  const _HeadingBlock(this.text, {required this.level});
+
+  final String text;
+  final int level;
+
+  @override
+  Widget build(TextStyle? baseStyle) {
+    final fontSize = switch (level) {
+      1 => 22.0,
+      2 => 18.0,
+      _ => 15.0,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Text(
+        text,
+        style: baseStyle?.copyWith(
+          color: AppColors.gold,
+          fontWeight: FontWeight.w700,
+          fontSize: fontSize,
+          height: 1.3,
+        ),
+      ),
+    );
+  }
 }
 
 class _ParagraphBlock extends _MdBlock {

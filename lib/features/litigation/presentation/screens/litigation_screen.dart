@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/legal/legal_document_screen.dart';
+import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/chat_bubble.dart';
@@ -153,6 +155,7 @@ class _LitigationViewState extends State<_LitigationView> {
                   },
                 ),
               ),
+              _AiDisclaimerHint(),
               ChatComposer(
                 controller: _inputController,
                 enabled: !controller.isSending,
@@ -220,6 +223,44 @@ class _ProfessionalSuggestionChip extends StatelessWidget {
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Rappel visible, au-dessus du composeur, que l'IA aide à comprendre une
+/// situation mais ne remplace pas un professionnel du droit — complète (sans
+/// le remplacer) l'avertissement déjà intégré au fil de la conversation par
+/// le system prompt de l'IA.
+class _AiDisclaimerHint extends StatelessWidget {
+  const _AiDisclaimerHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const LegalDocumentScreen(
+            title: 'Avertissement',
+            content: LegalDocuments.aiDisclaimer,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xs),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.textDisabled),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                "L'IA aide à comprendre, ne remplace pas un avocat.",
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

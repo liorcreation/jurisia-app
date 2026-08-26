@@ -35,4 +35,13 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() => _client.auth.signOut();
+
+  @override
+  Future<void> recordTermsAcceptance() async {
+    final id = _client.auth.currentUser?.id;
+    if (id == null) return;
+    await _client.from('profiles').update({
+      'terms_accepted_at': DateTime.now().toIso8601String(),
+    }).eq('id', id);
+  }
 }

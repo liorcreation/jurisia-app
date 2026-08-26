@@ -1,6 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/legal/legal_document_screen.dart';
+import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
@@ -41,6 +44,9 @@ class _UnconfiguredAuthRepository implements AuthRepository {
   @override
   Future<void> signOut() => _unavailable();
 
+  @override
+  Future<void> recordTermsAcceptance() async {}
+
   Future<Never> _unavailable() =>
       Future.error(StateError('Aucun projet Supabase configuré (SUPABASE_URL / SUPABASE_ANON_KEY).'));
 }
@@ -69,12 +75,30 @@ class _AuthView extends StatefulWidget {
 class _AuthViewState extends State<_AuthView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final TapGestureRecognizer _termsRecognizer;
+  late final TapGestureRecognizer _privacyRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _termsRecognizer = TapGestureRecognizer()..onTap = () => _openDocument('CGU', LegalDocuments.termsOfService);
+    _privacyRecognizer = TapGestureRecognizer()
+      ..onTap = () => _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy);
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _termsRecognizer.dispose();
+    _privacyRecognizer.dispose();
     super.dispose();
+  }
+
+  void _openDocument(String title, String content) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => LegalDocumentScreen(title: title, content: content)),
+    );
   }
 
   @override
@@ -129,6 +153,51 @@ class _AuthViewState extends State<_AuthView> {
                             decoration: const InputDecoration(labelText: 'Mot de passe'),
                             onSubmitted: (_) => _submit(controller),
                           ),
+                          if (!isSignIn) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Checkbox(
+                                  value: controller.termsAccepted,
+                                  onChanged: controller.isSubmitting
+                                      ? null
+                                      : (value) => controller.setTermsAccepted(value ?? false),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: Text.rich(
+                                      TextSpan(
+                                        style: Theme.of(context).textTheme.bodySmall,
+                                        children: [
+                                          const TextSpan(text: "J'accepte les "),
+                                          TextSpan(
+                                            text: 'CGU',
+                                            style: const TextStyle(
+                                              color: AppColors.gold,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            recognizer: _termsRecognizer,
+                                          ),
+                                          const TextSpan(text: ' et la '),
+                                          TextSpan(
+                                            text: 'politique de confidentialité',
+                                            style: const TextStyle(
+                                              color: AppColors.gold,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            recognizer: _privacyRecognizer,
+                                          ),
+                                          const TextSpan(text: '.'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                           if (controller.errorMessage != null) ...[
                             const SizedBox(height: AppSpacing.md),
                             Text(
@@ -166,6 +235,22 @@ class _AuthViewState extends State<_AuthView> {
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: AppSpacing.md,
+                      children: [
+                        TextButton(
+                          onPressed: () => _openDocument('CGU', LegalDocuments.termsOfService),
+                          child: const Text('CGU'),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
+                          child: const Text('Politique de confidentialité'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
