@@ -10,4 +10,4 @@ compatibility_date = "2026-08-25"
 # créer le namespace et remplacer l'id ci-dessous.
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
-id = "REMPLACER_APRES_wrangler_kv_namespace_create"
+id = "6b90aa68ca7c4445ba4a430547a85de5"
