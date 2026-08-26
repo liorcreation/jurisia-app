@@ -32,6 +32,12 @@ const _actions = [
     shortcutLabel: 'D',
     moduleIndex: 3,
   ),
+  _PaletteAction(
+    icon: Icons.support_agent_rounded,
+    label: 'Contacter un professionnel',
+    shortcutLabel: 'C',
+    moduleIndex: 4,
+  ),
 ];
 
 /// Enveloppe la coquille desktop avec le raccourci ⌘K / Ctrl+K qui ouvre la

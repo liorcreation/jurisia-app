@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/contact_professional/presentation/screens/contact_professional_screen.dart';
 import '../../features/library/presentation/screens/library_screen.dart';
 import '../../features/litigation/presentation/screens/litigation_screen.dart';
 import '../../features/professional/presentation/screens/professional_screen.dart';
@@ -40,13 +41,18 @@ const _destinations = [
     icon: Icons.workspace_premium_outlined,
     selectedIcon: Icons.workspace_premium_rounded,
   ),
+  _NavDestination(
+    label: 'Contacter',
+    icon: Icons.support_agent_outlined,
+    selectedIcon: Icons.support_agent_rounded,
+  ),
 ];
 
-/// Coquille de navigation principale de JurisIA, reliant les quatre modules
-/// obligatoires : Litiges et consultations, Bibliothèque juridique, Espace
-/// étudiant et Espace professionnel. S'adapte entre une barre de navigation
-/// inférieure (mobile) et un rail latéral (web, tablette, desktop), toutes
-/// deux habillées en verre fumé sombre.
+/// Coquille de navigation principale de JurisIA, reliant les cinq modules :
+/// Litiges et consultations, Bibliothèque juridique, Espace étudiant, Espace
+/// professionnel et Contacter un professionnel. S'adapte entre une barre de
+/// navigation inférieure (mobile) et un rail latéral (web, tablette,
+/// desktop), toutes deux habillées en verre fumé sombre.
 class HomeNavigation extends StatefulWidget {
   const HomeNavigation({super.key});
 
@@ -62,6 +68,7 @@ class _HomeNavigationState extends State<HomeNavigation> {
     LibraryScreen(),
     StudentScreen(),
     ProfessionalScreen(),
+    ContactProfessionalScreen(),
   ];
 
   void _onSelect(int index) => setState(() => _selectedIndex = index);

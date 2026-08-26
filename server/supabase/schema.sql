@@ -202,3 +202,27 @@ create policy "Un utilisateur gère ses propres documents générés"
   on public.professional_drafting_results for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- Module 05 — Contacter un professionnel
+-- ---------------------------------------------------------------------
+
+create table if not exists public.professional_contact_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  category text not null check (
+    category in ('notaire', 'avocat', 'juriste', 'huissier', 'greffier', 'juge')
+  ),
+  full_name text not null,
+  contact_info text not null,
+  message text not null,
+  status text not null default 'pending' check (status in ('pending', 'contacted', 'closed')),
+  created_at timestamptz not null default now()
+);
+
+alter table public.professional_contact_requests enable row level security;
+
+create policy "Un utilisateur gère ses propres demandes de contact"
+  on public.professional_contact_requests for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

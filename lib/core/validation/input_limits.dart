@@ -22,4 +22,8 @@ class AppInputLimits {
 
   /// Question de consultation approfondie.
   static const int consultationQuestion = 3000;
+
+  /// Description du besoin dans une demande de mise en relation
+  /// (Contacter un professionnel).
+  static const int contactMessage = 1000;
 }
