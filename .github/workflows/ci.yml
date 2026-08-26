@@ -1,0 +1,62 @@
+name: CI
+
+# Sur chaque push et pull request vers main : analyse statique, tests, et une
+# compilation réelle sur deux plateformes pour attraper les régressions que
+# `flutter analyze`/`flutter test` seuls ne voient pas (config native,
+# assets manquants, etc.). iOS/macOS/Windows sont volontairement absents ici
+# — les runners macOS/Windows de GitHub Actions coûtent nettement plus de
+# minutes que ubuntu ; à ajouter si ce projet passe sur un plan payant ou
+# que ces plateformes deviennent prioritaires.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FLUTTER_VERSION: '3.44.6'
+
+jobs:
+  analyze-and-test:
+    name: Analyse & tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  build-android:
+    name: Build Android (debug)
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: flutter pub get
+      - run: flutter build apk --debug
+
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      - run: flutter build web
