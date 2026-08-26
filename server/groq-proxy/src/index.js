@@ -46,6 +46,14 @@ function jsonError(message, status) {
   });
 }
 
+// Journal structuré (jamais le contenu des messages : voir la défense
+// anti-injection dans le client, ce Worker suit la même discipline) capté
+// par Workers Logs pour la supervision en production — dashboard Cloudflare
+// > Workers & Pages > jurisia-groq-proxy > Logs.
+function logEvent(event, fields) {
+  console.log(JSON.stringify({ event, ts: new Date().toISOString(), ...fields }));
+}
+
 async function checkRateLimit(env, ip) {
   if (!env.RATE_LIMIT_KV) {
     // Pas de namespace KV lié : on n'échoue pas fermé, on n'échoue pas
@@ -119,17 +127,22 @@ export default {
       return new Response('Method not allowed', { status: 405, headers: CORS_HEADERS });
     }
     if (!env.GROQ_API_KEY) {
+      logEvent('misconfigured', {});
       return jsonError('Proxy misconfigured: missing GROQ_API_KEY secret', 500);
     }
 
+    const started = Date.now();
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+
     const rateLimit = await checkRateLimit(env, ip);
     if (!rateLimit.allowed) {
+      logEvent('rate_limited', { ip });
       return jsonError(rateLimit.reason, 429);
     }
 
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
+      logEvent('rejected', { ip, reason: 'body_too_large' });
       return jsonError(`Requête trop volumineuse (maximum ${MAX_BODY_BYTES} octets).`, 413);
     }
 
@@ -137,11 +150,13 @@ export default {
     try {
       parsed = JSON.parse(rawBody);
     } catch (error) {
+      logEvent('rejected', { ip, reason: 'invalid_json' });
       return jsonError('Corps de requête JSON invalide.', 400);
     }
 
     const validationError = validatePayload(parsed);
     if (validationError) {
+      logEvent('rejected', { ip, reason: 'validation_failed' });
       return jsonError(validationError, 400);
     }
 
@@ -161,8 +176,16 @@ export default {
         body: JSON.stringify(parsed),
       });
     } catch (error) {
+      logEvent('upstream_error', { ip, model: parsed.model, error: String(error) });
       return jsonError(`Upstream error: ${error}`, 502);
     }
+
+    logEvent('completed', {
+      ip,
+      model: parsed.model,
+      status: groqResponse.status,
+      durationMs: Date.now() - started,
+    });
 
     // Le corps de la réponse Groq (flux SSE inclus) est relayé tel quel,
     // sans mise en mémoire tampon, pour préserver le streaming côté client.

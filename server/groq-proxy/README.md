@@ -82,6 +82,34 @@ pouvez toujours activer une règle de limitation de débit native dans le
 tableau de bord Cloudflare (**Security → WAF → Rate limiting rules**) et
 surveiller votre consommation sur https://console.groq.com/.
 
+## Supervision en production (logs, métriques, alerting)
+
+Le Worker journalise chaque requête en JSON structuré (`console.log`), sans
+jamais logger le contenu des messages : `completed` (modèle, statut HTTP,
+durée), `rate_limited`, `rejected` (avec la raison : corps trop volumineux,
+JSON invalide, validation), `upstream_error`, `misconfigured`.
+
+- **Logs en direct** :
+  ```
+  npx wrangler tail
+  ```
+- **Logs persistés et filtrables** (quelques jours de rétention) : activés
+  via `[observability] enabled = true` dans `wrangler.toml`, consultables
+  dans le tableau de bord Cloudflare → Workers & Pages → `jurisia-groq-proxy`
+  → onglet **Logs**.
+- **Métriques** (requêtes, erreurs, latence, CPU) : onglet **Metrics** du
+  même tableau de bord, sans configuration supplémentaire.
+- **Alerting** (étape manuelle, une seule fois, non scriptable via
+  `wrangler`) : tableau de bord Cloudflare → **Notifications** → *Add* →
+  chercher le type d'alerte **Workers** (ex. taux d'erreur, quantité de
+  requêtes) → sélectionner `jurisia-groq-proxy` → indiquer un e-mail. C'est
+  la façon d'être prévenu d'un pic d'erreurs sans avoir à surveiller le
+  tableau de bord activement.
+
+Côté Supabase, l'authentification, l'API REST et la base disposent déjà de
+leurs propres journaux dans le tableau de bord Supabase (**Logs** dans le
+menu du projet) — aucune configuration supplémentaire n'est nécessaire.
+
 ## Redéployer après une modification de `src/index.js` ou `wrangler.toml`
 
 ```

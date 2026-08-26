@@ -11,3 +11,10 @@ compatibility_date = "2026-08-25"
 [[kv_namespaces]]
 binding = "RATE_LIMIT_KV"
 id = "6b90aa68ca7c4445ba4a430547a85de5"
+
+# Workers Logs : persiste les console.log() du Worker (quelques jours de
+# rétention côté Cloudflare) et les rend consultables/filtrables dans le
+# tableau de bord (Workers & Pages > jurisia-groq-proxy > Logs), pour la
+# supervision en production (voir README.md).
+[observability]
+enabled = true
