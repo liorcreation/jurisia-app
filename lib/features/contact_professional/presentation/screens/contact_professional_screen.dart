@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/repositories/contact_professional_repository_impl.dart';
@@ -92,9 +94,12 @@ class _ContactProfessionalView extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final category = ProfessionalCategory.values[index];
-                  return ProfessionalCategoryCard(
-                    category: category,
-                    onTap: () => _openRequestSheet(context, category),
+                  return EntranceFadeSlide(
+                    index: index,
+                    child: ProfessionalCategoryCard(
+                      category: category,
+                      onTap: () => _openRequestSheet(context, category),
+                    ),
                   );
                 },
               ),
@@ -102,10 +107,13 @@ class _ContactProfessionalView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xl),
                 Text('Mes demandes', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: AppSpacing.sm),
-                for (final request in controller.requests)
+                for (var i = 0; i < controller.requests.length; i++)
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: _ContactRequestTile(request: request),
+                    child: EntranceFadeSlide(
+                      index: ProfessionalCategory.values.length + i,
+                      child: _ContactRequestTile(request: controller.requests[i]),
+                    ),
                   ),
               ],
             ],
@@ -141,16 +149,7 @@ class _ContactRequestTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(iconForCategory(request.category), color: AppColors.gold, size: 20),
-          ),
+          GradientIconBadge(icon: iconForCategory(request.category), size: 40),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

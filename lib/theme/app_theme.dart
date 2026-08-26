@@ -177,9 +177,36 @@ class AppShadows {
       offset: const Offset(0, 18),
     ),
     BoxShadow(
+      color: AppColors.nightBlueDeep.withValues(alpha: 0.35),
+      blurRadius: 6,
+      offset: const Offset(0, 2),
+    ),
+    BoxShadow(
       color: AppColors.gold.withValues(alpha: 0.08),
       blurRadius: 18,
       offset: const Offset(0, 2),
+    ),
+  ];
+
+  /// Trois couches pour les surfaces qui doivent sembler « soulevées »
+  /// au-dessus du reste de l'écran (nav flottante, modales) : une ombre
+  /// ambiante large et sombre, une ombre de contact serrée qui ancre la
+  /// surface, et une lueur or très douce qui la distingue du fond.
+  static List<BoxShadow> floating = [
+    BoxShadow(
+      color: AppColors.nightBlueDeep.withValues(alpha: 0.6),
+      blurRadius: 40,
+      offset: const Offset(0, 22),
+    ),
+    BoxShadow(
+      color: AppColors.nightBlueDeep.withValues(alpha: 0.4),
+      blurRadius: 8,
+      offset: const Offset(0, 3),
+    ),
+    BoxShadow(
+      color: AppColors.gold.withValues(alpha: 0.10),
+      blurRadius: 24,
+      offset: const Offset(0, 0),
     ),
   ];
 

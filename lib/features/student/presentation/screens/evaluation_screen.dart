@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -72,19 +73,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(color: AppColors.gold),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            "Préparation de l'évaluation…",
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
-      ),
-    );
+    return const Center(child: AiThinkingIndicator(label: "Préparation de l'évaluation…"));
   }
 }
 

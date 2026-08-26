@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/validation/input_limits.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/glow_focus_field.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/smoked_glass_surface.dart';
 import '../../../../theme/app_theme.dart';
@@ -117,37 +118,43 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(
-                        controller: _nameController,
-                        onChanged: (_) => setState(() {}),
-                        maxLength: AppInputLimits.shortField,
-                        decoration: const InputDecoration(
-                          labelText: 'Nom complet',
-                          filled: false,
-                          counterText: '',
+                      GlowFocusField(
+                        child: TextField(
+                          controller: _nameController,
+                          onChanged: (_) => setState(() {}),
+                          maxLength: AppInputLimits.shortField,
+                          decoration: const InputDecoration(
+                            labelText: 'Nom complet',
+                            filled: false,
+                            counterText: '',
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _contactController,
-                        onChanged: (_) => setState(() {}),
-                        maxLength: AppInputLimits.shortField,
-                        decoration: const InputDecoration(
-                          labelText: 'Téléphone ou e-mail',
-                          filled: false,
-                          counterText: '',
+                      GlowFocusField(
+                        child: TextField(
+                          controller: _contactController,
+                          onChanged: (_) => setState(() {}),
+                          maxLength: AppInputLimits.shortField,
+                          decoration: const InputDecoration(
+                            labelText: 'Téléphone ou e-mail',
+                            filled: false,
+                            counterText: '',
+                          ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _messageController,
-                        onChanged: (_) => setState(() {}),
-                        maxLines: 4,
-                        maxLength: AppInputLimits.contactMessage,
-                        decoration: const InputDecoration(
-                          labelText: 'Décrivez brièvement votre besoin',
-                          alignLabelWithHint: true,
-                          filled: false,
+                      GlowFocusField(
+                        child: TextField(
+                          controller: _messageController,
+                          onChanged: (_) => setState(() {}),
+                          maxLines: 4,
+                          maxLength: AppInputLimits.contactMessage,
+                          decoration: const InputDecoration(
+                            labelText: 'Décrivez brièvement votre besoin',
+                            alignLabelWithHint: true,
+                            filled: false,
+                          ),
                         ),
                       ),
                     ],

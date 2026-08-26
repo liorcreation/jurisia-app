@@ -170,6 +170,29 @@ class _GradientBorderPainter extends CustomPainter {
       ..shader = gradient.createShader(Offset.zero & size);
 
     canvas.drawRRect(rrect, paint);
+
+    // Filet lumineux intérieur le long du segment droit du bord supérieur —
+    // le détail qui vend le verre : une carte en verre réel refléterait une
+    // lumière plus vive au sommet. N'existe que là où un vrai segment droit
+    // existe (les formes en pilule, dont le "haut" est entièrement courbe,
+    // n'en ont pas — le test ci-dessous les ignore proprement).
+    final flatLeft = radius + width;
+    final flatRight = size.width - radius - width;
+    if (flatRight > flatLeft) {
+      final highlightY = width + 0.75;
+      final highlightPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.75
+        ..shader = LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0),
+            Colors.white.withValues(alpha: 0.22),
+            Colors.white.withValues(alpha: 0),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(Rect.fromLTRB(flatLeft, 0, flatRight, highlightY + 1));
+      canvas.drawLine(Offset(flatLeft, highlightY), Offset(flatRight, highlightY), highlightPaint);
+    }
   }
 
   @override

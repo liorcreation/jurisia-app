@@ -6,6 +6,7 @@ import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/glow_focus_field.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -137,21 +138,25 @@ class _AuthViewState extends State<_AuthView> {
                             _ConfigWarning(),
                             const SizedBox(height: AppSpacing.md),
                           ],
-                          TextField(
-                            controller: _emailController,
-                            enabled: SupabaseConfig.isReady && !controller.isSubmitting,
-                            keyboardType: TextInputType.emailAddress,
-                            autofillHints: const [AutofillHints.email],
-                            decoration: const InputDecoration(labelText: 'E-mail'),
+                          GlowFocusField(
+                            child: TextField(
+                              controller: _emailController,
+                              enabled: SupabaseConfig.isReady && !controller.isSubmitting,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const [AutofillHints.email],
+                              decoration: const InputDecoration(labelText: 'E-mail'),
+                            ),
                           ),
                           const SizedBox(height: AppSpacing.md),
-                          TextField(
-                            controller: _passwordController,
-                            enabled: SupabaseConfig.isReady && !controller.isSubmitting,
-                            obscureText: true,
-                            autofillHints: const [AutofillHints.password],
-                            decoration: const InputDecoration(labelText: 'Mot de passe'),
-                            onSubmitted: (_) => _submit(controller),
+                          GlowFocusField(
+                            child: TextField(
+                              controller: _passwordController,
+                              enabled: SupabaseConfig.isReady && !controller.isSubmitting,
+                              obscureText: true,
+                              autofillHints: const [AutofillHints.password],
+                              decoration: const InputDecoration(labelText: 'Mot de passe'),
+                              onSubmitted: (_) => _submit(controller),
+                            ),
                           ),
                           if (!isSignIn) ...[
                             const SizedBox(height: AppSpacing.md),

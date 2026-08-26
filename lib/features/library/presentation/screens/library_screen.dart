@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
@@ -193,10 +194,13 @@ class _LibraryViewState extends State<_LibraryView> {
                           final doc = results[index];
                           return Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: LibraryDocumentCard(
-                              document: doc,
-                              onToggleFavorite: () => controller.toggleBookmark(doc.id),
-                              onTap: () => _openDetail(context, controller, doc.id),
+                            child: EntranceFadeSlide(
+                              index: index,
+                              child: LibraryDocumentCard(
+                                document: doc,
+                                onToggleFavorite: () => controller.toggleBookmark(doc.id),
+                                onTap: () => _openDetail(context, controller, doc.id),
+                              ),
                             ),
                           );
                         },

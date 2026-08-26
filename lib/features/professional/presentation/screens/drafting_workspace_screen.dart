@@ -7,6 +7,7 @@ import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/tap_scale.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../library/data/datasources/legal_document_local_datasource.dart';
 import '../../../library/data/repositories/library_repository_impl.dart';
@@ -80,13 +81,15 @@ class _WorkspaceView extends StatelessWidget {
           title: Text(result?.title ?? _loadingLabel(controller.request.mode)),
           actions: [
             if (result != null)
-              IconButton(
-                tooltip: result.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
-                icon: Icon(
-                  result.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: AppColors.gold,
+              TapScale(
+                child: IconButton(
+                  tooltip: result.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                  icon: Icon(
+                    result.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                    color: AppColors.gold,
+                  ),
+                  onPressed: controller.toggleFavorite,
                 ),
-                onPressed: controller.toggleFavorite,
               ),
           ],
         ),

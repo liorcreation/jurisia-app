@@ -93,8 +93,16 @@ class _HomeNavigationState extends State<HomeNavigation> {
         body: isWide
             ? Row(
                 children: [
-                  _SideRail(selectedIndex: _selectedIndex, onSelect: _onSelect),
-                  const VerticalDivider(width: 1, color: AppColors.divider),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.large),
+                        boxShadow: AppShadows.floating,
+                      ),
+                      child: _SideRail(selectedIndex: _selectedIndex, onSelect: _onSelect),
+                    ),
+                  ),
                   Expanded(child: body),
                 ],
               )
@@ -179,7 +187,8 @@ class _SideRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SmokedGlassSurface(
-      border: const Border(right: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+      borderRadius: BorderRadius.circular(AppRadius.large),
+      border: Border.all(color: AppColors.glassBorder, width: 0.6),
       child: Container(
         width: 232,
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
@@ -266,6 +275,36 @@ class _RailItem extends StatelessWidget {
   }
 }
 
+/// Enveloppe partagée par les deux barres mobiles : un îlot flottant en
+/// verre fumé, détaché des bords de l'écran par une marge et soulevé par
+/// [AppShadows.floating], plutôt qu'une barre plein-écran collée au bord.
+class _FloatingNavIsland extends StatelessWidget {
+  const _FloatingNavIsland({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: AppShadows.floating,
+          ),
+          child: SmokedGlassSurface(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.glassBorder, width: 0.6),
+            child: SizedBox(height: 76, child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Barre d'onglets iOS — le registre « Verre glacé » : pas de pastille ni de
 /// halo, seule la couleur de l'icône et du libellé change, comme sur iOS.
 class _IosTabBar extends StatelessWidget {
@@ -276,24 +315,18 @@ class _IosTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SmokedGlassSurface(
-      border: const Border(top: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-      child: SafeArea(
-        child: SizedBox(
-          height: 74,
-          child: Row(
-            children: [
-              for (var i = 0; i < _destinations.length; i++)
-                Expanded(
-                  child: _IosTabItem(
-                    destination: _destinations[i],
-                    selected: selectedIndex == i,
-                    onTap: () => onSelect(i),
-                  ),
-                ),
-            ],
-          ),
-        ),
+    return _FloatingNavIsland(
+      child: Row(
+        children: [
+          for (var i = 0; i < _destinations.length; i++)
+            Expanded(
+              child: _IosTabItem(
+                destination: _destinations[i],
+                selected: selectedIndex == i,
+                onTap: () => onSelect(i),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -328,6 +361,9 @@ class _IosTabItem extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             destination.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: color,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
@@ -350,24 +386,18 @@ class _AndroidNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SmokedGlassSurface(
-      border: const Border(top: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-      child: SafeArea(
-        child: SizedBox(
-          height: 74,
-          child: Row(
-            children: [
-              for (var i = 0; i < _destinations.length; i++)
-                Expanded(
-                  child: _AndroidNavItem(
-                    destination: _destinations[i],
-                    selected: selectedIndex == i,
-                    onTap: () => onSelect(i),
-                  ),
-                ),
-            ],
-          ),
-        ),
+    return _FloatingNavIsland(
+      child: Row(
+        children: [
+          for (var i = 0; i < _destinations.length; i++)
+            Expanded(
+              child: _AndroidNavItem(
+                destination: _destinations[i],
+                selected: selectedIndex == i,
+                onTap: () => onSelect(i),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -408,6 +438,9 @@ class _AndroidNavItem extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               destination.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: color,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,

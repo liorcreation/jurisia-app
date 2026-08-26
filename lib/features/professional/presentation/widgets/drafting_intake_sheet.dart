@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/validation/input_limits.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/glow_focus_field.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/smoked_glass_surface.dart';
 import '../../../../models/legal_document/legal_domain.dart';
@@ -211,20 +212,24 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
               for (final field in _selectedTemplate!.requiredFields)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: TextField(
-                    controller: _controllerFor(field),
-                    onChanged: (_) => setState(() {}),
-                    maxLength: AppInputLimits.shortField,
-                    decoration: InputDecoration(labelText: field, filled: false, counterText: ''),
+                  child: GlowFocusField(
+                    child: TextField(
+                      controller: _controllerFor(field),
+                      onChanged: (_) => setState(() {}),
+                      maxLength: AppInputLimits.shortField,
+                      decoration: InputDecoration(labelText: field, filled: false, counterText: ''),
+                    ),
                   ),
                 ),
-              TextField(
-                controller: _instructionsController,
-                maxLines: 3,
-                maxLength: AppInputLimits.instructions,
-                decoration: const InputDecoration(
-                  labelText: 'Instructions complémentaires (facultatif)',
-                  filled: false,
+              GlowFocusField(
+                child: TextField(
+                  controller: _instructionsController,
+                  maxLines: 3,
+                  maxLength: AppInputLimits.instructions,
+                  decoration: const InputDecoration(
+                    labelText: 'Instructions complémentaires (facultatif)',
+                    filled: false,
+                  ),
                 ),
               ),
             ],
@@ -240,25 +245,29 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
-              controller: _mainTextController,
-              onChanged: (_) => setState(() {}),
-              maxLines: 10,
-              maxLength: AppInputLimits.contractText,
-              decoration: const InputDecoration(
-                labelText: 'Collez le texte du contrat à auditer',
-                alignLabelWithHint: true,
-                filled: false,
+            GlowFocusField(
+              child: TextField(
+                controller: _mainTextController,
+                onChanged: (_) => setState(() {}),
+                maxLines: 10,
+                maxLength: AppInputLimits.contractText,
+                decoration: const InputDecoration(
+                  labelText: 'Collez le texte du contrat à auditer',
+                  alignLabelWithHint: true,
+                  filled: false,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _instructionsController,
-              maxLines: 2,
-              maxLength: AppInputLimits.instructions,
-              decoration: const InputDecoration(
-                labelText: "Points d'attention (facultatif)",
-                filled: false,
+            GlowFocusField(
+              child: TextField(
+                controller: _instructionsController,
+                maxLines: 2,
+                maxLength: AppInputLimits.instructions,
+                decoration: const InputDecoration(
+                  labelText: "Points d'attention (facultatif)",
+                  filled: false,
+                ),
               ),
             ),
           ],
@@ -275,15 +284,17 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
   List<Widget> _buildConsultationFields(BuildContext context) {
     return [
       GlassContainer(
-        child: TextField(
-          controller: _mainTextController,
-          onChanged: (_) => setState(() {}),
-          maxLines: 8,
-          maxLength: AppInputLimits.consultationQuestion,
-          decoration: const InputDecoration(
-            labelText: 'Décrivez la question juridique à traiter',
-            alignLabelWithHint: true,
-            filled: false,
+        child: GlowFocusField(
+          child: TextField(
+            controller: _mainTextController,
+            onChanged: (_) => setState(() {}),
+            maxLines: 8,
+            maxLength: AppInputLimits.consultationQuestion,
+            decoration: const InputDecoration(
+              labelText: 'Décrivez la question juridique à traiter',
+              alignLabelWithHint: true,
+              filled: false,
+            ),
           ),
         ),
       ),

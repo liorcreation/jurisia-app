@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
@@ -65,13 +66,15 @@ class DocumentDetailScreen extends StatelessWidget {
         appBar: AppBar(
           title: Text(document.type.label),
           actions: [
-            IconButton(
-              tooltip: document.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
-              icon: Icon(
-                document.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                color: AppColors.gold,
+            TapScale(
+              child: IconButton(
+                tooltip: document.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                icon: Icon(
+                  document.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                  color: AppColors.gold,
+                ),
+                onPressed: () => controller.toggleBookmark(document.id),
               ),
-              onPressed: () => controller.toggleBookmark(document.id),
             ),
             IconButton(
               tooltip: 'Copier le texte',

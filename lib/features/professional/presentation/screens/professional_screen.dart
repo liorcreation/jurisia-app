@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/platform/app_platform_style.dart';
+import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/datasources/professional_template_local_datasource.dart';
@@ -79,28 +81,38 @@ class ProfessionalScreen extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
-              _ActionCard(
-                icon: Icons.edit_document,
-                emoji: '✍️',
-                title: 'Rédaction d\'Actes & Contrats',
-                subtitle: 'Bail commercial, contrat de prestation, statuts SARL/SAS, contrat de travail…',
-                onTap: () => _openIntake(context, DraftingMode.redaction),
+              EntranceFadeSlide(
+                index: 0,
+                child: _ActionCard(
+                  icon: Icons.edit_document,
+                  emoji: '✍️',
+                  title: 'Rédaction d\'Actes & Contrats',
+                  subtitle: 'Bail commercial, contrat de prestation, statuts SARL/SAS, contrat de travail…',
+                  onTap: () => _openIntake(context, DraftingMode.redaction),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
-              _ActionCard(
-                icon: Icons.fact_check_rounded,
-                emoji: '🔍',
-                title: 'Audit & Analyse de Clauses',
-                subtitle: 'Détection de clauses abusives ou à risque et propositions de reformulation.',
-                onTap: () => _openIntake(context, DraftingMode.audit),
+              EntranceFadeSlide(
+                index: 1,
+                child: _ActionCard(
+                  icon: Icons.fact_check_rounded,
+                  emoji: '🔍',
+                  title: 'Audit & Analyse de Clauses',
+                  subtitle: 'Détection de clauses abusives ou à risque et propositions de reformulation.',
+                  onTap: () => _openIntake(context, DraftingMode.audit),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
-              _ActionCard(
-                icon: Icons.balance_rounded,
-                emoji: '⚖️',
-                title: 'Consultation Approfondie & Note de Synthèse',
-                subtitle: 'Analyse argumentée d\'une question de droit complexe, textes et jurisprudence à l\'appui.',
-                onTap: () => _openIntake(context, DraftingMode.consultation),
+              EntranceFadeSlide(
+                index: 2,
+                child: _ActionCard(
+                  icon: Icons.balance_rounded,
+                  emoji: '⚖️',
+                  title: 'Consultation Approfondie & Note de Synthèse',
+                  subtitle:
+                      'Analyse argumentée d\'une question de droit complexe, textes et jurisprudence à l\'appui.',
+                  onTap: () => _openIntake(context, DraftingMode.consultation),
+                ),
               ),
             ],
           ),
@@ -134,16 +146,7 @@ class _ActionCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              gradient: AppGradients.goldMetallic,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: AppColors.nightBlueDeep),
-          ),
+          GradientIconBadge(icon: icon, size: 48),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

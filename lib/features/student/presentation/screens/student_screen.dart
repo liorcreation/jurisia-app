@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/student_level.dart';
@@ -129,21 +130,25 @@ class _LevelSelector extends StatelessWidget {
               crossAxisSpacing: AppSpacing.md,
               childAspectRatio: 1.3,
               children: [
-                for (final level in AcademicLevel.values)
-                  _LevelTile(
-                    level: level,
-                    unlocked: controller.isLevelUnlocked(level),
-                    onTap: () {
-                      if (controller.isLevelUnlocked(level)) {
-                        controller.selectLevel(level);
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Terminez le niveau précédent pour débloquer celui-ci.'),
-                          ),
-                        );
-                      }
-                    },
+                for (var i = 0; i < AcademicLevel.values.length; i++)
+                  EntranceFadeSlide(
+                    index: i,
+                    child: _LevelTile(
+                      level: AcademicLevel.values[i],
+                      unlocked: controller.isLevelUnlocked(AcademicLevel.values[i]),
+                      onTap: () {
+                        final level = AcademicLevel.values[i];
+                        if (controller.isLevelUnlocked(level)) {
+                          controller.selectLevel(level);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Terminez le niveau précédent pour débloquer celui-ci.'),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                   ),
               ],
             ),
@@ -247,11 +252,22 @@ class _ModulePath extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: LinearProgressIndicator(
-                  value: percentage,
-                  minHeight: 8,
-                  backgroundColor: AppColors.legalBlueDark,
-                  valueColor: const AlwaysStoppedAnimation(AppColors.gold),
+                child: Stack(
+                  children: [
+                    const LinearProgressIndicator(
+                      value: 1,
+                      minHeight: 8,
+                      backgroundColor: AppColors.legalBlueDark,
+                      valueColor: AlwaysStoppedAnimation(Colors.transparent),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: percentage,
+                      child: Container(
+                        height: 8,
+                        decoration: const BoxDecoration(gradient: AppGradients.goldMetallic),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (average > 0) ...[
@@ -266,7 +282,10 @@ class _ModulePath extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         for (var i = 0; i < modules.length; i++) ...[
-          _ModuleCard(module: modules[i], onTap: () => onOpenModule(modules[i].id)),
+          EntranceFadeSlide(
+            index: i,
+            child: _ModuleCard(module: modules[i], onTap: () => onOpenModule(modules[i].id)),
+          ),
           if (i != modules.length - 1)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),

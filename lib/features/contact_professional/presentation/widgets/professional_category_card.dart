@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/glass_container.dart';
+import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/entities/professional_category.dart';
 
@@ -39,13 +40,7 @@ class ProfessionalCategoryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(gradient: AppGradients.goldMetallic, shape: BoxShape.circle),
-            child: Icon(iconForCategory(category), color: AppColors.nightBlueDeep, size: 22),
-          ),
+          GradientIconBadge(icon: iconForCategory(category)),
           const SizedBox(height: AppSpacing.sm),
           Text(category.label, style: textTheme.titleMedium),
           const SizedBox(height: 4),
