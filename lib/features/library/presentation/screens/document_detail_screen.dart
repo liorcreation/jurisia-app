@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/widgets/glass_container.dart';
@@ -53,8 +52,8 @@ class DocumentDetailScreen extends StatelessWidget {
       );
     }
 
-    final readingStyle = GoogleFonts.lora(
-      textStyle: Theme.of(context).textTheme.bodyLarge,
+    final readingStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+      fontFamily: 'Lora',
       color: AppColors.textPrimary,
       height: 1.9,
       fontSize: 16.5,

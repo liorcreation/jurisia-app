@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Palette officielle de la charte graphique JurisIA — « Glassmorphism
 /// sombre juridique ». Trois couleurs porteuses : le Bleu Nuit en fond, le
@@ -452,8 +451,8 @@ class AppTheme {
   }
 
   static TextTheme _buildTextTheme(TextTheme base) {
-    final serif = GoogleFonts.libreCaslonDisplayTextTheme(base);
-    final sans = GoogleFonts.publicSansTextTheme(base);
+    final serif = base.apply(fontFamily: 'Libre Caslon Display');
+    final sans = base.apply(fontFamily: 'Public Sans');
 
     return sans
         .copyWith(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../features/library/presentation/screens/library_screen.dart';
 import '../../features/litigation/presentation/screens/litigation_screen.dart';
@@ -191,7 +190,8 @@ class _SideRail extends StatelessWidget {
                     shaderCallback: (bounds) => AppGradients.goldMetallic.createShader(bounds),
                     child: Text(
                       'JurisIA',
-                      style: GoogleFonts.libreCaslonDisplay(
+                      style: const TextStyle(
+                        fontFamily: 'Libre Caslon Display',
                         color: Colors.white,
                         fontSize: 19,
                         fontWeight: FontWeight.w600,

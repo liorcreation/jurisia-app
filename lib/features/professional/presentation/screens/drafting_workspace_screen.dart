@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
@@ -149,8 +148,8 @@ class _DocumentView extends StatelessWidget {
   Widget build(BuildContext context) {
     final result = controller.result;
     final text = result?.content ?? controller.streamingText;
-    final readingStyle = GoogleFonts.lora(
-      textStyle: Theme.of(context).textTheme.bodyLarge,
+    final readingStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+      fontFamily: 'Lora',
       color: AppColors.textPrimary,
       height: 1.8,
       fontSize: 16,
