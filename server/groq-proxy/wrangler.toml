@@ -4,3 +4,10 @@ compatibility_date = "2026-08-25"
 
 # La clé Groq n'est JAMAIS mise ici ni dans aucun fichier versionné : elle est
 # fournie via un secret Cloudflare, voir README.md ("wrangler secret put").
+
+# Compteurs de limitation de débit (anti-abus). Sans ce binding, le Worker
+# continue de fonctionner mais sans limiter le débit — voir README.md pour
+# créer le namespace et remplacer l'id ci-dessous.
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "REMPLACER_APRES_wrangler_kv_namespace_create"

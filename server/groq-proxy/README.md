@@ -35,25 +35,54 @@ fidèlement les requêtes de complétion vers Groq, streaming SSE compris.
    (`GroqApiConfig.endpoint`) — c'est une URL publique, pas un secret, elle
    peut être commitée sans risque.
 
+## Limitation de débit (anti-abus) — mise en place du namespace KV
+
+Le Worker limite désormais le débit par adresse IP (20 requêtes/minute,
+300/jour) via un compteur stocké dans Cloudflare KV. Sans cette étape, le
+Worker continue de fonctionner normalement mais sans limiter le débit.
+
+1. Créer le namespace (une seule fois) :
+   ```
+   npx wrangler kv namespace create RATE_LIMIT_KV
+   ```
+   La commande affiche un `id`.
+
+2. Remplacer `REMPLACER_APRES_wrangler_kv_namespace_create` dans
+   `wrangler.toml` par cet `id`.
+
+3. Redéployer (voir plus bas).
+
+## Validation et bornes appliquées par le Worker
+
+En plus de relayer la requête, le Worker rejette désormais :
+
+- un modèle autre que celui explicitement autorisé (`ALLOWED_MODELS` dans
+  `src/index.js` — à tenir synchronisé avec `GROQ_MODEL` côté client si vous
+  en changez) ;
+- un corps de requête de plus de 60 Ko, ou un contenu de messages cumulé de
+  plus de 24 000 caractères ;
+- un `max_tokens` supérieur à 4096, quoi que le client demande (borne appliquée
+  silencieusement, pas un rejet) ;
+- plus de 20 requêtes/minute ou 300/jour pour une même adresse IP (nécessite
+  le namespace KV ci-dessus).
+
 ## Sécurité — ce que ce relais protège, et ce qu'il ne protège pas
 
 Protégé : la clé Groq elle-même n'est plus jamais présente dans le binaire de
-l'application ni dans ses requêtes réseau.
+l'application ni dans ses requêtes réseau. Les bornes ci-dessus limitent
+l'exposition financière et l'abus grossier (script, boucle).
 
 Pas protégé (volontairement hors périmètre de cette étape) : ce Worker
-n'authentifie pas l'appelant. Tant qu'aucun compte utilisateur n'existe côté
-application, quiconque connaît cette URL peut l'appeler et consommer votre
-quota Groq. Deux mitigations recommandées en attendant l'authentification
-réelle (item séparé de la feuille de route) :
+n'authentifie toujours pas l'appelant — la limitation de débit se fait par IP,
+pas par compte utilisateur, et les compteurs KV ne sont pas parfaitement
+atomiques (voir le commentaire en tête de `src/index.js`). Une vraie
+authentification par utilisateur au niveau du Worker reste l'item séparé de
+la feuille de route (« authentification & comptes »). En complément, vous
+pouvez toujours activer une règle de limitation de débit native dans le
+tableau de bord Cloudflare (**Security → WAF → Rate limiting rules**) et
+surveiller votre consommation sur https://console.groq.com/.
 
-- Activer une règle de limitation de débit dans le tableau de bord
-  Cloudflare : **Security → WAF → Rate limiting rules** (quelques clics,
-  aucun code à écrire).
-- Surveiller votre consommation sur https://console.groq.com/ et régénérer
-  la clé (`wrangler secret put GROQ_API_KEY` avec une nouvelle valeur) en cas
-  d'usage anormal.
-
-## Redéployer après une modification de `src/index.js`
+## Redéployer après une modification de `src/index.js` ou `wrangler.toml`
 
 ```
 npx wrangler deploy
