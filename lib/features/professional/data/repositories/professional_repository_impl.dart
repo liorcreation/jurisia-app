@@ -84,16 +84,18 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
       final system = ProfessionalSystemPrompt.drafting(
         actTitle: template.title,
         actDescription: template.description,
+        libraryContext: context,
+      );
+      final userMessage = ProfessionalSystemPrompt.draftingUserMessage(
         fieldValues: request.fieldValues,
         instructions: request.instructions,
-        libraryContext: context,
       );
 
       yield* _generate(
         mode: DraftingMode.redaction,
         title: template.title,
         system: system,
-        userMessage: 'Rédige le document demandé.',
+        userMessage: userMessage,
         citedSources: context,
       );
       return;
@@ -106,13 +108,13 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     }
 
     final context = _libraryContext(domain: request.domainHint);
-    final system = ProfessionalSystemPrompt.consultation(question: question, libraryContext: context);
+    final system = ProfessionalSystemPrompt.consultation(libraryContext: context);
 
     yield* _generate(
       mode: DraftingMode.consultation,
       title: 'Note de synthèse',
       system: system,
-      userMessage: 'Rédige la note de synthèse demandée.',
+      userMessage: ProfessionalSystemPrompt.consultationUserMessage(question),
       citedSources: context,
     );
   }
@@ -125,18 +127,18 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     }
 
     final context = _libraryContext(domain: request.domainHint);
-    final system = ProfessionalSystemPrompt.audit(
+    final system = ProfessionalSystemPrompt.audit(libraryContext: context);
+    final userMessage = ProfessionalSystemPrompt.auditUserMessage(
       contractText: contractText,
       instructions: request.instructions,
-      libraryContext: context,
     );
 
     final splitter = HiddenBlockStreamSplitter(markerStart: ProfessionalSystemPrompt.risksMarkerStart);
 
     await for (final delta in dataSource.streamCompletion(
       system: system,
-      messages: const [
-        {'role': 'user', 'content': 'Audite le contrat fourni.'},
+      messages: [
+        {'role': 'user', 'content': userMessage},
       ],
       maxTokens: 3072,
     )) {
@@ -173,7 +175,8 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
       throw ArgumentError('Résultat introuvable : $resultId');
     }
 
-    final system = ProfessionalSystemPrompt.quickAdjustment(
+    final system = ProfessionalSystemPrompt.quickAdjustment();
+    final userMessage = ProfessionalSystemPrompt.quickAdjustmentUserMessage(
       currentDocument: current.content,
       instruction: adjustment.instruction,
     );
@@ -181,8 +184,8 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     final buffer = StringBuffer();
     await for (final delta in dataSource.streamCompletion(
       system: system,
-      messages: const [
-        {'role': 'user', 'content': 'Applique la modification demandée.'},
+      messages: [
+        {'role': 'user', 'content': userMessage},
       ],
     )) {
       buffer.write(delta);

@@ -20,6 +20,7 @@ class _FakeDataSource implements LlmDataSource {
 
   final List<List<String>> _responses;
   final List<String> systemPromptsSeen = [];
+  final List<List<Map<String, String>>> messagesSeen = [];
   var _callIndex = 0;
   var disposed = false;
 
@@ -30,6 +31,7 @@ class _FakeDataSource implements LlmDataSource {
     int maxTokens = 1536,
   }) async* {
     systemPromptsSeen.add(system);
+    messagesSeen.add(messages);
     final chunks = _responses[_callIndex];
     _callIndex++;
     for (final chunk in chunks) {
@@ -91,8 +93,13 @@ void main() {
       expect(done.citedSources, hasLength(3));
       expect(done.citedSources.map((s) => s.title), contains('Code du travail'));
 
-      expect(built.fakeDataSource.systemPromptsSeen.single, contains('ACME SARL'));
+      // Les informations propres à l'utilisateur voyagent en message `user`
+      // (jamais interpolées dans le prompt système) pour ne pas exposer de
+      // surface d'injection de prompt ; le contexte de bibliothèque, lui,
+      // fixe et non contrôlé par l'utilisateur, reste dans le système.
+      expect(built.fakeDataSource.messagesSeen.single.single['content'], contains('ACME SARL'));
       expect(built.fakeDataSource.systemPromptsSeen.single, contains('Code du travail'));
+      expect(built.fakeDataSource.systemPromptsSeen.single, isNot(contains('ACME SARL')));
     });
 
     test('lève une erreur si aucun modèle n\'est fourni en mode rédaction', () async {
@@ -258,7 +265,8 @@ void main() {
 
       expect(adjustedResult.id, initialResult.id);
       expect(adjustedResult.content, 'Version renforcée et plus stricte du contrat.');
-      expect(built.fakeDataSource.systemPromptsSeen.last, contains('Version initiale du contrat.'));
+      expect(built.fakeDataSource.messagesSeen.last.single['content'], contains('Version initiale du contrat.'));
+      expect(built.fakeDataSource.systemPromptsSeen.last, isNot(contains('Version initiale du contrat.')));
     });
 
     test('applyQuickAdjustment lève une erreur pour un identifiant inconnu', () async {
