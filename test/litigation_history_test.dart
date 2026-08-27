@@ -1,16 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
+import 'package:jurisia_app/features/litigation/data/datasources/litigation_system_prompt.dart';
 import 'package:jurisia_app/features/litigation/data/repositories/litigation_repository_impl.dart';
 import 'package:jurisia_app/features/litigation/domain/repositories/litigation_conversation_store.dart';
 import 'package:jurisia_app/features/litigation/domain/usecases/analyze_litigation_usecase.dart';
+import 'package:jurisia_app/features/litigation/domain/usecases/generate_conversation_title_usecase.dart';
 import 'package:jurisia_app/features/litigation/presentation/controllers/litigation_chat_controller.dart';
 import 'package:jurisia_app/models/chat/conversation_model.dart';
 import 'package:jurisia_app/models/chat/message_model.dart';
 
+/// Distingue l'appel de chat (system = grille d'analyse) de l'appel de
+/// génération de titre (system = [LitigationSystemPrompt.titleGeneration])
+/// pour leur servir des réponses différentes, comme le ferait le vrai
+/// relais Groq selon le prompt reçu.
 class _FakeDataSource implements LlmDataSource {
-  _FakeDataSource(this.chunks);
+  _FakeDataSource({
+    required this.chatChunks,
+    this.titleChunks = const ['Titre généré'],
+    this.throwOnTitleRequest = false,
+  });
 
-  final List<String> chunks;
+  final List<String> chatChunks;
+  final List<String> titleChunks;
+  final bool throwOnTitleRequest;
 
   @override
   Stream<String> streamCompletion({
@@ -18,7 +30,11 @@ class _FakeDataSource implements LlmDataSource {
     required List<Map<String, String>> messages,
     int maxTokens = 1536,
   }) async* {
-    for (final chunk in chunks) {
+    final isTitleRequest = system == LitigationSystemPrompt.titleGeneration;
+    if (isTitleRequest && throwOnTitleRequest) {
+      throw Exception('panne simulée du service de titres');
+    }
+    for (final chunk in isTitleRequest ? titleChunks : chatChunks) {
       yield chunk;
     }
   }
@@ -38,13 +54,6 @@ class _FakeConversationStore implements LitigationConversationStore {
     final values = _conversations.values.toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return values;
-  }
-
-  @override
-  Future<Conversation?> loadLatest() async {
-    if (_conversations.isEmpty) return null;
-    final latest = _sorted().first;
-    return latest.copyWith(messages: List.of(_messages[latest.id] ?? const []));
   }
 
   @override
@@ -76,22 +85,33 @@ class _FakeConversationStore implements LitigationConversationStore {
   }
 }
 
-LitigationChatController _buildController(_FakeConversationStore store, {List<String>? chunks}) {
-  final dataSource = _FakeDataSource(chunks ?? const ["Merci, je regarde votre situation."]);
+LitigationChatController _buildController(
+  _FakeConversationStore store, {
+  List<String>? chatChunks,
+  List<String>? titleChunks,
+  bool throwOnTitleRequest = false,
+}) {
+  final dataSource = _FakeDataSource(
+    chatChunks: chatChunks ?? const ["Merci, je regarde votre situation."],
+    titleChunks: titleChunks ?? const ['Titre généré'],
+    throwOnTitleRequest: throwOnTitleRequest,
+  );
   final repository = LitigationRepositoryImpl(dataSource: dataSource);
   return LitigationChatController(
     useCase: AnalyzeLitigationUseCase(repository: repository),
+    generateTitleUseCase: GenerateConversationTitleUseCase(repository: repository),
     conversationStore: store,
   );
 }
 
-/// Laisse les `Future`s de construction (loadLatest/refreshHistory) du
-/// contrôleur se résoudre avant d'inspecter son état.
+/// Laisse les `Future`s en arrière-plan du contrôleur (refreshHistory,
+/// génération de titre non attendue depuis `_send`) se résoudre avant
+/// d'inspecter son état.
 Future<void> _settle() => Future.delayed(Duration.zero);
 
 void main() {
   group('LitigationChatController — historique', () {
-    test('dérive un titre depuis le premier message utilisateur', () async {
+    test('affiche un titre tronqué dès le premier message, avant la réponse IA', () async {
       final store = _FakeConversationStore();
       final controller = _buildController(store);
       await _settle();
@@ -100,9 +120,34 @@ void main() {
         "J'ai été licencié sans préavis après quinze ans d'ancienneté, que puis-je faire ?",
       );
 
+      // Le titre généré par l'IA n'a pas forcément eu le temps de revenir
+      // dès la fin de l'échange : soit le repli tronqué est encore là, soit
+      // le titre généré (voir test suivant) a déjà pris le relais — dans
+      // tous les cas, ce n'est jamais resté "Nouvelle consultation".
       expect(controller.conversation.title, isNot('Nouvelle consultation'));
+    });
+
+    test('le titre généré par l\'IA remplace le titre tronqué une fois reçu', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store, titleChunks: const ['Licenciement sans préavis']);
+      await _settle();
+
+      await controller.sendMessage("J'ai été licencié sans préavis, que puis-je faire ?");
+      await _settle();
+
+      expect(controller.conversation.title, 'Licenciement sans préavis');
+      expect(controller.history.first.title, 'Licenciement sans préavis');
+    });
+
+    test('conserve le titre tronqué si la génération IA échoue', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store, throwOnTitleRequest: true);
+      await _settle();
+
+      await controller.sendMessage("J'ai été licencié sans préavis, que puis-je faire ?");
+      await _settle();
+
       expect(controller.conversation.title, startsWith("J'ai été licencié"));
-      expect(controller.conversation.title.length, lessThanOrEqualTo(49));
     });
 
     test('ne change plus le titre après le premier message', () async {
@@ -111,9 +156,11 @@ void main() {
       await _settle();
 
       await controller.sendMessage('Première question sur mon bail.');
+      await _settle();
       final titleAfterFirst = controller.conversation.title;
 
       await controller.sendMessage('Une deuxième question, sans rapport.');
+      await _settle();
 
       expect(controller.conversation.title, titleAfterFirst);
     });
@@ -136,10 +183,12 @@ void main() {
       await _settle();
 
       await controller.sendMessage('Premier dossier : conflit de voisinage.');
+      await _settle();
       final firstConversationId = controller.conversation.id;
 
       controller.startNewConsultation();
       await controller.sendMessage('Second dossier : rupture de contrat.');
+      await _settle();
       final secondConversationId = controller.conversation.id;
 
       expect(controller.conversation.id, isNot(firstConversationId));
@@ -162,6 +211,7 @@ void main() {
         await _settle();
 
         await controller.sendMessage('Dossier à supprimer.');
+        await _settle();
         final deletedId = controller.conversation.id;
 
         await controller.deleteConversation(deletedId);
@@ -178,10 +228,12 @@ void main() {
       await _settle();
 
       await controller.sendMessage('Premier dossier.');
+      await _settle();
       final firstId = controller.conversation.id;
 
       controller.startNewConsultation();
       await controller.sendMessage('Deuxième dossier, actif.');
+      await _settle();
       final activeId = controller.conversation.id;
 
       await controller.deleteConversation(firstId);
@@ -190,5 +242,45 @@ void main() {
       expect(controller.history.any((c) => c.id == firstId), isFalse);
       expect(controller.history.any((c) => c.id == activeId), isTrue);
     });
+
+    test('renameConversation met à jour le titre de la consultation active', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store);
+      await _settle();
+
+      await controller.sendMessage('Dossier à renommer.');
+      await _settle();
+
+      await controller.renameConversation(controller.conversation.id, 'Nouveau titre choisi');
+
+      expect(controller.conversation.title, 'Nouveau titre choisi');
+      expect(controller.history.first.title, 'Nouveau titre choisi');
+    });
+
+    test(
+      'renameConversation met à jour une entrée inactive sans toucher à la consultation active',
+      () async {
+        final store = _FakeConversationStore();
+        final controller = _buildController(store);
+        await _settle();
+
+        await controller.sendMessage('Premier dossier.');
+        await _settle();
+        final firstId = controller.conversation.id;
+
+        controller.startNewConsultation();
+        await controller.sendMessage('Deuxième dossier, actif.');
+        await _settle();
+        final activeTitleBefore = controller.conversation.title;
+
+        await controller.renameConversation(firstId, 'Titre renommé manuellement');
+
+        expect(controller.conversation.title, activeTitleBefore);
+        expect(
+          controller.history.firstWhere((c) => c.id == firstId).title,
+          'Titre renommé manuellement',
+        );
+      },
+    );
   });
 }

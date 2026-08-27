@@ -6,10 +6,6 @@ import '../../../../models/chat/message_model.dart';
 /// à la conversation de survivre à un redémarrage sans coupler le domaine à
 /// Supabase ou à tout autre fournisseur de stockage.
 abstract class LitigationConversationStore {
-  /// La consultation la plus récente de l'utilisateur pour ce module, ou
-  /// `null` s'il n'en a encore aucune.
-  Future<Conversation?> loadLatest();
-
   /// Résumés de toutes les consultations de l'utilisateur (titre, dates,
   /// branche du droit — `messages` vide), triés du plus récent au plus
   /// ancien, pour alimenter le panneau d'historique.

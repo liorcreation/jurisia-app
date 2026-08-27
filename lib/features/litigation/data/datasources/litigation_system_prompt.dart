@@ -34,6 +34,15 @@ Après ta réponse visible, ajoute systématiquement, sur de nouvelles lignes, u
 Ce bloc doit toujours représenter l'état COMPLET et à jour de ta compréhension du dossier (pas seulement les nouveautés de ce message), en JSON strictement valide, sur une seule ligne, avec des guillemets doubles et sans commentaire. « chancesDeSucces » est soit un nombre entre 0 et 100, soit null si tu ne peux pas encore l'estimer. « isComplete » ne passe à true que lorsque tu as livré une analyse développée et un plan d'action concret — jamais tant que tu es encore en train de poser des questions pour obtenir les informations clés.
 ''';
 
+  /// System prompt statique et fixe (le message de l'utilisateur part
+  /// toujours en message `role: user`, jamais interpolé ici — même
+  /// discipline anti-injection que le reste de l'application) pour nommer
+  /// une consultation dans l'historique, comme le font ChatGPT/Claude/
+  /// Gemini pour leurs propres conversations.
+  static const String titleGeneration = '''
+Tu résumes le sujet d'une consultation juridique en un titre très court, entre 3 et 6 mots, en français, sans ponctuation finale, sans guillemets, sans le mot "consultation" ni "titre". Réponds uniquement par ce titre, rien d'autre.
+''';
+
   /// Construit le system prompt final en y ajoutant, le cas échéant, un
   /// rappel interne du contenu déjà connu de la grille d'analyse, afin que
   /// le modèle ne redemande pas des informations déjà obtenues.

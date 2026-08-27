@@ -15,6 +15,11 @@ abstract class LitigationRepository {
     required LegalAnalysisGrid currentGrid,
   });
 
+  /// Résume le premier message d'une consultation en un titre court (3 à 6
+  /// mots), comme le font ChatGPT/Claude/Gemini pour nommer une
+  /// conversation dans leur historique.
+  Future<String> generateTitle(String firstMessage);
+
   /// Libère les ressources réseau sous-jacentes (connexion HTTP persistante).
   void dispose();
 }

@@ -17,25 +17,6 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
   final String userId;
 
   @override
-  Future<Conversation?> loadLatest() async {
-    try {
-      final conversationRows = await client
-          .from('litigation_conversations')
-          .select()
-          .eq('user_id', userId)
-          .order('updated_at', ascending: false)
-          .limit(1);
-
-      if (conversationRows.isEmpty) return null;
-      return _loadFullConversation(conversationRows.first);
-    } catch (error) {
-      // ignore: avoid_print
-      print('Échec du chargement de la dernière consultation Supabase : $error');
-      return null;
-    }
-  }
-
-  @override
   Future<List<Conversation>> listConversations() async {
     try {
       final rows = await client

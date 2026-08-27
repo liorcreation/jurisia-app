@@ -69,6 +69,37 @@ class LitigationRepositoryImpl implements LitigationRepository {
     );
   }
 
+  @override
+  Future<String> generateTitle(String firstMessage) async {
+    final buffer = StringBuffer();
+    await for (final delta in dataSource.streamCompletion(
+      system: LitigationSystemPrompt.titleGeneration,
+      messages: [
+        {'role': 'user', 'content': firstMessage},
+      ],
+      // Le modèle utilisé (openai/gpt-oss-120b) est un modèle "raisonneur" :
+      // il consomme d'abord une part significative et variable du budget de
+      // tokens en raisonnement interne (jamais visible, jamais dans
+      // `content`) avant d'émettre la réponse réelle. Vérifié en direct
+      // contre le relais : 20 tokens ne laissaient aucune place au titre
+      // lui-même (coupé en pleine réflexion) ; 200 laisse une marge
+      // confortable après ~80-90 tokens de raisonnement typiques pour ce
+      // prompt très court.
+      maxTokens: 200,
+    )) {
+      buffer.write(delta);
+    }
+    return _cleanTitle(buffer.toString());
+  }
+
+  String _cleanTitle(String raw) {
+    var title = raw.trim();
+    if (title.isEmpty) return '';
+    title = title.replaceAll(RegExp('^["“]|["”]\$'), '').trim();
+    if (title.endsWith('.')) title = title.substring(0, title.length - 1);
+    return title.trim();
+  }
+
   List<Map<String, String>> _buildApiMessages(List<ChatMessage> messages) {
     final startIndex = messages.indexWhere((m) => m.sender == MessageSender.user);
     if (startIndex == -1) return const [];

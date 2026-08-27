@@ -21,13 +21,17 @@ import '../../data/repositories/litigation_repository_impl.dart';
 import '../../data/repositories/supabase_litigation_conversation_store.dart';
 import '../../domain/repositories/litigation_conversation_store.dart';
 import '../../domain/usecases/analyze_litigation_usecase.dart';
+import '../../domain/usecases/generate_conversation_title_usecase.dart';
 import '../controllers/litigation_chat_controller.dart';
 import '../widgets/conversation_history_panel.dart';
 
-AnalyzeLitigationUseCase _buildAnalyzeLitigationUseCase() {
-  final dataSource = GroqDataSource();
-  final repository = LitigationRepositoryImpl(dataSource: dataSource);
-  return AnalyzeLitigationUseCase(repository: repository);
+({AnalyzeLitigationUseCase analyze, GenerateConversationTitleUseCase generateTitle})
+    _buildLitigationUseCases() {
+  final repository = LitigationRepositoryImpl(dataSource: GroqDataSource());
+  return (
+    analyze: AnalyzeLitigationUseCase(repository: repository),
+    generateTitle: GenerateConversationTitleUseCase(repository: repository),
+  );
 }
 
 LitigationConversationStore? _buildConversationStore() {
@@ -45,10 +49,14 @@ class LitigationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<LitigationChatController>(
-      create: (_) => LitigationChatController(
-        useCase: _buildAnalyzeLitigationUseCase(),
-        conversationStore: _buildConversationStore(),
-      ),
+      create: (_) {
+        final useCases = _buildLitigationUseCases();
+        return LitigationChatController(
+          useCase: useCases.analyze,
+          generateTitleUseCase: useCases.generateTitle,
+          conversationStore: _buildConversationStore(),
+        );
+      },
       child: const _LitigationView(),
     );
   }
@@ -64,6 +72,7 @@ class _LitigationView extends StatefulWidget {
 class _LitigationViewState extends State<_LitigationView> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  bool _historyCollapsed = false;
 
   @override
   void dispose() {
@@ -135,16 +144,26 @@ class _LitigationViewState extends State<_LitigationView> {
           controller.openConversation(id);
         },
         onDelete: controller.deleteConversation,
+        onRename: controller.renameConversation,
       );
     }
 
-    final historyButton = Builder(
-      builder: (innerContext) => IconButton(
-        tooltip: 'Historique des consultations',
-        icon: const Icon(Icons.history_rounded),
-        onPressed: () => Scaffold.of(innerContext).openDrawer(),
-      ),
-    );
+    // Mobile : ouvre le tiroir. Desktop : replie/déplie le panneau
+    // permanent — ChatGPT/Claude permettent les deux, pas seulement le
+    // tiroir mobile.
+    final historyButton = isDesktop
+        ? IconButton(
+            tooltip: _historyCollapsed ? "Afficher l'historique" : "Masquer l'historique",
+            icon: Icon(_historyCollapsed ? Icons.menu_open_rounded : Icons.menu_rounded),
+            onPressed: () => setState(() => _historyCollapsed = !_historyCollapsed),
+          )
+        : Builder(
+            builder: (innerContext) => IconButton(
+              tooltip: 'Historique des consultations',
+              icon: const Icon(Icons.history_rounded),
+              onPressed: () => Scaffold.of(innerContext).openDrawer(),
+            ),
+          );
 
     final chatBody = Column(
       children: [
@@ -201,7 +220,7 @@ class _LitigationViewState extends State<_LitigationView> {
               )
             : AppBar(
                 title: const Text('Litiges et consultations'),
-                leading: isDesktop ? null : historyButton,
+                leading: historyButton,
                 actions: platformStyle == AppPlatformStyle.android ? null : [newConsultationAction],
               ),
         floatingActionButton: platformStyle == AppPlatformStyle.android
@@ -215,13 +234,15 @@ class _LitigationViewState extends State<_LitigationView> {
           child: isDesktop
               ? Row(
                   children: [
-                    SizedBox(
-                      width: 280,
-                      child: SmokedGlassSurface(
-                        border: const Border(right: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-                        child: historyPanel(inDrawer: false),
+                    if (!_historyCollapsed)
+                      SizedBox(
+                        width: 280,
+                        child: SmokedGlassSurface(
+                          border:
+                              const Border(right: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+                          child: historyPanel(inDrawer: false),
+                        ),
                       ),
-                    ),
                     Expanded(child: chatBody),
                   ],
                 )

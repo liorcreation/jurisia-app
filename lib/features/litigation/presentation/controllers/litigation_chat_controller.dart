@@ -6,6 +6,7 @@ import '../../../../models/chat/message_model.dart';
 import '../../domain/entities/litigation_response_chunk.dart';
 import '../../domain/repositories/litigation_conversation_store.dart';
 import '../../domain/usecases/analyze_litigation_usecase.dart';
+import '../../domain/usecases/generate_conversation_title_usecase.dart';
 
 /// État d'envoi courant de la conversation.
 enum LitigationSendStatus { idle, sending, error }
@@ -13,23 +14,23 @@ enum LitigationSendStatus { idle, sending, error }
 /// Contrôleur d'état de l'écran "Litiges et consultations" : conserve la
 /// conversation en cours, pilote l'appel au use case d'analyse et expose
 /// le texte en cours de streaming ainsi que les erreurs éventuelles à la
-/// vue. Si [conversationStore] est fourni, recharge la dernière
-/// consultation de l'utilisateur au démarrage et sauvegarde chaque message
-/// en arrière-plan, au mieux effort.
+/// vue. Comme ChatGPT/Claude/Gemini, démarre toujours sur une consultation
+/// neuve — les précédentes restent accessibles via [history], jamais
+/// rouvertes automatiquement. Si [conversationStore] est fourni, chaque
+/// message est sauvegardé en arrière-plan, au mieux effort.
 class LitigationChatController extends ChangeNotifier {
-  LitigationChatController({required this.useCase, this.conversationStore, Uuid? uuid})
-      : _uuid = uuid ?? const Uuid() {
+  LitigationChatController({
+    required this.useCase,
+    required this.generateTitleUseCase,
+    this.conversationStore,
+    Uuid? uuid,
+  }) : _uuid = uuid ?? const Uuid() {
     _conversation = _createConversation();
-    conversationStore?.loadLatest().then((loaded) {
-      if (loaded != null) {
-        _conversation = loaded;
-        notifyListeners();
-      }
-    });
     refreshHistory();
   }
 
   final AnalyzeLitigationUseCase useCase;
+  final GenerateConversationTitleUseCase generateTitleUseCase;
   final LitigationConversationStore? conversationStore;
   final Uuid _uuid;
 
@@ -141,6 +142,53 @@ class LitigationChatController extends ChangeNotifier {
     }
   }
 
+  /// Renomme une consultation, active ou non — même logique que
+  /// [deleteConversation] pour retrouver la bonne entrée.
+  Future<void> renameConversation(String id, String newTitle) async {
+    final title = newTitle.trim();
+    if (title.isEmpty) return;
+
+    if (_conversation.id == id) {
+      _conversation = _conversation.copyWith(title: title);
+      conversationStore?.upsertConversation(_conversation);
+      _upsertHistoryEntry(_conversation);
+      notifyListeners();
+      return;
+    }
+
+    Conversation? existing;
+    for (final entry in _history) {
+      if (entry.id == id) {
+        existing = entry;
+        break;
+      }
+    }
+    if (existing == null) return;
+
+    final updated = existing.copyWith(title: title);
+    conversationStore?.upsertConversation(updated);
+    _upsertHistoryEntry(updated);
+    notifyListeners();
+  }
+
+  /// Remplace le titre tronqué affiché immédiatement au premier message par
+  /// un titre généré par l'IA, dès qu'il arrive — sans bloquer l'échange en
+  /// cours. Si l'utilisateur a changé de conversation entretemps, met à
+  /// jour l'entrée d'historique correspondante plutôt que la conversation
+  /// active. Un échec de génération n'est jamais visible : le titre tronqué
+  /// reste un repli tout à fait correct.
+  Future<void> _refineTitleFromFirstMessage(String conversationId, String firstMessage) async {
+    String smartTitle;
+    try {
+      smartTitle = await generateTitleUseCase(firstMessage);
+    } catch (_) {
+      return;
+    }
+    if (smartTitle.trim().isEmpty) return;
+
+    await renameConversation(conversationId, smartTitle);
+  }
+
   ChatMessage _welcomeMessage(String conversationId) {
     return ChatMessage(
       id: _uuid.v4(),
@@ -214,6 +262,12 @@ class LitigationChatController extends ChangeNotifier {
             conversationStore?.upsertConversation(_conversation);
             conversationStore?.appendMessage(message);
             _upsertHistoryEntry(_conversation);
+            if (isFirstUserMessage) {
+              // Le titre tronqué ci-dessus s'affiche tout de suite ; celui-ci
+              // le remplace dès qu'il arrive, sans bloquer l'échange en cours.
+              // ignore: unawaited_futures
+              _refineTitleFromFirstMessage(_conversation.id, text);
+            }
             notifyListeners();
           case LitigationTextDeltaChunk(:final delta):
             _streamingText += delta;
