@@ -71,7 +71,17 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
             ? widget.child
             : Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [Icon(widget.icon), const SizedBox(width: AppSpacing.sm), widget.child],
+                children: [
+                  Icon(widget.icon),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: DefaultTextStyle.merge(
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      child: widget.child,
+                    ),
+                  ),
+                ],
               ),
       ),
     );

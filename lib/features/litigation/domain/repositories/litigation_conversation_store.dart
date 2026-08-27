@@ -10,6 +10,19 @@ abstract class LitigationConversationStore {
   /// `null` s'il n'en a encore aucune.
   Future<Conversation?> loadLatest();
 
+  /// Résumés de toutes les consultations de l'utilisateur (titre, dates,
+  /// branche du droit — `messages` vide), triés du plus récent au plus
+  /// ancien, pour alimenter le panneau d'historique.
+  Future<List<Conversation>> listConversations();
+
+  /// Une consultation précise avec l'ensemble de ses messages, ou `null` si
+  /// elle n'existe pas (ou plus).
+  Future<Conversation?> loadConversation(String id);
+
+  /// Supprime définitivement une consultation et son historique de
+  /// messages.
+  Future<void> deleteConversation(String id);
+
   /// Crée ou met à jour les métadonnées d'une consultation (titre, branche
   /// du droit, complexité, grille d'analyse).
   Future<void> upsertConversation(Conversation conversation);

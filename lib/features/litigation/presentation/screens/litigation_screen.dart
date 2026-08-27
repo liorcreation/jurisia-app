@@ -12,6 +12,7 @@ import '../../../../core/widgets/ios_large_title_bar.dart';
 import '../../../../core/widgets/ios_new_consultation_sheet.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/markdown_text.dart';
+import '../../../../core/widgets/smoked_glass_surface.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../../../../core/ai/groq_api_datasource.dart';
@@ -21,6 +22,7 @@ import '../../data/repositories/supabase_litigation_conversation_store.dart';
 import '../../domain/repositories/litigation_conversation_store.dart';
 import '../../domain/usecases/analyze_litigation_usecase.dart';
 import '../controllers/litigation_chat_controller.dart';
+import '../widgets/conversation_history_panel.dart';
 
 AnalyzeLitigationUseCase _buildAnalyzeLitigationUseCase() {
   final dataSource = GroqDataSource();
@@ -82,10 +84,23 @@ class _LitigationViewState extends State<_LitigationView> {
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
+  void _startNewConsultation(
+    BuildContext context,
+    LitigationChatController controller,
+    AppPlatformStyle platformStyle,
+  ) {
+    if (platformStyle == AppPlatformStyle.ios) {
+      showIosNewConsultationSheet(context, onConfirm: controller.startNewConsultation);
+    } else {
+      controller.startNewConsultation();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<LitigationChatController>();
     final platformStyle = AppPlatformStyle.of(context);
+    final isDesktop = platformStyle == AppPlatformStyle.desktop;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
 
@@ -101,18 +116,92 @@ class _LitigationViewState extends State<_LitigationView> {
       icon: const Icon(Icons.add_comment_outlined),
       onPressed: controller.isSending
           ? null
-          : platformStyle == AppPlatformStyle.ios
-              ? () => showIosNewConsultationSheet(context, onConfirm: controller.startNewConsultation)
-              : controller.startNewConsultation,
+          : () => _startNewConsultation(context, controller, platformStyle),
+    );
+
+    // Sur mobile, le panneau vit dans le tiroir : la sélection referme le
+    // tiroir avant de basculer de consultation. Sur desktop, le panneau est
+    // toujours visible, rien à fermer.
+    Widget historyPanel({required bool inDrawer}) {
+      return ConversationHistoryPanel(
+        history: controller.history,
+        activeId: controller.conversation.id,
+        onNewConsultation: () {
+          if (inDrawer) Navigator.of(context).maybePop();
+          _startNewConsultation(context, controller, platformStyle);
+        },
+        onSelect: (id) {
+          if (inDrawer) Navigator.of(context).maybePop();
+          controller.openConversation(id);
+        },
+        onDelete: controller.deleteConversation,
+      );
+    }
+
+    final historyButton = Builder(
+      builder: (innerContext) => IconButton(
+        tooltip: 'Historique des consultations',
+        icon: const Icon(Icons.history_rounded),
+        onPressed: () => Scaffold.of(innerContext).openDrawer(),
+      ),
+    );
+
+    final chatBody = Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
+            ),
+            itemCount: itemCount,
+            itemBuilder: (context, index) {
+              if (index < messages.length) {
+                return _ChatBubble(message: messages[index]);
+              }
+
+              var remaining = index - messages.length;
+
+              if (controller.isSending) {
+                if (remaining == 0) {
+                  return _AssistantThinkingBubble(streamingText: controller.streamingText);
+                }
+                remaining -= 1;
+              }
+
+              return ChatErrorBubble(
+                message: controller.errorMessage ?? '',
+                onRetry: controller.canRetry ? controller.retry : null,
+                onDismiss: controller.dismissError,
+              );
+            },
+          ),
+        ),
+        _AiDisclaimerHint(),
+        ChatComposer(
+          controller: _inputController,
+          enabled: !controller.isSending,
+          onSend: () => _handleSend(controller),
+          hintText: 'Décrivez votre situation…',
+        ),
+      ],
     );
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        drawer: isDesktop
+            ? null
+            : Drawer(child: SafeArea(child: historyPanel(inDrawer: true))),
         appBar: platformStyle == AppPlatformStyle.ios
-            ? IosLargeTitleBar(title: 'Litiges et consultations', actions: [newConsultationAction])
+            ? IosLargeTitleBar(
+                title: 'Litiges et consultations',
+                actions: [historyButton, newConsultationAction],
+              )
             : AppBar(
                 title: const Text('Litiges et consultations'),
+                leading: isDesktop ? null : historyButton,
                 actions: platformStyle == AppPlatformStyle.android ? null : [newConsultationAction],
               ),
         floatingActionButton: platformStyle == AppPlatformStyle.android
@@ -123,47 +212,20 @@ class _LitigationViewState extends State<_LitigationView> {
               )
             : null,
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
-                  ),
-                  itemCount: itemCount,
-                  itemBuilder: (context, index) {
-                    if (index < messages.length) {
-                      return _ChatBubble(message: messages[index]);
-                    }
-
-                    var remaining = index - messages.length;
-
-                    if (controller.isSending) {
-                      if (remaining == 0) {
-                        return _AssistantThinkingBubble(streamingText: controller.streamingText);
-                      }
-                      remaining -= 1;
-                    }
-
-                    return ChatErrorBubble(
-                      message: controller.errorMessage ?? '',
-                      onRetry: controller.canRetry ? controller.retry : null,
-                      onDismiss: controller.dismissError,
-                    );
-                  },
-                ),
-              ),
-              _AiDisclaimerHint(),
-              ChatComposer(
-                controller: _inputController,
-                enabled: !controller.isSending,
-                onSend: () => _handleSend(controller),
-                hintText: 'Décrivez votre situation…',
-              ),
-            ],
-          ),
+          child: isDesktop
+              ? Row(
+                  children: [
+                    SizedBox(
+                      width: 280,
+                      child: SmokedGlassSurface(
+                        border: const Border(right: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+                        child: historyPanel(inDrawer: false),
+                      ),
+                    ),
+                    Expanded(child: chatBody),
+                  ],
+                )
+              : chatBody,
         ),
       ),
     );

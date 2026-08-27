@@ -27,39 +27,95 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
           .limit(1);
 
       if (conversationRows.isEmpty) return null;
-      final row = conversationRows.first;
-
-      final messageRows = await client
-          .from('litigation_messages')
-          .select()
-          .eq('conversation_id', row['id'] as String)
-          .order('created_at', ascending: true);
-
-      final messages = messageRows.map((m) => _messageFromRow(m, row['id'] as String)).toList();
-
-      return Conversation(
-        id: row['id'] as String,
-        title: row['title'] as String? ?? 'Nouvelle consultation',
-        module: ConversationModule.litigeEtConsultation,
-        createdAt: DateTime.parse(row['created_at'] as String),
-        updatedAt: DateTime.parse(row['updated_at'] as String),
-        domain: row['domain'] != null ? LegalDomain.fromName(row['domain'] as String) : null,
-        complexity: row['complexity'] != null
-            ? ComplexityLevel.values.firstWhere(
-                (c) => c.name == row['complexity'],
-                orElse: () => ComplexityLevel.simple,
-              )
-            : null,
-        messages: messages,
-        analysisGrid: row['analysis_grid'] != null
-            ? LegalAnalysisGrid.fromJson(row['analysis_grid'] as Map<String, dynamic>)
-            : const LegalAnalysisGrid(),
-      );
+      return _loadFullConversation(conversationRows.first);
     } catch (error) {
       // ignore: avoid_print
       print('Échec du chargement de la dernière consultation Supabase : $error');
       return null;
     }
+  }
+
+  @override
+  Future<List<Conversation>> listConversations() async {
+    try {
+      final rows = await client
+          .from('litigation_conversations')
+          .select('id, title, domain, complexity, created_at, updated_at')
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false)
+          .limit(50);
+
+      return rows.map(_summaryFromRow).toList();
+    } catch (error) {
+      // ignore: avoid_print
+      print("Échec du chargement de l'historique des consultations Supabase : $error");
+      return const [];
+    }
+  }
+
+  @override
+  Future<Conversation?> loadConversation(String id) async {
+    try {
+      final conversationRows =
+          await client.from('litigation_conversations').select().eq('id', id).limit(1);
+
+      if (conversationRows.isEmpty) return null;
+      return _loadFullConversation(conversationRows.first);
+    } catch (error) {
+      // ignore: avoid_print
+      print('Échec du chargement de la consultation $id : $error');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> deleteConversation(String id) async {
+    try {
+      // Les messages liés partent automatiquement (foreign key `on delete
+      // cascade` sur litigation_messages.conversation_id, voir schema.sql) :
+      // pas besoin d'une suppression séparée.
+      await client.from('litigation_conversations').delete().eq('id', id);
+    } catch (error) {
+      // ignore: avoid_print
+      print('Échec de la suppression de la consultation $id : $error');
+    }
+  }
+
+  /// Charge les messages d'une consultation dont la ligne est déjà connue,
+  /// et assemble le [Conversation] complet — factorisé entre [loadLatest]
+  /// et [loadConversation], qui ne diffèrent que par la façon dont ils
+  /// trouvent la ligne de départ.
+  Future<Conversation> _loadFullConversation(Map<String, dynamic> row) async {
+    final messageRows = await client
+        .from('litigation_messages')
+        .select()
+        .eq('conversation_id', row['id'] as String)
+        .order('created_at', ascending: true);
+
+    final messages = messageRows.map((m) => _messageFromRow(m, row['id'] as String)).toList();
+    return _summaryFromRow(row).copyWith(messages: messages);
+  }
+
+  /// Construit un [Conversation] résumé (sans messages) depuis une ligne de
+  /// `litigation_conversations`.
+  Conversation _summaryFromRow(Map<String, dynamic> row) {
+    return Conversation(
+      id: row['id'] as String,
+      title: row['title'] as String? ?? 'Nouvelle consultation',
+      module: ConversationModule.litigeEtConsultation,
+      createdAt: DateTime.parse(row['created_at'] as String),
+      updatedAt: DateTime.parse(row['updated_at'] as String),
+      domain: row['domain'] != null ? LegalDomain.fromName(row['domain'] as String) : null,
+      complexity: row['complexity'] != null
+          ? ComplexityLevel.values.firstWhere(
+              (c) => c.name == row['complexity'],
+              orElse: () => ComplexityLevel.simple,
+            )
+          : null,
+      analysisGrid: row['analysis_grid'] != null
+          ? LegalAnalysisGrid.fromJson(row['analysis_grid'] as Map<String, dynamic>)
+          : const LegalAnalysisGrid(),
+    );
   }
 
   ChatMessage _messageFromRow(Map<String, dynamic> row, String conversationId) {

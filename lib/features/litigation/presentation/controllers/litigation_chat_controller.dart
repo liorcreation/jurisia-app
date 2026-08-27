@@ -26,6 +26,7 @@ class LitigationChatController extends ChangeNotifier {
         notifyListeners();
       }
     });
+    refreshHistory();
   }
 
   final AnalyzeLitigationUseCase useCase;
@@ -34,6 +35,12 @@ class LitigationChatController extends ChangeNotifier {
 
   late Conversation _conversation;
   Conversation get conversation => _conversation;
+
+  List<Conversation> _history = const [];
+  List<Conversation> get history => _history;
+
+  bool _isSwitchingConversation = false;
+  bool get isSwitchingConversation => _isSwitchingConversation;
 
   LitigationSendStatus _status = LitigationSendStatus.idle;
   LitigationSendStatus get status => _status;
@@ -48,17 +55,90 @@ class LitigationChatController extends ChangeNotifier {
   String? _pendingRetryMessage;
   bool get canRetry => _pendingRetryMessage != null;
 
+  static const String _defaultTitle = 'Nouvelle consultation';
+  static const int _autoTitleMaxLength = 48;
+
   Conversation _createConversation() {
     final id = _uuid.v4();
     final now = DateTime.now();
     return Conversation(
       id: id,
-      title: 'Nouvelle consultation',
+      title: _defaultTitle,
       module: ConversationModule.litigeEtConsultation,
       createdAt: now,
       updatedAt: now,
       messages: [_welcomeMessage(id)],
     );
+  }
+
+  /// Dérive un titre lisible depuis le premier message de l'utilisateur —
+  /// remplace le "Nouvelle consultation" générique dès le premier échange,
+  /// pour que l'historique reste identifiable au coup d'œil.
+  String _deriveTitle(String message) {
+    final singleLine = message.replaceAll('\n', ' ').trim();
+    if (singleLine.length <= _autoTitleMaxLength) return singleLine;
+    return '${singleLine.substring(0, _autoTitleMaxLength).trimRight()}…';
+  }
+
+  /// Met à jour l'entrée de [conversation] dans [_history] en mémoire (sans
+  /// nouvel aller-retour Supabase) : retirée si déjà présente, réinsérée en
+  /// tête — l'historique reste trié du plus récent au plus ancien sans
+  /// dépendre d'un tri côté serveur à chaque message.
+  void _upsertHistoryEntry(Conversation conversation) {
+    final summary = conversation.copyWith(messages: const []);
+    _history = [
+      summary,
+      for (final entry in _history)
+        if (entry.id != conversation.id) entry,
+    ];
+  }
+
+  /// Charge la liste des consultations de l'utilisateur pour le panneau
+  /// d'historique. Sans effet si la persistance n'est pas configurée.
+  Future<void> refreshHistory() async {
+    final store = conversationStore;
+    if (store == null) return;
+    _history = await store.listConversations();
+    notifyListeners();
+  }
+
+  /// Bascule vers une consultation précédente. Sans effet si c'est déjà la
+  /// consultation active ou qu'un envoi est en cours.
+  Future<void> openConversation(String id) async {
+    if (id == _conversation.id || isSending) return;
+    final store = conversationStore;
+    if (store == null) return;
+
+    _isSwitchingConversation = true;
+    notifyListeners();
+
+    final loaded = await store.loadConversation(id);
+    if (loaded != null) {
+      _conversation = loaded;
+      _streamingText = '';
+      _status = LitigationSendStatus.idle;
+      _errorMessage = null;
+      _pendingRetryMessage = null;
+    }
+    _isSwitchingConversation = false;
+    notifyListeners();
+  }
+
+  /// Supprime définitivement une consultation. Si c'était la consultation
+  /// active, en démarre une nouvelle pour ne pas rester sur une référence
+  /// supprimée.
+  Future<void> deleteConversation(String id) async {
+    final store = conversationStore;
+    if (store == null) return;
+
+    await store.deleteConversation(id);
+    _history = _history.where((entry) => entry.id != id).toList();
+
+    if (_conversation.id == id) {
+      startNewConsultation();
+    } else {
+      notifyListeners();
+    }
   }
 
   ChatMessage _welcomeMessage(String conversationId) {
@@ -124,13 +204,16 @@ class LitigationChatController extends ChangeNotifier {
       await for (final chunk in useCase.call(conversation: _conversation, userMessage: text)) {
         switch (chunk) {
           case LitigationUserMessageChunk(:final message):
+            final isFirstUserMessage = _conversation.title == _defaultTitle;
             _conversation = _conversation.copyWith(
+              title: isFirstUserMessage ? _deriveTitle(text) : null,
               messages: [..._conversation.messages, message],
               updatedAt: DateTime.now(),
             );
             _pendingRetryMessage = text;
             conversationStore?.upsertConversation(_conversation);
             conversationStore?.appendMessage(message);
+            _upsertHistoryEntry(_conversation);
             notifyListeners();
           case LitigationTextDeltaChunk(:final delta):
             _streamingText += delta;
@@ -148,6 +231,7 @@ class LitigationChatController extends ChangeNotifier {
             _pendingRetryMessage = null;
             conversationStore?.upsertConversation(_conversation);
             conversationStore?.appendMessage(assistantMessage);
+            _upsertHistoryEntry(_conversation);
             notifyListeners();
         }
       }
