@@ -203,6 +203,21 @@ void main() {
       expect(controller.conversation.id, isNot(secondConversationId));
     });
 
+    test('openConversation signale une erreur si la consultation est introuvable', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store);
+      await _settle();
+
+      await controller.sendMessage('Dossier actif.');
+      await _settle();
+      final activeId = controller.conversation.id;
+
+      await controller.openConversation('consultation-inexistante');
+
+      expect(controller.conversation.id, activeId);
+      expect(controller.errorMessage, isNotNull);
+    });
+
     test(
       'deleteConversation retire de l\'historique et redémarre si c\'était l\'active',
       () async {

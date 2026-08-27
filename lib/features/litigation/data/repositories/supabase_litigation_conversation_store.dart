@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../models/chat/conversation_model.dart';
@@ -16,6 +17,35 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
   final SupabaseClient client;
   final String userId;
 
+  /// Journalise un échec de persistance. En production les écritures restent
+  /// au mieux effort — perdre une sauvegarde ne doit jamais interrompre
+  /// l'échange avec l'IA. Mais en développement, un échec — surtout un schéma
+  /// Supabase désynchronisé (colonne absente, migration non appliquée), qui
+  /// casse *toute* la persistance en silence — doit sauter aux yeux plutôt
+  /// que de se noyer dans les logs.
+  void _reportFailure(String operation, Object error) {
+    assert(() {
+      debugPrint('⚠️  SupabaseLitigationConversationStore.$operation a échoué : $error');
+      if (error is PostgrestException &&
+          (error.code == '42703' || // colonne inexistante
+              error.code == '42P01' || // table inexistante
+              error.code == 'PGRST204' || // colonne absente du cache de schéma
+              error.code == 'PGRST205')) {
+        FlutterError.reportError(FlutterErrorDetails(
+          exception: error,
+          library: 'litigation persistence',
+          context: ErrorDescription(
+            'Schéma Supabase désynchronisé pendant "$operation" — une migration '
+            'manque probablement (voir server/supabase/migration_*.sql). '
+            "Tant que ce n'est pas corrigé, aucune consultation n'est "
+            'enregistrée et l\'historique reste vide au redémarrage.',
+          ),
+        ));
+      }
+      return true;
+    }());
+  }
+
   @override
   Future<List<Conversation>> listConversations() async {
     try {
@@ -28,8 +58,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
 
       return rows.map(_summaryFromRow).toList();
     } catch (error) {
-      // ignore: avoid_print
-      print("Échec du chargement de l'historique des consultations Supabase : $error");
+      _reportFailure('listConversations', error);
       return const [];
     }
   }
@@ -43,8 +72,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
       if (conversationRows.isEmpty) return null;
       return _loadFullConversation(conversationRows.first);
     } catch (error) {
-      // ignore: avoid_print
-      print('Échec du chargement de la consultation $id : $error');
+      _reportFailure('loadConversation($id)', error);
       return null;
     }
   }
@@ -57,8 +85,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
       // pas besoin d'une suppression séparée.
       await client.from('litigation_conversations').delete().eq('id', id);
     } catch (error) {
-      // ignore: avoid_print
-      print('Échec de la suppression de la consultation $id : $error');
+      _reportFailure('deleteConversation($id)', error);
     }
   }
 
@@ -128,8 +155,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
         'updated_at': conversation.updatedAt.toIso8601String(),
       });
     } catch (error) {
-      // ignore: avoid_print
-      print('Échec de synchronisation de la consultation ${conversation.id} : $error');
+      _reportFailure('upsertConversation(${conversation.id})', error);
     }
   }
 
@@ -145,8 +171,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
         'created_at': message.timestamp.toIso8601String(),
       });
     } catch (error) {
-      // ignore: avoid_print
-      print('Échec de synchronisation du message ${message.id} : $error');
+      _reportFailure('appendMessage(${message.id})', error);
     }
   }
 }

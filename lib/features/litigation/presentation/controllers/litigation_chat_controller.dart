@@ -94,6 +94,18 @@ class LitigationChatController extends ChangeNotifier {
     ];
   }
 
+  /// Persiste la conversation **puis** le message, dans cet ordre : la
+  /// politique RLS des messages côté Supabase vérifie l'appartenance via la
+  /// conversation parente — insérer le message avant que sa conversation
+  /// n'existe le fait rejeter, et le message est alors perdu en silence. Au
+  /// mieux effort, comme tout [conversationStore].
+  Future<void> _persistExchange(Conversation conversation, ChatMessage message) async {
+    final store = conversationStore;
+    if (store == null) return;
+    await store.upsertConversation(conversation);
+    await store.appendMessage(message);
+  }
+
   /// Charge la liste des consultations de l'utilisateur pour le panneau
   /// d'historique. Sans effet si la persistance n'est pas configurée.
   Future<void> refreshHistory() async {
@@ -120,6 +132,13 @@ class LitigationChatController extends ChangeNotifier {
       _status = LitigationSendStatus.idle;
       _errorMessage = null;
       _pendingRetryMessage = null;
+    } else {
+      // La consultation figure dans l'historique en mémoire mais reste
+      // introuvable côté persistance (réseau, ou schéma désynchronisé) : on
+      // le dit clairement plutôt que de laisser le clic sans effet.
+      _errorMessage =
+          "Impossible d'ouvrir cette consultation pour l'instant. Vérifiez votre "
+          'connexion et réessayez.';
     }
     _isSwitchingConversation = false;
     notifyListeners();
@@ -283,8 +302,8 @@ class LitigationChatController extends ChangeNotifier {
               updatedAt: DateTime.now(),
             );
             _pendingRetryMessage = text;
-            conversationStore?.upsertConversation(_conversation);
-            conversationStore?.appendMessage(message);
+            // ignore: unawaited_futures
+            _persistExchange(_conversation, message);
             _upsertHistoryEntry(_conversation);
             if (isFirstUserMessage) {
               // Le titre tronqué ci-dessus s'affiche tout de suite ; celui-ci
@@ -307,8 +326,8 @@ class LitigationChatController extends ChangeNotifier {
             _streamingText = '';
             _status = LitigationSendStatus.idle;
             _pendingRetryMessage = null;
-            conversationStore?.upsertConversation(_conversation);
-            conversationStore?.appendMessage(assistantMessage);
+            // ignore: unawaited_futures
+            _persistExchange(_conversation, assistantMessage);
             _upsertHistoryEntry(_conversation);
             notifyListeners();
         }
