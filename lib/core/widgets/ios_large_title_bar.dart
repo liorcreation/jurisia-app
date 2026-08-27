@@ -7,10 +7,14 @@ import '../../theme/app_theme.dart';
 /// Barre de titre iOS : le grand titre descend sur un fond en flou de vraie
 /// vibrance plutôt qu'une barre pleine — le registre « Verre glacé ».
 class IosLargeTitleBar extends StatelessWidget implements PreferredSizeWidget {
-  const IosLargeTitleBar({super.key, required this.title, this.actions});
+  const IosLargeTitleBar({super.key, required this.title, this.actions, this.leading});
 
   final String title;
   final List<Widget>? actions;
+
+  /// Bouton affiché tout à gauche de la rangée d'actions — typiquement le
+  /// bouton hamburger qui ouvre la sidebar ([AppShellMenuButton]).
+  final Widget? leading;
 
   @override
   Size get preferredSize => const Size.fromHeight(84);
@@ -40,8 +44,14 @@ class IosLargeTitleBar extends StatelessWidget implements PreferredSizeWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (actions != null)
-                    Row(mainAxisAlignment: MainAxisAlignment.end, children: actions!),
+                  if (leading != null || actions != null)
+                    Row(
+                      children: [
+                        ?leading,
+                        const Spacer(),
+                        ...?actions,
+                      ],
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(left: AppSpacing.xs),
                     child: Text(

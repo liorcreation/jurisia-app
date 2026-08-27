@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ai/groq_api_datasource.dart';
-import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../models/student/course_module.dart';
@@ -10,34 +9,9 @@ import '../../../../models/student/student_level.dart';
 import '../../../../models/student/student_progress_model.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
-import '../../data/datasources/ai_evaluation_generator.dart';
-import '../../data/datasources/evaluation_question_bank.dart';
-import '../../data/datasources/student_curriculum_local_datasource.dart';
-import '../../data/repositories/student_repository_impl.dart';
-import '../../domain/repositories/student_repository.dart';
-import '../../domain/usecases/generate_evaluation_usecase.dart';
-import '../../domain/usecases/get_student_modules_usecase.dart';
-import '../../domain/usecases/validate_module_usecase.dart';
 import '../controllers/student_controller.dart';
 import '../widgets/module_status_badge.dart';
 import 'module_detail_screen.dart';
-
-StudentController _buildStudentController() {
-  final StudentRepository repository = StudentRepositoryImpl(
-    curriculumDataSource: const LocalStudentCurriculumDataSource(),
-    questionBank: const LocalEvaluationQuestionBank(),
-    aiGenerator: AiEvaluationGenerator(dataSource: GroqDataSource()),
-    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
-    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
-  );
-
-  return StudentController(
-    repository: repository,
-    getModulesUseCase: GetStudentModulesUseCase(repository: repository),
-    validateModuleUseCase: ValidateModuleUseCase(repository: repository),
-    generateEvaluationUseCase: GenerateEvaluationUseCase(repository: repository),
-  );
-}
 
 /// Section 3 — Espace étudiant : sélection du niveau à la première
 /// connexion, puis parcours universitaire officiel et séquentiel. Seul le
@@ -49,12 +23,7 @@ class StudentScreen extends StatelessWidget {
   const StudentScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<StudentController>(
-      create: (_) => _buildStudentController(),
-      child: const _StudentView(),
-    );
-  }
+  Widget build(BuildContext context) => const _StudentView();
 }
 
 class _StudentView extends StatelessWidget {
@@ -83,7 +52,7 @@ class _StudentView extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Espace étudiant'),
           leading: selectedLevel == null
-              ? null
+              ? const AppShellMenuButton()
               : IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   onPressed: controller.backToLevelSelection,

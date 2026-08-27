@@ -17,6 +17,8 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text,
+  full_name text,
+  profession text,
   terms_accepted_at timestamptz,
   created_at timestamptz not null default now()
 );
@@ -31,11 +33,22 @@ create policy "Un utilisateur modifie son propre profil"
   on public.profiles for update
   using (auth.uid() = id);
 
--- Crée automatiquement la ligne de profil à l'inscription.
+create policy "Un utilisateur crée son propre profil"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
+-- Crée automatiquement la ligne de profil à l'inscription, en recopiant le
+-- nom complet et le profil fournis dans les métadonnées utilisateur.
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id) values (new.id);
+  insert into public.profiles (id, full_name, profession)
+  values (
+    new.id,
+    nullif(new.raw_user_meta_data->>'full_name', ''),
+    nullif(new.raw_user_meta_data->>'profession', '')
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer set search_path = public;
@@ -56,6 +69,7 @@ create table if not exists public.litigation_conversations (
   domain text,
   complexity text,
   analysis_grid jsonb,
+  is_favorite boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

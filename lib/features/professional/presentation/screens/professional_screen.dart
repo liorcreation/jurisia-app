@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/platform/app_platform_style.dart';
+import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
@@ -41,7 +42,10 @@ class ProfessionalScreen extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Espace professionnel')),
+        appBar: AppBar(
+          title: const Text('Espace professionnel'),
+          leading: const AppShellMenuButton(),
+        ),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.md),

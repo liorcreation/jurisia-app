@@ -14,6 +14,9 @@ class AppInputLimits {
   /// Champ court d'un formulaire de rédaction (nom, montant, poste...).
   static const int shortField = 200;
 
+  /// Nom complet de l'utilisateur (inscription, feuille profil).
+  static const int fullName = 80;
+
   /// Instructions complémentaires (rédaction, audit).
   static const int instructions = 1000;
 

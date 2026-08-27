@@ -24,8 +24,36 @@ class SupabaseAuthRepository implements AuthRepository {
   AuthUser? get currentUser => _toAuthUser(_client.auth.currentUser);
 
   @override
-  Future<void> signUp({required String email, required String password}) async {
-    await _client.auth.signUp(email: email, password: password);
+  Future<void> signUp({
+    required String email,
+    required String password,
+    String? fullName,
+    String? profession,
+  }) async {
+    final metadata = <String, dynamic>{};
+    if (fullName != null && fullName.trim().isNotEmpty) metadata['full_name'] = fullName.trim();
+    if (profession != null && profession.isNotEmpty) metadata['profession'] = profession;
+
+    await _client.auth.signUp(
+      email: email,
+      password: password,
+      data: metadata.isEmpty ? null : metadata,
+    );
+
+    // Repli : si le déclencheur `on_auth_user_created` n'a pas encore été
+    // redéployé avec la copie des métadonnées, on écrit quand même la ligne
+    // de profil côté application (au mieux effort).
+    if (metadata.isNotEmpty) {
+      final id = _client.auth.currentUser?.id;
+      if (id != null) {
+        try {
+          await _client.from('profiles').upsert({'id': id, ...metadata});
+        } catch (_) {
+          // La confirmation par e-mail peut retarder la session : sans
+          // utilisateur courant, le déclencheur reste la source de vérité.
+        }
+      }
+    }
   }
 
   @override

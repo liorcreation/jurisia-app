@@ -27,6 +27,10 @@ abstract class ProfessionalRepository {
 
   LegalDraftingResult? findResult(String resultId);
 
+  /// Documents déjà générés par l'utilisateur, du plus récent au plus
+  /// ancien — alimente la section « Documents récents » de la sidebar.
+  List<LegalDraftingResult> get recentResults;
+
   LegalDraftingResult toggleFavorite(String resultId);
 
   /// Charge les résultats déjà connus d'une source de persistance avant la

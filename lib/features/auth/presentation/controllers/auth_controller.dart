@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../profile/domain/entities/user_profession.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 enum AuthMode { signIn, signUp }
@@ -26,6 +27,9 @@ class AuthController extends ChangeNotifier {
   bool _termsAccepted = false;
   bool get termsAccepted => _termsAccepted;
 
+  UserProfession? _profession;
+  UserProfession? get profession => _profession;
+
   void toggleMode() {
     _mode = _mode == AuthMode.signIn ? AuthMode.signUp : AuthMode.signIn;
     _errorMessage = null;
@@ -37,13 +41,29 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> submit({required String email, required String password}) async {
+  void setProfession(UserProfession? value) {
+    _profession = value;
+    notifyListeners();
+  }
+
+  Future<void> submit({
+    required String email,
+    required String password,
+    String fullName = '',
+  }) async {
     if (isSubmitting) return;
 
     final trimmedEmail = email.trim();
+    final trimmedName = fullName.trim();
     if (trimmedEmail.isEmpty || password.isEmpty) {
       _status = AuthStatus.error;
       _errorMessage = 'Renseignez votre e-mail et votre mot de passe.';
+      notifyListeners();
+      return;
+    }
+    if (_mode == AuthMode.signUp && trimmedName.isEmpty) {
+      _status = AuthStatus.error;
+      _errorMessage = 'Renseignez votre nom complet.';
       notifyListeners();
       return;
     }
@@ -68,7 +88,12 @@ class AuthController extends ChangeNotifier {
       if (_mode == AuthMode.signIn) {
         await repository.signIn(email: trimmedEmail, password: password);
       } else {
-        await repository.signUp(email: trimmedEmail, password: password);
+        await repository.signUp(
+          email: trimmedEmail,
+          password: password,
+          fullName: trimmedName,
+          profession: _profession?.name,
+        );
         await repository.recordTermsAcceptance();
       }
       _status = AuthStatus.idle;

@@ -243,6 +243,43 @@ void main() {
       expect(controller.history.any((c) => c.id == activeId), isTrue);
     });
 
+    test('togglePin épingle puis désépingle la consultation active', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store);
+      await _settle();
+
+      await controller.sendMessage('Dossier à épingler.');
+      await _settle();
+      final id = controller.conversation.id;
+
+      await controller.togglePin(id);
+      expect(controller.conversation.isFavorite, isTrue);
+      expect(controller.history.firstWhere((c) => c.id == id).isFavorite, isTrue);
+
+      await controller.togglePin(id);
+      expect(controller.conversation.isFavorite, isFalse);
+      expect(controller.history.firstWhere((c) => c.id == id).isFavorite, isFalse);
+    });
+
+    test('togglePin met à jour une entrée inactive de l\'historique', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store);
+      await _settle();
+
+      await controller.sendMessage('Premier dossier.');
+      await _settle();
+      final firstId = controller.conversation.id;
+
+      controller.startNewConsultation();
+      await controller.sendMessage('Deuxième dossier, actif.');
+      await _settle();
+
+      await controller.togglePin(firstId);
+
+      expect(controller.history.firstWhere((c) => c.id == firstId).isFavorite, isTrue);
+      expect(controller.conversation.isFavorite, isFalse);
+    });
+
     test('renameConversation met à jour le titre de la consultation active', () async {
       final store = _FakeConversationStore();
       final controller = _buildController(store);

@@ -142,6 +142,30 @@ class LitigationChatController extends ChangeNotifier {
     }
   }
 
+  /// Épingle / désépingle une consultation. Les consultations épinglées
+  /// remontent en tête de l'historique (section « Épinglées »), comme sur
+  /// ChatGPT. Persisté au mieux effort via [conversationStore].
+  Future<void> togglePin(String id) async {
+    Conversation? target;
+    if (_conversation.id == id) {
+      target = _conversation;
+    } else {
+      for (final entry in _history) {
+        if (entry.id == id) {
+          target = entry;
+          break;
+        }
+      }
+    }
+    if (target == null) return;
+
+    final updated = target.copyWith(isFavorite: !target.isFavorite);
+    if (_conversation.id == id) _conversation = updated;
+    conversationStore?.upsertConversation(updated);
+    _upsertHistoryEntry(updated);
+    notifyListeners();
+  }
+
   /// Renomme une consultation, active ou non — même logique que
   /// [deleteConversation] pour retrouver la bonne entrée.
   Future<void> renameConversation(String id, String newTitle) async {

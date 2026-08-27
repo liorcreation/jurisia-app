@@ -48,6 +48,9 @@ dependencies:
   provider: ^6.1.2
   supabase_flutter: ^2.17.2
 
+  # Persistance locale légère : largeur / état replié de la sidebar.
+  shared_preferences: ^2.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

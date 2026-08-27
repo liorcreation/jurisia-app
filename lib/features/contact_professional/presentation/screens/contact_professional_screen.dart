@@ -1,45 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
-import '../../data/repositories/contact_professional_repository_impl.dart';
 import '../../domain/entities/contact_request.dart';
 import '../../domain/entities/professional_category.dart';
-import '../../domain/repositories/contact_professional_repository.dart';
-import '../../domain/usecases/submit_contact_request_usecase.dart';
 import '../controllers/contact_professional_controller.dart';
 import '../widgets/contact_request_sheet.dart';
 import '../widgets/professional_category_card.dart';
 
-ContactProfessionalController _buildController() {
-  final ContactProfessionalRepository repository = ContactProfessionalRepositoryImpl(
-    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
-    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
-  );
-  return ContactProfessionalController(
-    repository: repository,
-    submitUseCase: SubmitContactRequestUseCase(repository: repository),
-  );
-}
-
 /// Section 5 — Contacter un professionnel : mise en relation avec un
 /// notaire, avocat, juriste, huissier, greffier ou juge partenaire, via une
-/// demande de contact enregistrée et suivie dans Supabase.
+/// demande de contact enregistrée et suivie dans Supabase. Le
+/// [ContactProfessionalController] est fourni par la coquille applicative
+/// ([AppShell]).
 class ContactProfessionalScreen extends StatelessWidget {
   const ContactProfessionalScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ContactProfessionalController>(
-      create: (_) => _buildController(),
-      child: const _ContactProfessionalView(),
-    );
-  }
+  Widget build(BuildContext context) => const _ContactProfessionalView();
 }
 
 class _ContactProfessionalView extends StatelessWidget {
@@ -66,7 +49,10 @@ class _ContactProfessionalView extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Contacter un professionnel')),
+        appBar: AppBar(
+          title: const Text('Contacter un professionnel'),
+          leading: const AppShellMenuButton(),
+        ),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.md),

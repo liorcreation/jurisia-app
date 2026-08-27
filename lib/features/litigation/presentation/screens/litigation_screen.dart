@@ -5,6 +5,7 @@ import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
+import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/chat_bubble.dart';
 import '../../../../core/widgets/chat_composer.dart';
 import '../../../../core/widgets/gold_fab.dart';
@@ -12,54 +13,20 @@ import '../../../../core/widgets/ios_large_title_bar.dart';
 import '../../../../core/widgets/ios_new_consultation_sheet.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/markdown_text.dart';
-import '../../../../core/widgets/smoked_glass_surface.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../../core/ai/groq_api_datasource.dart';
-import '../../../../core/supabase/supabase_config.dart';
-import '../../data/repositories/litigation_repository_impl.dart';
-import '../../data/repositories/supabase_litigation_conversation_store.dart';
-import '../../domain/repositories/litigation_conversation_store.dart';
-import '../../domain/usecases/analyze_litigation_usecase.dart';
-import '../../domain/usecases/generate_conversation_title_usecase.dart';
 import '../controllers/litigation_chat_controller.dart';
-import '../widgets/conversation_history_panel.dart';
-
-({AnalyzeLitigationUseCase analyze, GenerateConversationTitleUseCase generateTitle})
-    _buildLitigationUseCases() {
-  final repository = LitigationRepositoryImpl(dataSource: GroqDataSource());
-  return (
-    analyze: AnalyzeLitigationUseCase(repository: repository),
-    generateTitle: GenerateConversationTitleUseCase(repository: repository),
-  );
-}
-
-LitigationConversationStore? _buildConversationStore() {
-  if (!SupabaseConfig.isReady) return null;
-  final userId = SupabaseConfig.client.auth.currentUser?.id;
-  if (userId == null) return null;
-  return SupabaseLitigationConversationStore(client: SupabaseConfig.client, userId: userId);
-}
 
 /// Section 1 — Litiges et consultations : interface de chat naturel avec
-/// l'IA juridique, connectée à l'API Groq via [LitigationChatController].
+/// l'IA juridique. Le contrôleur ([LitigationChatController]) est fourni par
+/// la coquille applicative ([AppShell]) — la sidebar unifiée pilote
+/// l'historique des consultations, cet écran n'affiche que la conversation
+/// active et son composeur.
 class LitigationScreen extends StatelessWidget {
   const LitigationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LitigationChatController>(
-      create: (_) {
-        final useCases = _buildLitigationUseCases();
-        return LitigationChatController(
-          useCase: useCases.analyze,
-          generateTitleUseCase: useCases.generateTitle,
-          conversationStore: _buildConversationStore(),
-        );
-      },
-      child: const _LitigationView(),
-    );
-  }
+  Widget build(BuildContext context) => const _LitigationView();
 }
 
 class _LitigationView extends StatefulWidget {
@@ -72,7 +39,6 @@ class _LitigationView extends StatefulWidget {
 class _LitigationViewState extends State<_LitigationView> {
   final TextEditingController _inputController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  bool _historyCollapsed = false;
 
   @override
   void dispose() {
@@ -109,7 +75,6 @@ class _LitigationViewState extends State<_LitigationView> {
   Widget build(BuildContext context) {
     final controller = context.watch<LitigationChatController>();
     final platformStyle = AppPlatformStyle.of(context);
-    final isDesktop = platformStyle == AppPlatformStyle.desktop;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
 
@@ -117,9 +82,6 @@ class _LitigationViewState extends State<_LitigationView> {
     final itemCount =
         messages.length + (controller.isSending ? 1 : 0) + (controller.errorMessage != null ? 1 : 0);
 
-    // iOS propose l'action dans une feuille modale (registre « Verre
-    // glacé ») ; Android la propose via un bouton d'action flottant
-    // (registre « Or expressif ») ; le desktop garde l'icône directe.
     final newConsultationAction = IconButton(
       tooltip: 'Nouvelle consultation',
       icon: const Icon(Icons.add_comment_outlined),
@@ -127,43 +89,6 @@ class _LitigationViewState extends State<_LitigationView> {
           ? null
           : () => _startNewConsultation(context, controller, platformStyle),
     );
-
-    // Sur mobile, le panneau vit dans le tiroir : la sélection referme le
-    // tiroir avant de basculer de consultation. Sur desktop, le panneau est
-    // toujours visible, rien à fermer.
-    Widget historyPanel({required bool inDrawer}) {
-      return ConversationHistoryPanel(
-        history: controller.history,
-        activeId: controller.conversation.id,
-        onNewConsultation: () {
-          if (inDrawer) Navigator.of(context).maybePop();
-          _startNewConsultation(context, controller, platformStyle);
-        },
-        onSelect: (id) {
-          if (inDrawer) Navigator.of(context).maybePop();
-          controller.openConversation(id);
-        },
-        onDelete: controller.deleteConversation,
-        onRename: controller.renameConversation,
-      );
-    }
-
-    // Mobile : ouvre le tiroir. Desktop : replie/déplie le panneau
-    // permanent — ChatGPT/Claude permettent les deux, pas seulement le
-    // tiroir mobile.
-    final historyButton = isDesktop
-        ? IconButton(
-            tooltip: _historyCollapsed ? "Afficher l'historique" : "Masquer l'historique",
-            icon: Icon(_historyCollapsed ? Icons.menu_open_rounded : Icons.menu_rounded),
-            onPressed: () => setState(() => _historyCollapsed = !_historyCollapsed),
-          )
-        : Builder(
-            builder: (innerContext) => IconButton(
-              tooltip: 'Historique des consultations',
-              icon: const Icon(Icons.history_rounded),
-              onPressed: () => Scaffold.of(innerContext).openDrawer(),
-            ),
-          );
 
     final chatBody = Column(
       children: [
@@ -210,17 +135,15 @@ class _LitigationViewState extends State<_LitigationView> {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        drawer: isDesktop
-            ? null
-            : Drawer(child: SafeArea(child: historyPanel(inDrawer: true))),
         appBar: platformStyle == AppPlatformStyle.ios
             ? IosLargeTitleBar(
                 title: 'Litiges et consultations',
-                actions: [historyButton, newConsultationAction],
+                leading: const AppShellMenuButton(),
+                actions: [newConsultationAction],
               )
             : AppBar(
                 title: const Text('Litiges et consultations'),
-                leading: historyButton,
+                leading: const AppShellMenuButton(),
                 actions: platformStyle == AppPlatformStyle.android ? null : [newConsultationAction],
               ),
         floatingActionButton: platformStyle == AppPlatformStyle.android
@@ -230,24 +153,7 @@ class _LitigationViewState extends State<_LitigationView> {
                 onPressed: controller.isSending ? null : controller.startNewConsultation,
               )
             : null,
-        body: SafeArea(
-          child: isDesktop
-              ? Row(
-                  children: [
-                    if (!_historyCollapsed)
-                      SizedBox(
-                        width: 280,
-                        child: SmokedGlassSurface(
-                          border:
-                              const Border(right: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-                          child: historyPanel(inDrawer: false),
-                        ),
-                      ),
-                    Expanded(child: chatBody),
-                  ],
-                )
-              : chatBody,
-        ),
+        body: SafeArea(child: chatBody),
       ),
     );
   }
@@ -312,9 +218,7 @@ class _ProfessionalSuggestionChip extends StatelessWidget {
 }
 
 /// Rappel visible, au-dessus du composeur, que l'IA aide à comprendre une
-/// situation mais ne remplace pas un professionnel du droit — complète (sans
-/// le remplacer) l'avertissement déjà intégré au fil de la conversation par
-/// le system prompt de l'IA.
+/// situation mais ne remplace pas un professionnel du droit.
 class _AiDisclaimerHint extends StatelessWidget {
   const _AiDisclaimerHint();
 
@@ -362,4 +266,3 @@ class _AssistantThinkingBubble extends StatelessWidget {
     );
   }
 }
-

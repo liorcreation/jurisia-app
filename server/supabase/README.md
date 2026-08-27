@@ -16,7 +16,13 @@
 3. Ouvrez **SQL Editor → New query**, collez le contenu de `schema.sql`, et
    exécutez-le. Il crée les tables (profils, consultations, favoris,
    progression étudiante, documents professionnels) avec la sécurité au
-   niveau des lignes déjà activée sur chacune.
+   niveau des lignes déjà activée sur chacune. Puis exécutez, dans l'ordre,
+   les fichiers `migration_002` … `migration_005` (tous idempotents).
+   `migration_005_profile_identity.sql` ajoute `profiles.full_name` /
+   `profiles.profession` (nom et rôle affichés dans la carte profil de la
+   sidebar) et `litigation_conversations.is_favorite` (consultations
+   épinglées), et redéploie le déclencheur `on_auth_user_created` pour
+   recopier le nom fourni à l'inscription.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la

@@ -21,7 +21,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
     try {
       final rows = await client
           .from('litigation_conversations')
-          .select('id, title, domain, complexity, created_at, updated_at')
+          .select('id, title, domain, complexity, is_favorite, created_at, updated_at')
           .eq('user_id', userId)
           .order('updated_at', ascending: false)
           .limit(50);
@@ -96,6 +96,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
       analysisGrid: row['analysis_grid'] != null
           ? LegalAnalysisGrid.fromJson(row['analysis_grid'] as Map<String, dynamic>)
           : const LegalAnalysisGrid(),
+      isFavorite: row['is_favorite'] as bool? ?? false,
     );
   }
 
@@ -123,6 +124,7 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
         'domain': conversation.domain?.name,
         'complexity': conversation.complexity?.name,
         'analysis_grid': conversation.analysisGrid.toJson(),
+        'is_favorite': conversation.isFavorite,
         'updated_at': conversation.updatedAt.toIso8601String(),
       });
     } catch (error) {

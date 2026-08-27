@@ -41,6 +41,11 @@ class LibraryController extends ChangeNotifier {
   /// résultats filtrée courante.
   LegalDocument? documentById(String id) => repository.findById(id);
 
+  /// Tous les documents en favori, indépendamment des filtres courants —
+  /// alimente la section « Favoris » de la sidebar.
+  List<LegalDocument> get favoriteDocuments =>
+      searchUseCase(const LibrarySearchQuery(favoritesOnly: true));
+
   void updateKeyword(String value) {
     _keyword = value;
     _runSearch();

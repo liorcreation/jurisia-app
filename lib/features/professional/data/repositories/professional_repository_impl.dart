@@ -51,6 +51,13 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
   List<ProfessionalTemplate> get templates => templateDataSource.getAll();
 
   @override
+  List<LegalDraftingResult> get recentResults {
+    final all = _resultsById.values.toList()
+      ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
+    return all;
+  }
+
+  @override
   Future<void> hydrate() async {
     if (!_persistenceEnabled) return;
 

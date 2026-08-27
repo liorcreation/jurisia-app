@@ -13,60 +13,95 @@ Widget _wrapHomeNavigation() {
   );
 }
 
+/// La carte profil anime en continu (balayage doré du monogramme), donc
+/// `pumpAndSettle` ne se stabilise jamais : on avance le temps par paliers.
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 120));
+  }
+}
+
 void main() {
-  testWidgets('HomeNavigation shows the five navigation destinations', (
+  testWidgets('Narrow layout: the sidebar drawer carries the five spaces', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(400, 800);
+    tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_wrapHomeNavigation());
-    await tester.pumpAndSettle();
+    await _settle(tester);
 
-    expect(find.text('Litiges'), findsOneWidget);
-    expect(find.text('Bibliothèque'), findsOneWidget);
-    expect(find.text('Étudiant'), findsOneWidget);
-    expect(find.text('Professionnel'), findsOneWidget);
-    expect(find.text('Contacter'), findsOneWidget);
-
+    // Le premier espace (Litiges) est affiché, sans barre de navigation
+    // inférieure — la navigation passe par le bouton hamburger.
     expect(find.text('Litiges et consultations'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
 
-    await tester.tap(find.text('Bibliothèque'));
-    await tester.pumpAndSettle();
-    expect(find.text('Bibliothèque juridique'), findsOneWidget);
+    final menuButton = find.byIcon(Icons.menu_rounded);
+    expect(menuButton, findsOneWidget);
+    await tester.tap(menuButton);
+    await _settle(tester);
+
+    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Professionnel', 'Contacter']) {
+      expect(find.text(label), findsOneWidget);
+    }
 
     await tester.tap(find.text('Contacter'));
-    await tester.pumpAndSettle();
-    expect(find.text('Contacter un professionnel'), findsOneWidget);
+    await _settle(tester);
+    expect(find.text('Contacter un professionnel'), findsWidgets);
     expect(find.text('Notaire'), findsOneWidget);
-    expect(find.text('Avocat'), findsOneWidget);
-    expect(find.text('Juriste'), findsOneWidget);
-    expect(find.text('Huissier'), findsOneWidget);
-    expect(find.text('Greffier'), findsOneWidget);
     expect(find.text('Juge'), findsOneWidget);
   });
 
-  testWidgets('Wide layout shows the JurisIA side rail without overflow', (
+  testWidgets('Wide layout: the permanent JurisIA sidebar renders without overflow', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(_wrapHomeNavigation());
-    await tester.pumpAndSettle();
+    await _settle(tester);
 
     expect(find.text('JurisIA'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Professionnel', 'Contacter']) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    // Chaque espace rend sa section contextuelle dans la sidebar sans
+    // exception ni débordement.
+    for (final entry in const {
+      'Bibliothèque': 'Bibliothèque juridique',
+      'Étudiant': 'Espace étudiant',
+      'Professionnel': 'Espace professionnel',
+      'Contacter': 'Contacter un professionnel',
+      'Litiges': 'Litiges et consultations',
+    }.entries) {
+      await tester.tap(find.text(entry.key));
+      await _settle(tester);
+      expect(find.text(entry.value), findsWidgets, reason: entry.key);
+      expect(tester.takeException(), isNull, reason: entry.key);
+    }
   });
 
-  // Pas de test end-to-end pumpant JurisIAApp directement : avec un projet
-  // Supabase réellement configuré par défaut, AuthGate a besoin que
-  // Supabase.initialize() ait tourné (fait dans main(), jamais dans un test
-  // de widget) avant de toucher SupabaseConfig.client. Tester le flux
-  // d'authentification proprement demanderait d'injecter le SupabaseClient
-  // plutôt que de le lire depuis un singleton global — hors scope ici.
+  testWidgets('Wide layout: the profile card opens the profile sheet', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
+
+    await tester.tap(find.text('Mon compte'));
+    await _settle(tester);
+
+    expect(find.text('Nom complet'), findsWidgets);
+    expect(find.text('Se déconnecter'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

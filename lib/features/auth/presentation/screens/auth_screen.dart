@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/validation/input_limits.dart';
+import '../../../profile/domain/entities/user_profession.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/glow_focus_field.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
@@ -37,7 +39,13 @@ class _UnconfiguredAuthRepository implements AuthRepository {
   AuthUser? get currentUser => null;
 
   @override
-  Future<void> signUp({required String email, required String password}) => _unavailable();
+  Future<void> signUp({
+    required String email,
+    required String password,
+    String? fullName,
+    String? profession,
+  }) =>
+      _unavailable();
 
   @override
   Future<void> signIn({required String email, required String password}) => _unavailable();
@@ -74,6 +82,7 @@ class _AuthView extends StatefulWidget {
 }
 
 class _AuthViewState extends State<_AuthView> {
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   late final TapGestureRecognizer _termsRecognizer;
@@ -89,6 +98,7 @@ class _AuthViewState extends State<_AuthView> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _termsRecognizer.dispose();
@@ -136,6 +146,36 @@ class _AuthViewState extends State<_AuthView> {
                           const SizedBox(height: AppSpacing.lg),
                           if (!SupabaseConfig.isReady) ...[
                             _ConfigWarning(),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
+                          if (!isSignIn) ...[
+                            GlowFocusField(
+                              child: TextField(
+                                controller: _nameController,
+                                enabled: SupabaseConfig.isReady && !controller.isSubmitting,
+                                textCapitalization: TextCapitalization.words,
+                                maxLength: AppInputLimits.fullName,
+                                autofillHints: const [AutofillHints.name],
+                                decoration: const InputDecoration(
+                                  labelText: 'Nom complet',
+                                  counterText: '',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            DropdownButtonFormField<UserProfession>(
+                              initialValue: controller.profession,
+                              isExpanded: true,
+                              decoration: const InputDecoration(labelText: 'Vous êtes'),
+                              items: [
+                                for (final profession in UserProfession.values)
+                                  DropdownMenuItem(
+                                    value: profession,
+                                    child: Text(profession.label),
+                                  ),
+                              ],
+                              onChanged: controller.isSubmitting ? null : controller.setProfession,
+                            ),
                             const SizedBox(height: AppSpacing.md),
                           ],
                           GlowFocusField(
@@ -268,7 +308,11 @@ class _AuthViewState extends State<_AuthView> {
   }
 
   void _submit(AuthController controller) {
-    controller.submit(email: _emailController.text, password: _passwordController.text);
+    controller.submit(
+      email: _emailController.text,
+      password: _passwordController.text,
+      fullName: _nameController.text,
+    );
   }
 }
 

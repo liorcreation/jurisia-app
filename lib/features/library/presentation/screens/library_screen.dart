@@ -1,49 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/supabase/supabase_config.dart';
+import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
-import '../../data/datasources/legal_document_local_datasource.dart';
-import '../../data/repositories/library_repository_impl.dart';
-import '../../domain/repositories/library_repository.dart';
-import '../../domain/usecases/search_legal_documents_usecase.dart';
-import '../../domain/usecases/toggle_bookmark_usecase.dart';
 import '../controllers/library_controller.dart';
 import '../widgets/document_card.dart';
 import 'document_detail_screen.dart';
 
-LibraryController _buildLibraryController() {
-  final LibraryRepository repository = LibraryRepositoryImpl(
-    dataSource: const LocalLegalDocumentDataSource(),
-    supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
-    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
-  );
-  return LibraryController(
-    searchUseCase: SearchLegalDocumentsUseCase(repository: repository),
-    toggleBookmarkUseCase: ToggleBookmarkUseCase(repository: repository),
-    repository: repository,
-  );
-}
-
 /// Section 2 — Bibliothèque juridique : moteur de recherche intelligent sur
 /// l'ensemble des textes et décisions (Constitution, codes, lois, décrets,
-/// arrêtés, jurisprudence, traités, modèles d'actes), connecté au
-/// [LibraryController].
+/// arrêtés, jurisprudence, traités, modèles d'actes). Le [LibraryController]
+/// est fourni par la coquille applicative ([AppShell]).
 class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LibraryController>(
-      create: (_) => _buildLibraryController(),
-      child: const _LibraryView(),
-    );
-  }
+  Widget build(BuildContext context) => const _LibraryView();
 }
 
 class _LibraryView extends StatefulWidget {
@@ -83,6 +60,7 @@ class _LibraryViewState extends State<_LibraryView> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: const Text('Bibliothèque juridique'),
+          leading: const AppShellMenuButton(),
           actions: [
             IconButton(
               tooltip: controller.favoritesOnly ? 'Afficher tous les documents' : 'Afficher les favoris',
