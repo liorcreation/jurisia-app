@@ -49,6 +49,10 @@ class PlanDefinition {
 
   bool get isFree => code == PlanCode.decouverte;
 
+  /// `true` si l'offre s'achète en libre-service (par opposition à
+  /// « Sur devis » comme JurisIA Cabinet).
+  bool get isPurchasable => !isFree && code != PlanCode.cabinet;
+
   /// `true` si la fonctionnalité est comprise dans l'offre (quota fini,
   /// illimité, ou capacité booléenne).
   bool allows(String feature) => quotas.containsKey(feature) || capabilities.contains(feature);

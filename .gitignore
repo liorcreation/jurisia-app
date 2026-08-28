@@ -40,6 +40,12 @@ migrate_working_dir/
 
 # Cloudflare Worker — local dev state, never commit.
 server/groq-proxy/node_modules/
+
+# Supabase CLI local state + Edge Function secrets (.env is already ignored
+# above, listed here for clarity — it holds the payment provider keys).
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
 server/groq-proxy/.wrangler/
 server/groq-proxy/.dev.vars
 

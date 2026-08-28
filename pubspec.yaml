@@ -51,6 +51,10 @@ dependencies:
   # Persistance locale légère : largeur / état replié de la sidebar.
   shared_preferences: ^2.3.2
 
+  # Ouvre l'URL de paiement du prestataire (Mobile Money / carte) dans le
+  # navigateur, sur toutes les plateformes.
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -17,7 +17,7 @@
    exécutez-le. Il crée les tables (profils, consultations, favoris,
    progression étudiante, documents professionnels) avec la sécurité au
    niveau des lignes déjà activée sur chacune. Puis exécutez, dans l'ordre,
-   les fichiers `migration_002` … `migration_007` (tous idempotents).
+   les fichiers `migration_002` … `migration_009` (tous idempotents).
    `migration_005_profile_identity.sql` ajoute `profiles.full_name` /
    `profiles.profession` (nom et rôle affichés dans la carte profil de la
    sidebar) et `litigation_conversations.is_favorite` (consultations
@@ -39,6 +39,10 @@
    consommation, et expose `jurisia_admin_set_contact_status` (change le
    statut d'une demande **et** écrit au journal d'audit) — utilisé par la
    console d'administration (`lib/admin_main.dart`). Nécessite 006 et 007.
+   `migration_009_billing.sql` ajoute `payment_intents` et les fonctions
+   `jurisia_billing_create_intent` / `jurisia_billing_apply` appelées par
+   les Edge Functions de paiement (`supabase/functions/`, voir leur README).
+   Nécessite 006 et 007.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
@@ -63,6 +67,9 @@
   amorcer le premier `super_admin` en insérant sa ligne à la main).
 - `plans` / `subscriptions` / `usage_counters` / `usage_events` / `ai_limits` —
   abonnement et quotas (migration 007).
+- `payment_intents` — suivi des paiements (migration 009). Les abonnements
+  ne s'activent que par un paiement confirmé, via les Edge Functions
+  `supabase/functions/billing-*`.
 
 ## Ce qui n'est pas encore fait
 

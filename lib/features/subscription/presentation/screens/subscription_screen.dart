@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/billing/billing_controller.dart';
+import '../../../../core/billing/billing_providers.dart';
 import '../../../../core/entitlements/entitlement_feature.dart';
 import '../../../../core/entitlements/entitlements_controller.dart';
 import '../../../../core/entitlements/plan.dart';
@@ -12,11 +14,8 @@ import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
 
 /// Écran « Mon abonnement » : l'offre en cours, les jauges d'usage du mois,
-/// et le catalogue complet des offres.
-///
-/// Lecture seule pour l'instant : le paiement (Mobile Money + carte) et la
-/// bascule de palier arrivent dans un incrément ultérieur — les boutons des
-/// autres offres portent « Bientôt disponible ».
+/// et le catalogue complet des offres avec passage à une offre payante
+/// (Mobile Money / carte via l'Edge Function `billing-checkout`).
 ///
 /// À ouvrir en réinjectant le [EntitlementsController] de la coquille via
 /// `ChangeNotifierProvider.value`, car une route poussée sur le navigateur
@@ -26,8 +25,35 @@ class SubscriptionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final entitlements = context.read<EntitlementsController>();
+
+    return ChangeNotifierProvider<BillingController>(
+      create: (_) => BillingController(
+        repository: buildBillingRepository(),
+        onActivated: entitlements.refresh,
+      ),
+      child: const _SubscriptionView(),
+    );
+  }
+}
+
+class _SubscriptionView extends StatelessWidget {
+  const _SubscriptionView();
+
+  @override
+  Widget build(BuildContext context) {
     final entitlements = context.watch<EntitlementsController>();
+    final billing = context.watch<BillingController>();
     final current = entitlements.definition;
+
+    final message = billing.error ?? billing.info;
+    if (message != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        billing.clearMessages();
+      });
+    }
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -51,6 +77,9 @@ class SubscriptionScreen extends StatelessWidget {
                     child: _PlanCard(
                       plan: PlanCatalog.all[i],
                       isCurrent: PlanCatalog.all[i].code == current.code,
+                      busy: billing.pendingPlan == PlanCatalog.all[i].code,
+                      anyBusy: billing.isBusy,
+                      onChoose: () => billing.choosePlan(PlanCatalog.all[i].code),
                     ),
                   ),
                 ),
@@ -61,7 +90,8 @@ class SubscriptionScreen extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
-                      'Le paiement par Mobile Money (Orange, Moov) et carte arrive bientôt.',
+                      'Paiement par Mobile Money (Orange, Moov) et carte. '
+                      'JurisIA Cabinet se souscrit sur devis.',
                       style: Theme.of(context)
                           .textTheme
                           .labelSmall
@@ -221,10 +251,19 @@ class _UsageMeter extends StatelessWidget {
 }
 
 class _PlanCard extends StatelessWidget {
-  const _PlanCard({required this.plan, required this.isCurrent});
+  const _PlanCard({
+    required this.plan,
+    required this.isCurrent,
+    required this.busy,
+    required this.anyBusy,
+    required this.onChoose,
+  });
 
   final PlanDefinition plan;
   final bool isCurrent;
+  final bool busy;
+  final bool anyBusy;
+  final VoidCallback onChoose;
 
   @override
   Widget build(BuildContext context) {
@@ -281,11 +320,48 @@ class _PlanCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: isCurrent
-                ? const OutlinedButton(onPressed: null, child: Text('Offre actuelle'))
-                : const ElevatedButton(onPressed: null, child: Text('Bientôt disponible')),
+          SizedBox(width: double.infinity, child: _action(context)),
+        ],
+      ),
+    );
+  }
+
+  Widget _action(BuildContext context) {
+    if (isCurrent) {
+      return const OutlinedButton(onPressed: null, child: Text('Offre actuelle'));
+    }
+    if (!plan.isPurchasable) {
+      // JurisIA Cabinet : sur devis.
+      return OutlinedButton(
+        onPressed: anyBusy ? null : () => _contactSales(context),
+        child: const Text('Nous contacter'),
+      );
+    }
+    return ElevatedButton(
+      onPressed: anyBusy ? null : onChoose,
+      child: busy
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Text('Choisir cette offre'),
+    );
+  }
+
+  void _contactSales(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(plan.name),
+        content: const Text(
+          'Écrivez-nous à contact@jurisia.app en précisant le nombre de '
+          'sièges souhaités : nous préparons un devis et l\'accès délégué.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Compris'),
           ),
         ],
       ),

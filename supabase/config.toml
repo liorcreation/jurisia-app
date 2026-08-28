@@ -1,0 +1,23 @@
+# Configuration de la CLI Supabase pour les Edge Functions de JurisIA.
+#
+# Le schéma SQL et les migrations restent gérés manuellement dans
+# `server/supabase/*.sql` (SQL Editor du tableau de bord). Ce dossier ne
+# sert qu'aux Edge Functions de paiement.
+#
+# Déploiement :
+#   supabase functions deploy billing-checkout --project-ref <ref>
+#   supabase functions deploy billing-webhook  --project-ref <ref>
+#   supabase secrets set --env-file supabase/functions/.env  --project-ref <ref>
+
+# Référence du projet Supabase (visible dans l'URL du projet — pas un secret,
+# déjà présente dans lib/core/supabase/supabase_config.dart).
+project_id = "gfpguuuzzyqoxjkhlhli"
+
+[functions.billing-checkout]
+# Appelée par l'application avec le jeton de l'utilisateur connecté.
+verify_jwt = true
+
+[functions.billing-webhook]
+# Appelée en serveur-à-serveur par le prestataire de paiement : pas de JWT.
+# La sécurité vient de la re-vérification du paiement auprès du prestataire.
+verify_jwt = false
