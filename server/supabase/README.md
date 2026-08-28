@@ -17,12 +17,23 @@
    exécutez-le. Il crée les tables (profils, consultations, favoris,
    progression étudiante, documents professionnels) avec la sécurité au
    niveau des lignes déjà activée sur chacune. Puis exécutez, dans l'ordre,
-   les fichiers `migration_002` … `migration_005` (tous idempotents).
+   les fichiers `migration_002` … `migration_007` (tous idempotents).
    `migration_005_profile_identity.sql` ajoute `profiles.full_name` /
    `profiles.profession` (nom et rôle affichés dans la carte profil de la
    sidebar) et `litigation_conversations.is_favorite` (consultations
    épinglées), et redéploie le déclencheur `on_auth_user_created` pour
    recopier le nom fourni à l'inscription.
+   `migration_006_roles_and_audit.sql` pose les fondations de la future
+   console d'administration séparée (table `staff_roles`, journal d'audit
+   `admin_audit_log`, fonctions `jurisia_has_role` / `jurisia_is_staff`) —
+   aucune application cliente n'en dépend encore, elle peut être différée.
+   `migration_007_subscriptions_and_usage.sql` met en place l'abonnement :
+   catalogue `plans`, `subscriptions`, compteurs `usage_counters` /
+   `usage_events`, `ai_limits` par palier, et les RPC `jurisia_entitlements`
+   / `jurisia_record_usage` appelées par `lib/core/entitlements/`. Tant
+   qu'elle n'est pas appliquée, l'application applique le quota de l'offre
+   Découverte depuis un compteur local ; une fois en place, le serveur fait
+   foi.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
@@ -42,6 +53,10 @@
 - `library_favorites` / `library_document_stats` — Module 02.
 - `student_module_progress` / `student_evaluation_attempts` — Module 03.
 - `professional_drafting_results` — Module 04.
+- `professional_contact_requests` — Module 05.
+- `staff_roles` / `admin_audit_log` — fondations de la console d'admin (migration 006).
+- `plans` / `subscriptions` / `usage_counters` / `usage_events` / `ai_limits` —
+  abonnement et quotas (migration 007).
 
 ## Ce qui n'est pas encore fait
 

@@ -9,6 +9,11 @@ Espace professionnel, Contacter un professionnel.
 - Chaque module suit une Clean Architecture (`domain` / `data` /
   `presentation`) sous `lib/features/`.
 - Persistance et authentification : Supabase (voir `server/supabase/`).
+- Abonnements : fondations dans `lib/core/entitlements/` (catalogue d'offres,
+  quotas, porte d'accès + feuille d'incitation, écran « Mon abonnement »).
+  Le serveur (`plans` / `usage_counters` / RPC, migration 007) fait foi
+  quand il répond ; sinon un compteur mensuel local applique le quota
+  Découverte. Le paiement (Mobile Money + carte) reste à câbler.
 - IA : Groq, jamais appelé directement depuis le client — toujours via le
   relais Cloudflare Worker (voir `server/groq-proxy/`), qui détient la clé
   API et applique validation, CORS et limitation de débit.

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../features/profile/domain/entities/user_profession.dart';
 import '../../features/profile/presentation/controllers/profile_controller.dart';
+import '../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../entitlements/entitlements_controller.dart';
 import '../legal/legal_document_screen.dart';
 import '../legal/legal_documents.dart';
 import '../platform/app_platform_style.dart';
@@ -18,10 +20,14 @@ import 'profile_monogram.dart';
 /// mentions légales, déconnexion.
 Future<void> showProfileSheet(BuildContext context) {
   final controller = context.read<ProfileController>();
+  final entitlements = context.read<EntitlementsController>();
   final isDesktop = AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
 
-  final body = ChangeNotifierProvider<ProfileController>.value(
-    value: controller,
+  final body = MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ProfileController>.value(value: controller),
+      ChangeNotifierProvider<EntitlementsController>.value(value: entitlements),
+    ],
     child: const _ProfileSheetBody(),
   );
 
@@ -198,6 +204,26 @@ class _ProfileSheetBodyState extends State<_ProfileSheetBody> {
                   : const Text('Enregistrer'),
             ),
             const Divider(height: AppSpacing.xl),
+            Builder(
+              builder: (context) {
+                final entitlements = context.watch<EntitlementsController>();
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.workspace_premium_outlined, color: AppColors.gold),
+                  title: const Text('Mon abonnement'),
+                  subtitle: Text(entitlements.definition.name),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ChangeNotifierProvider<EntitlementsController>.value(
+                        value: entitlements,
+                        child: const SubscriptionScreen(),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.description_outlined),

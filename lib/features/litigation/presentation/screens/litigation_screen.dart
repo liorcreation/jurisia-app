@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/entitlements/entitlement_feature.dart';
+import '../../../../core/entitlements/entitlements_controller.dart';
+import '../../../../core/entitlements/widgets/upgrade_sheet.dart';
 import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/platform/app_platform_style.dart';
@@ -47,9 +50,28 @@ class _LitigationViewState extends State<_LitigationView> {
     super.dispose();
   }
 
-  void _handleSend(LitigationChatController controller) {
+  Future<void> _handleSend(LitigationChatController controller) async {
     final text = _inputController.text;
     if (text.trim().isEmpty || controller.isSending) return;
+
+    // Le quota « consultations » de l'offre gratuite se décompte à
+    // l'ouverture réelle d'une consultation, c.-à-d. au premier message de
+    // l'utilisateur d'une conversation neuve. Une relance après échec réseau
+    // passe par `controller.retry` et n'est jamais recomptée.
+    final isFirstUserMessage =
+        controller.conversation.messages.every((m) => m.sender != MessageSender.user);
+    if (isFirstUserMessage) {
+      final allowed =
+          await context.read<EntitlementsController>().tryConsume(EntitlementFeature.litigeConsultations);
+      if (!allowed) {
+        if (mounted) {
+          await showUpgradeSheet(context, feature: EntitlementFeature.litigeConsultations);
+        }
+        return;
+      }
+      if (!mounted) return;
+    }
+
     _inputController.clear();
     controller.sendMessage(text);
   }

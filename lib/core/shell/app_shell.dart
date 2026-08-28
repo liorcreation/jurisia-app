@@ -22,6 +22,8 @@ import '../../features/professional/presentation/screens/professional_screen.dar
 import '../../features/student/presentation/controllers/student_controller.dart';
 import '../../features/student/presentation/screens/student_screen.dart';
 import '../../features/student/presentation/student_providers.dart';
+import '../entitlements/entitlements_controller.dart';
+import '../entitlements/entitlements_providers.dart';
 import '../navigation/nav_destinations.dart';
 import '../platform/app_platform_style.dart';
 import '../widgets/command_palette.dart';
@@ -242,6 +244,9 @@ class _AppShellState extends State<AppShell> implements AppShellController {
 
     Widget shell = MultiProvider(
       providers: [
+        ChangeNotifierProvider<EntitlementsController>(
+          create: (_) => buildEntitlementsController(),
+        ),
         ChangeNotifierProvider<LitigationChatController>(
           create: (_) => buildLitigationChatController(),
         ),
