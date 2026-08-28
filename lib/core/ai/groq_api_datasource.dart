@@ -30,9 +30,15 @@ abstract class LlmDataSource {
 /// texte. Le relais détient la clé Groq côté serveur — ce datasource n'en
 /// manipule aucune.
 class GroqDataSource implements LlmDataSource {
-  GroqDataSource({http.Client? client}) : _client = client ?? http.Client();
+  GroqDataSource({http.Client? client, this.accessToken}) : _client = client ?? http.Client();
 
   final http.Client _client;
+
+  /// Fournit, à la demande, le jeton d'accès de l'utilisateur connecté. Quand
+  /// il renvoie une valeur, elle est jointe en `Authorization: Bearer` pour
+  /// que le relais applique les quotas et le modèle de l'abonnement ; sinon
+  /// le relais retombe sur ses limites par adresse IP.
+  final Future<String?> Function()? accessToken;
 
   @override
   Stream<String> streamCompletion({
@@ -48,8 +54,17 @@ class GroqDataSource implements LlmDataSource {
       );
     }
 
+    final headers = {'content-type': 'application/json'};
+    final tokenProvider = accessToken;
+    if (tokenProvider != null) {
+      final token = await tokenProvider();
+      if (token != null && token.isNotEmpty) {
+        headers['authorization'] = 'Bearer $token';
+      }
+    }
+
     final request = http.Request('POST', Uri.parse(GroqApiConfig.endpoint))
-      ..headers.addAll({'content-type': 'application/json'})
+      ..headers.addAll(headers)
       ..body = jsonEncode({
         'model': GroqApiConfig.model,
         'messages': [

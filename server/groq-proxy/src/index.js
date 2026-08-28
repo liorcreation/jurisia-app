@@ -3,18 +3,26 @@
  *
  * Le rôle de ce Worker : détenir la clé Groq côté serveur, valider et
  * borner ce qui lui est soumis avant de le relayer (streaming SSE compris),
- * et limiter le débit par adresse IP pour contenir l'exposition financière
- * en cas d'abus — puisque n'importe qui connaissant cette URL peut
- * l'appeler tant qu'aucune authentification par utilisateur n'existe côté
- * Worker (voir la feuille de route : « authentification & comptes »).
+ * et limiter le débit — par utilisateur connecté quand un jeton Supabase est
+ * fourni, sinon par adresse IP — pour contenir l'exposition financière en
+ * cas d'abus.
+ *
+ * Authentification de l'appelant (rétrocompatible) : si la requête porte un
+ * en-tête `Authorization: Bearer <jwt Supabase>`, le Worker valide le jeton
+ * auprès de Supabase, lit l'offre de l'utilisateur (`jurisia_plan_code`) et
+ * applique les quotas et le plafond de jetons de son palier (voir
+ * `TIER_LIMITS`, à tenir aligné avec la table `ai_limits` de
+ * `server/supabase/migration_007_subscriptions_and_usage.sql`). En l'absence
+ * de jeton, ou si sa validation échoue, le Worker retombe **exactement** sur
+ * son comportement historique (limites par IP) : aucune coupure de service.
  *
  * Limite de la limitation de débit : les compteurs vivent dans Cloudflare
  * KV, qui n'est PAS fortement cohérent ni atomique — deux requêtes
- * concurrentes depuis la même IP peuvent, dans une fenêtre de quelques
- * dizaines de millisecondes, toutes deux lire l'ancien compteur avant que
- * l'une des deux écritures ne se propage. C'est un frein sérieux contre un
- * abus grossier (script, boucle), pas une garantie cryptographique — une
- * limitation exacte demanderait un Durable Object.
+ * concurrentes depuis la même identité peuvent, dans une fenêtre de
+ * quelques dizaines de millisecondes, toutes deux lire l'ancien compteur.
+ * C'est un frein sérieux contre un abus grossier (script, boucle), pas une
+ * garantie cryptographique — une limitation exacte demanderait un Durable
+ * Object.
  */
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
@@ -44,7 +52,7 @@ function isAllowedOrigin(origin) {
 function corsHeadersFor(origin) {
   const headers = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     Vary: 'Origin',
   };
   if (origin) {
@@ -61,11 +69,30 @@ const ALLOWED_MODELS = ['openai/gpt-oss-120b'];
 
 const MAX_BODY_BYTES = 60_000; // généreux pour un contrat long, borne l'abus
 const MAX_MESSAGES_CHARS = 24_000;
-const MAX_TOKENS_CEILING = 4096;
+const MAX_TOKENS_CEILING = 4096; // plafond absolu, quel que soit le palier
 
 const RATE_LIMIT_WINDOW_SECONDS = 60;
-const RATE_LIMIT_MAX_PER_MINUTE = 20;
-const RATE_LIMIT_MAX_PER_DAY = 300;
+
+// Limites appliquées à un appelant NON authentifié (comportement historique).
+const ANON_LIMITS = {
+  reqPerMinute: 20,
+  reqPerDay: 300,
+  maxTokens: MAX_TOKENS_CEILING,
+};
+
+// Limites par palier d'abonnement — à tenir aligné avec la table `ai_limits`
+// de migration_007. Un palier inconnu retombe sur `decouverte`.
+const TIER_LIMITS = {
+  decouverte: { reqPerMinute: 12, reqPerDay: 150, maxTokens: 1536 },
+  plus: { reqPerMinute: 30, reqPerDay: 600, maxTokens: 2048 },
+  etudiant: { reqPerMinute: 20, reqPerDay: 400, maxTokens: 1536 },
+  pro: { reqPerMinute: 60, reqPerDay: 2000, maxTokens: 3072 },
+  cabinet: { reqPerMinute: 60, reqPerDay: 2000, maxTokens: 3072 },
+};
+
+function limitsForPlan(plan) {
+  return TIER_LIMITS[plan] || TIER_LIMITS.decouverte;
+}
 
 function jsonError(message, status, corsHeaders) {
   return new Response(JSON.stringify({ error: { message } }), {
@@ -82,7 +109,54 @@ function logEvent(event, fields) {
   console.log(JSON.stringify({ event, ts: new Date().toISOString(), ...fields }));
 }
 
-async function checkRateLimit(env, ip) {
+/**
+ * Résout l'appelant. Rétrocompatible : sans jeton, ou en cas d'échec de
+ * validation, renvoie `{ authenticated: false }` — le Worker se comporte
+ * alors exactement comme avant (limites par IP).
+ */
+async function resolveCaller(request, env) {
+  const auth = request.headers.get('Authorization') || '';
+  if (!auth.startsWith('Bearer ')) return { authenticated: false };
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return { authenticated: false };
+
+  const token = auth.slice('Bearer '.length).trim();
+  if (!token) return { authenticated: false };
+
+  try {
+    const userRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: env.SUPABASE_ANON_KEY },
+    });
+    if (!userRes.ok) return { authenticated: false };
+    const user = await userRes.json();
+    if (!user || !user.id) return { authenticated: false };
+
+    let plan = 'decouverte';
+    try {
+      const planRes = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/jurisia_plan_code`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: env.SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: '{}',
+      });
+      if (planRes.ok) {
+        const raw = await planRes.json();
+        if (typeof raw === 'string' && raw) plan = raw;
+      }
+    } catch (error) {
+      // La migration 007 n'est peut-être pas encore appliquée : on garde
+      // 'decouverte', sans échouer.
+    }
+
+    return { authenticated: true, userId: user.id, plan };
+  } catch (error) {
+    return { authenticated: false };
+  }
+}
+
+async function checkRateLimit(env, identity, limits) {
   if (!env.RATE_LIMIT_KV) {
     // Pas de namespace KV lié : on n'échoue pas fermé, on n'échoue pas
     // ouvert silencieusement non plus — voir le README pour le lier.
@@ -90,8 +164,8 @@ async function checkRateLimit(env, ip) {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const minuteKey = `rl:min:${ip}:${Math.floor(now / RATE_LIMIT_WINDOW_SECONDS)}`;
-  const dayKey = `rl:day:${ip}:${Math.floor(now / 86400)}`;
+  const minuteKey = `rl:min:${identity}:${Math.floor(now / RATE_LIMIT_WINDOW_SECONDS)}`;
+  const dayKey = `rl:day:${identity}:${Math.floor(now / 86400)}`;
 
   const [minuteCountRaw, dayCountRaw] = await Promise.all([
     env.RATE_LIMIT_KV.get(minuteKey),
@@ -100,11 +174,11 @@ async function checkRateLimit(env, ip) {
   const minuteCount = parseInt(minuteCountRaw || '0', 10);
   const dayCount = parseInt(dayCountRaw || '0', 10);
 
-  if (minuteCount >= RATE_LIMIT_MAX_PER_MINUTE) {
+  if (minuteCount >= limits.reqPerMinute) {
     return { allowed: false, reason: 'Trop de requêtes cette minute, réessayez dans un instant.' };
   }
-  if (dayCount >= RATE_LIMIT_MAX_PER_DAY) {
-    return { allowed: false, reason: 'Quota quotidien atteint pour cette adresse, réessayez demain.' };
+  if (dayCount >= limits.reqPerDay) {
+    return { allowed: false, reason: 'Quota quotidien atteint, réessayez demain ou passez à une offre supérieure.' };
   }
 
   await Promise.all([
@@ -173,15 +247,25 @@ export default {
     const started = Date.now();
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
 
-    const rateLimit = await checkRateLimit(env, ip);
+    // Identité de l'appelant : par utilisateur si un jeton Supabase valide
+    // est fourni, sinon par IP (comportement historique).
+    const caller = await resolveCaller(request, env);
+    const limits = caller.authenticated ? limitsForPlan(caller.plan) : ANON_LIMITS;
+    const identity = caller.authenticated ? `user:${caller.userId}` : `ip:${ip}`;
+
+    const rateLimit = await checkRateLimit(env, identity, limits);
     if (!rateLimit.allowed) {
-      logEvent('rate_limited', { ip });
+      logEvent('rate_limited', {
+        identity,
+        authenticated: caller.authenticated,
+        plan: caller.authenticated ? caller.plan : null,
+      });
       return jsonError(rateLimit.reason, 429, cors);
     }
 
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).length > MAX_BODY_BYTES) {
-      logEvent('rejected', { ip, reason: 'body_too_large' });
+      logEvent('rejected', { identity, reason: 'body_too_large' });
       return jsonError(`Requête trop volumineuse (maximum ${MAX_BODY_BYTES} octets).`, 413, cors);
     }
 
@@ -189,20 +273,25 @@ export default {
     try {
       parsed = JSON.parse(rawBody);
     } catch (error) {
-      logEvent('rejected', { ip, reason: 'invalid_json' });
+      logEvent('rejected', { identity, reason: 'invalid_json' });
       return jsonError('Corps de requête JSON invalide.', 400, cors);
     }
 
     const validationError = validatePayload(parsed);
     if (validationError) {
-      logEvent('rejected', { ip, reason: 'validation_failed' });
+      logEvent('rejected', { identity, reason: 'validation_failed' });
       return jsonError(validationError, 400, cors);
     }
 
-    // Le plafond de tokens demandé est borné côté serveur, quoi que le
-    // client envoie : un client modifié ne peut pas faire générer (et
-    // facturer) des réponses arbitrairement longues.
-    parsed.max_tokens = Math.min(parsed.max_tokens ?? MAX_TOKENS_CEILING, MAX_TOKENS_CEILING);
+    // Le plafond de tokens est borné côté serveur au plus petit de : ce que
+    // demande le client, la limite du palier, et le plafond absolu. Un
+    // client modifié ne peut pas faire générer (et facturer) des réponses
+    // plus longues que ne l'autorise l'abonnement.
+    parsed.max_tokens = Math.min(
+      parsed.max_tokens ?? limits.maxTokens,
+      limits.maxTokens,
+      MAX_TOKENS_CEILING,
+    );
 
     let groqResponse;
     try {
@@ -215,12 +304,14 @@ export default {
         body: JSON.stringify(parsed),
       });
     } catch (error) {
-      logEvent('upstream_error', { ip, model: parsed.model, error: String(error) });
+      logEvent('upstream_error', { identity, model: parsed.model, error: String(error) });
       return jsonError(`Upstream error: ${error}`, 502, cors);
     }
 
     logEvent('completed', {
-      ip,
+      identity,
+      authenticated: caller.authenticated,
+      plan: caller.authenticated ? caller.plan : null,
       model: parsed.model,
       status: groqResponse.status,
       durationMs: Date.now() - started,

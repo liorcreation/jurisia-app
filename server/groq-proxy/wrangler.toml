@@ -5,6 +5,17 @@ compatibility_date = "2026-08-25"
 # La clé Groq n'est JAMAIS mise ici ni dans aucun fichier versionné : elle est
 # fournie via un secret Cloudflare, voir README.md ("wrangler secret put").
 
+# URL et clé publique du projet Supabase — servent au Worker à valider le
+# jeton de l'appelant et à lire son offre d'abonnement (quotas par palier).
+# Ce ne sont PAS des secrets : ces deux valeurs sont déjà embarquées dans le
+# client (y compris la version web), leur exposition est sans risque — la
+# sécurité des données vient des politiques RLS, pas de leur confidentialité.
+# Sans ces variables, le Worker fonctionne normalement mais limite le débit
+# par IP uniquement (comportement historique).
+[vars]
+SUPABASE_URL = "https://gfpguuuzzyqoxjkhlhli.supabase.co"
+SUPABASE_ANON_KEY = "sb_publishable_zBehM1ZVTng4CoAnCn5xMw_ygbRmvGa"
+
 # Compteurs de limitation de débit (anti-abus). Sans ce binding, le Worker
 # continue de fonctionner mais sans limiter le débit — voir README.md pour
 # créer le namespace et remplacer l'id ci-dessous.

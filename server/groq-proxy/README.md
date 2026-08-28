@@ -66,21 +66,42 @@ En plus de relayer la requête, le Worker rejette désormais :
 - plus de 20 requêtes/minute ou 300/jour pour une même adresse IP (nécessite
   le namespace KV ci-dessus).
 
+## Authentification de l'appelant et quotas par abonnement
+
+Le Worker reconnaît un en-tête `Authorization: Bearer <jwt Supabase>` :
+
+- **avec un jeton valide** : il valide le jeton auprès de Supabase
+  (`/auth/v1/user`), lit l'offre de l'utilisateur (`jurisia_plan_code`,
+  migration 007) et applique les quotas et le plafond de jetons de son
+  palier (`TIER_LIMITS` dans `src/index.js`, à tenir aligné avec la table
+  `ai_limits`). La limitation de débit se fait alors **par utilisateur**
+  (`user:<id>`) et non plus par IP ;
+- **sans jeton, ou si la validation échoue** : le Worker retombe
+  **exactement** sur son comportement historique (limites `ANON_LIMITS` par
+  IP). Aucune coupure de service — la bascule est sans risque.
+
+Cela nécessite les variables `SUPABASE_URL` et `SUPABASE_ANON_KEY` dans
+`wrangler.toml` (déjà renseignées ; ce ne sont pas des secrets). Sans elles,
+le Worker ignore les jetons et limite par IP.
+
+Côté client Flutter, `lib/core/ai/groq_providers.dart` joint automatiquement
+le jeton de la session Supabase courante.
+
 ## Sécurité — ce que ce relais protège, et ce qu'il ne protège pas
 
 Protégé : la clé Groq elle-même n'est plus jamais présente dans le binaire de
 l'application ni dans ses requêtes réseau. Les bornes ci-dessus limitent
 l'exposition financière et l'abus grossier (script, boucle).
 
-Pas protégé (volontairement hors périmètre de cette étape) : ce Worker
-n'authentifie toujours pas l'appelant — la limitation de débit se fait par IP,
-pas par compte utilisateur, et les compteurs KV ne sont pas parfaitement
-atomiques (voir le commentaire en tête de `src/index.js`). Une vraie
-authentification par utilisateur au niveau du Worker reste l'item séparé de
-la feuille de route (« authentification & comptes »). En complément, vous
-pouvez toujours activer une règle de limitation de débit native dans le
-tableau de bord Cloudflare (**Security → WAF → Rate limiting rules**) et
-surveiller votre consommation sur https://console.groq.com/.
+Partiellement protégé : depuis un jeton Supabase, la limitation se fait par
+compte et par palier d'abonnement (voir la section « Authentification de
+l'appelant » ci-dessus). Mais un appelant qui n'envoie pas de jeton reste
+limité par IP uniquement, et les compteurs KV ne sont pas parfaitement
+atomiques (voir le commentaire en tête de `src/index.js`) : une limitation
+exacte demanderait un Durable Object. En complément, vous pouvez activer une
+règle de limitation de débit native dans le tableau de bord Cloudflare
+(**Security → WAF → Rate limiting rules**) et surveiller votre consommation
+sur https://console.groq.com/.
 
 ## Supervision en production (logs, métriques, alerting)
 

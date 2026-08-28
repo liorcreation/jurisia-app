@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/ai/groq_providers.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/chat_bubble.dart';
 import '../../../../core/widgets/chat_composer.dart';
@@ -252,7 +252,7 @@ class _TutorTabState extends State<_TutorTab> {
     _controller = ModuleTutorController(
       module: widget.module,
       useCase: AskModuleTutorUseCase(
-        repository: ModuleTutorRepositoryImpl(dataSource: GroqDataSource()),
+        repository: ModuleTutorRepositoryImpl(dataSource: buildGroqDataSource()),
       ),
     );
     _controller.addListener(_onControllerChanged);

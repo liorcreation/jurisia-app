@@ -1,4 +1,4 @@
-import '../../../core/ai/groq_api_datasource.dart';
+import '../../../core/ai/groq_providers.dart';
 import '../../../core/supabase/supabase_config.dart';
 import '../../library/data/datasources/legal_document_local_datasource.dart';
 import '../../library/data/repositories/library_repository_impl.dart';
@@ -11,7 +11,7 @@ import 'controllers/professional_documents_controller.dart';
 /// sidebar.
 ProfessionalDocumentsController buildProfessionalDocumentsController() {
   final repository = ProfessionalRepositoryImpl(
-    dataSource: GroqDataSource(),
+    dataSource: buildGroqDataSource(),
     libraryRepository: LibraryRepositoryImpl(dataSource: const LocalLegalDocumentDataSource()),
     templateDataSource: const LocalProfessionalTemplateDataSource(),
     supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,

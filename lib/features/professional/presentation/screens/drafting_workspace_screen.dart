@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/ai/groq_providers.dart';
 import '../../../../core/supabase/supabase_config.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
 import '../../../../core/widgets/glass_container.dart';
@@ -21,7 +21,7 @@ import '../../domain/usecases/draft_legal_document_usecase.dart';
 import '../controllers/drafting_workspace_controller.dart';
 
 DraftingWorkspaceController _buildController(DraftingRequest request) {
-  final dataSource = GroqDataSource();
+  final dataSource = buildGroqDataSource();
   final libraryRepository = LibraryRepositoryImpl(dataSource: const LocalLegalDocumentDataSource());
   final professionalRepository = ProfessionalRepositoryImpl(
     dataSource: dataSource,
