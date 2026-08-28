@@ -66,6 +66,15 @@ class CinetPayProvider implements BillingProvider {
   ) {}
 
   async createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
+    // CinetPay refuse les montants non multiples de 5 en XOF/XAF.
+    if (req.currency === "XOF" || req.currency === "XAF") {
+      if (req.amountFcfa % 5 !== 0) {
+        throw new Error(`CinetPay: montant ${req.amountFcfa} non multiple de 5 (${req.currency}).`);
+      }
+    }
+    // Les identités client sont exigées par l'API v2 même en Mobile Money ;
+    // on n'a que l'e-mail, on en dérive un nom lisible à défaut.
+    const fallbackName = (req.customerEmail.split("@")[0] || "Client").slice(0, 60);
     const res = await fetch(`${this.baseUrl}/v2/payment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,8 +88,12 @@ class CinetPayProvider implements BillingProvider {
         notify_url: req.notifyUrl,
         return_url: req.returnUrl,
         channels: "ALL",
+        lang: "fr",
+        metadata: req.customerId,
         customer_id: req.customerId,
         customer_email: req.customerEmail,
+        customer_name: fallbackName,
+        customer_surname: "JurisIA",
       }),
     });
     const data = await res.json();
