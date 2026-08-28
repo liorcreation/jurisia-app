@@ -34,6 +34,11 @@
    qu'elle n'est pas appliquée, l'application applique le quota de l'offre
    Découverte depuis un compteur local ; une fois en place, le serveur fait
    foi.
+   `migration_008_admin_operations.sql` ouvre au personnel la lecture
+   transverse des demandes de mise en relation, des abonnements et de la
+   consommation, et expose `jurisia_admin_set_contact_status` (change le
+   statut d'une demande **et** écrit au journal d'audit) — utilisé par la
+   console d'administration (`lib/admin_main.dart`). Nécessite 006 et 007.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
@@ -54,7 +59,8 @@
 - `student_module_progress` / `student_evaluation_attempts` — Module 03.
 - `professional_drafting_results` — Module 04.
 - `professional_contact_requests` — Module 05.
-- `staff_roles` / `admin_audit_log` — fondations de la console d'admin (migration 006).
+- `staff_roles` / `admin_audit_log` — console d'admin (migration 006 ;
+  amorcer le premier `super_admin` en insérant sa ligne à la main).
 - `plans` / `subscriptions` / `usage_counters` / `usage_events` / `ai_limits` —
   abonnement et quotas (migration 007).
 

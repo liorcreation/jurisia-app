@@ -16,7 +16,13 @@ Espace professionnel, Contacter un professionnel.
   Découverte. Le paiement (Mobile Money + carte) reste à câbler.
 - IA : Groq, jamais appelé directement depuis le client — toujours via le
   relais Cloudflare Worker (voir `server/groq-proxy/`), qui détient la clé
-  API et applique validation, CORS et limitation de débit.
+  API et applique validation, CORS et limitation de débit. Le relais
+  reconnaît le jeton Supabase de l'appelant (rétrocompatible) et applique
+  alors les quotas d'IA de son abonnement.
+- Console d'administration : application web **séparée**, point d'entrée
+  `lib/admin_main.dart`, code sous `lib/admin/`. Même projet Supabase,
+  design system partagé (accent cobalt), jamais dans le bundle grand public.
+  Accès filtré par un rôle de personnel (`staff_roles`, migration 006).
 
 ## Développement local
 
@@ -51,6 +57,21 @@ autorisées dans la liste CORS du Worker (`server/groq-proxy/src/index.js`,
 domaine (domaine personnalisé, etc.), il faut l'ajouter à cette liste et
 redéployer le Worker (`npx wrangler deploy` depuis `server/groq-proxy/`),
 sinon le navigateur se fera bloquer par CORS en appelant l'IA.
+
+### Console d'administration (web séparé)
+
+Point d'entrée distinct, à compiler et déployer comme un projet Cloudflare
+Pages à part (sur sa propre origine) :
+
+```
+flutter run  -d chrome -t lib/admin_main.dart
+flutter build web -t lib/admin_main.dart
+npx wrangler pages deploy build/web --project-name=jurisia-admin
+```
+
+Prérequis : exécuter `server/supabase/migration_006` … `008`, puis créer le
+premier compte `super_admin` en insérant sa ligne dans `staff_roles`
+(SQL Editor). Un compte sans rôle voit un écran « Accès refusé ».
 
 ### Mobile (Android / iOS)
 

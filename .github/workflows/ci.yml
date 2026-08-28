@@ -60,3 +60,18 @@ jobs:
           channel: stable
       - run: flutter pub get
       - run: flutter build web
+
+  build-admin-web:
+    name: Build Admin Web
+    runs-on: ubuntu-latest
+    needs: analyze-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+      - run: flutter pub get
+      # Console d'administration : point d'entrée séparé, jamais dans le
+      # bundle grand public (lib/main.dart ne l'importe pas).
+      - run: flutter build web -t lib/admin_main.dart
