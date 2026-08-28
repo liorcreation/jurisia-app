@@ -8,7 +8,9 @@ import '../../../../models/chat/message_model.dart';
 abstract class LitigationConversationStore {
   /// Résumés de toutes les consultations de l'utilisateur (titre, dates,
   /// branche du droit — `messages` vide), triés du plus récent au plus
-  /// ancien, pour alimenter le panneau d'historique.
+  /// ancien, pour alimenter le panneau d'historique. Lève une exception en
+  /// cas d'échec de chargement (à distinguer d'une liste vide) : l'appelant
+  /// garde alors l'historique déjà affiché.
   Future<List<Conversation>> listConversations();
 
   /// Une consultation précise avec l'ensemble de ses messages, ou `null` si

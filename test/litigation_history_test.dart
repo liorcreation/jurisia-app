@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
+import 'package:jurisia_app/core/storage/local_cache.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jurisia_app/features/litigation/data/datasources/litigation_system_prompt.dart';
 import 'package:jurisia_app/features/litigation/data/repositories/litigation_repository_impl.dart';
 import 'package:jurisia_app/features/litigation/domain/repositories/litigation_conversation_store.dart';
@@ -50,6 +52,10 @@ class _FakeConversationStore implements LitigationConversationStore {
   final Map<String, Conversation> _conversations = {};
   final Map<String, List<ChatMessage>> _messages = {};
 
+  /// Quand `true`, [listConversations] échoue — pour vérifier que le
+  /// contrôleur conserve l'historique déjà affiché.
+  bool failListConversations = false;
+
   List<Conversation> _sorted() {
     final values = _conversations.values.toList()
       ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -58,6 +64,9 @@ class _FakeConversationStore implements LitigationConversationStore {
 
   @override
   Future<List<Conversation>> listConversations() async {
+    if (failListConversations) {
+      throw Exception('panne réseau simulée');
+    }
     return _sorted().map((c) => c.copyWith(messages: const [])).toList();
   }
 
@@ -90,6 +99,7 @@ LitigationChatController _buildController(
   List<String>? chatChunks,
   List<String>? titleChunks,
   bool throwOnTitleRequest = false,
+  String? historyCacheKey,
 }) {
   final dataSource = _FakeDataSource(
     chatChunks: chatChunks ?? const ["Merci, je regarde votre situation."],
@@ -101,6 +111,7 @@ LitigationChatController _buildController(
     useCase: AnalyzeLitigationUseCase(repository: repository),
     generateTitleUseCase: GenerateConversationTitleUseCase(repository: repository),
     conversationStore: store,
+    historyCacheKey: historyCacheKey,
   );
 }
 
@@ -201,6 +212,23 @@ void main() {
         isTrue,
       );
       expect(controller.conversation.id, isNot(secondConversationId));
+    });
+
+    test('refreshHistory conserve l\'historique affiché quand le réseau échoue', () async {
+      final store = _FakeConversationStore();
+      final controller = _buildController(store);
+      await _settle();
+
+      await controller.sendMessage('Un dossier bien réel.');
+      await _settle();
+      expect(controller.history, hasLength(1));
+
+      // Le prochain rafraîchissement échoue : l'historique déjà affiché ne
+      // doit pas être vidé sous les yeux de l'utilisateur.
+      store.failListConversations = true;
+      await controller.refreshHistory();
+
+      expect(controller.history, hasLength(1));
     });
 
     test('openConversation signale une erreur si la consultation est introuvable', () async {
@@ -334,5 +362,51 @@ void main() {
         );
       },
     );
+  });
+
+  group('LitigationChatController — cache local de l\'historique', () {
+    const cacheKey = 'litigation.history.test';
+
+    setUp(() async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+      LocalCache.debugOverrideInstance(null);
+      await LocalCache.initialize();
+    });
+
+    tearDown(() => LocalCache.debugOverrideInstance(null));
+
+    test('un nouveau contrôleur réaffiche instantanément l\'historique mis en cache', () async {
+      // 1er contrôleur : produit un échange, ce qui alimente le cache.
+      final store = _FakeConversationStore();
+      final first = _buildController(store, historyCacheKey: cacheKey);
+      await _settle();
+      await first.sendMessage('Litige de voisinage à mémoriser.');
+      await _settle();
+      expect(first.history, hasLength(1));
+
+      // 2e contrôleur, store vide (réseau indisponible) : l'historique doit
+      // être présent dès la construction, sans attendre de réponse réseau.
+      final coldStore = _FakeConversationStore();
+      final second = _buildController(coldStore, historyCacheKey: cacheKey);
+
+      expect(second.history, hasLength(1));
+      expect(second.history.first.title, first.history.first.title);
+    });
+
+    test('le cache est vidé quand le serveur ne renvoie plus la consultation', () async {
+      final store = _FakeConversationStore();
+      final first = _buildController(store, historyCacheKey: cacheKey);
+      await _settle();
+      await first.sendMessage('Dossier temporaire.');
+      await _settle();
+
+      // Le serveur a « perdu » la consultation : listConversations renvoie [].
+      store._conversations.clear();
+      final second = _buildController(store, historyCacheKey: cacheKey);
+      expect(second.history, hasLength(1), reason: 'affichage instantané depuis le cache');
+      await _settle();
+      expect(second.history, isEmpty, reason: 'réconcilié avec le serveur');
+    });
   });
 }

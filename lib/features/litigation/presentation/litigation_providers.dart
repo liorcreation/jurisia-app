@@ -14,10 +14,12 @@ import 'controllers/litigation_chat_controller.dart';
 /// consultations, l'écran de chat n'en est plus qu'un consommateur.
 LitigationChatController buildLitigationChatController() {
   final repository = LitigationRepositoryImpl(dataSource: GroqDataSource());
+  final userId = SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null;
   return LitigationChatController(
     useCase: AnalyzeLitigationUseCase(repository: repository),
     generateTitleUseCase: GenerateConversationTitleUseCase(repository: repository),
     conversationStore: _buildConversationStore(),
+    historyCacheKey: userId == null ? null : 'litigation.history.v1.$userId',
   );
 }
 

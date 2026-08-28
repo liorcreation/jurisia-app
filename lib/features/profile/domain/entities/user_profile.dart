@@ -40,6 +40,20 @@ class UserProfile extends Equatable {
 
   String get roleLabel => profession?.label ?? 'Compte JurisIA';
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'email': email,
+        'fullName': fullName,
+        'profession': profession?.name,
+      };
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
+        id: json['id'] as String,
+        email: json['email'] as String? ?? '',
+        fullName: json['fullName'] as String?,
+        profession: UserProfession.fromName(json['profession'] as String?),
+      );
+
   UserProfile copyWith({String? fullName, UserProfession? profession}) {
     return UserProfile(
       id: id,

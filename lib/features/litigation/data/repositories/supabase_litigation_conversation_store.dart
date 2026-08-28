@@ -59,7 +59,10 @@ class SupabaseLitigationConversationStore implements LitigationConversationStore
       return rows.map(_summaryFromRow).toList();
     } catch (error) {
       _reportFailure('listConversations', error);
-      return const [];
+      // Propagé volontairement : le contrôleur doit pouvoir distinguer
+      // « aucune consultation » d'un « échec de chargement » pour conserver
+      // l'historique déjà affiché plutôt que de le vider.
+      rethrow;
     }
   }
 

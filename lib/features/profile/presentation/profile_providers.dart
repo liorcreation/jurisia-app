@@ -18,9 +18,11 @@ ProfileController buildProfileController() {
       authRepository: const _NoopAuthRepository(),
     );
   }
+  final userId = SupabaseConfig.client.auth.currentUser?.id;
   return ProfileController(
     profileRepository: SupabaseProfileRepository(client: SupabaseConfig.client),
     authRepository: SupabaseAuthRepository(client: SupabaseConfig.client),
+    cacheKey: userId == null ? null : 'profile.v1.$userId',
   );
 }
 

@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/auth/auth_gate.dart';
+import 'core/storage/local_cache.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/widgets/splash_screen.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SupabaseConfig.initialize();
+  await Future.wait([
+    SupabaseConfig.initialize(),
+    LocalCache.initialize(),
+  ]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

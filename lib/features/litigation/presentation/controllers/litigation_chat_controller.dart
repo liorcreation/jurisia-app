@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/storage/local_cache.dart';
 import '../../../../models/chat/conversation_model.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../domain/entities/litigation_response_chunk.dart';
@@ -23,15 +24,24 @@ class LitigationChatController extends ChangeNotifier {
     required this.useCase,
     required this.generateTitleUseCase,
     this.conversationStore,
+    this.historyCacheKey,
     Uuid? uuid,
   }) : _uuid = uuid ?? const Uuid() {
     _conversation = _createConversation();
+    // Affichage instantané depuis le dernier historique connu, avant même
+    // le premier aller-retour réseau.
+    _history = _readHistoryCache();
     refreshHistory();
   }
 
   final AnalyzeLitigationUseCase useCase;
   final GenerateConversationTitleUseCase generateTitleUseCase;
   final LitigationConversationStore? conversationStore;
+
+  /// Clé de cache local de l'historique (typiquement propre à l'utilisateur).
+  /// `null` désactive le cache — l'historique n'apparaît alors qu'après la
+  /// réponse réseau.
+  final String? historyCacheKey;
   final Uuid _uuid;
 
   late Conversation _conversation;
@@ -92,6 +102,35 @@ class LitigationChatController extends ChangeNotifier {
       for (final entry in _history)
         if (entry.id != conversation.id) entry,
     ];
+    _writeHistoryCache();
+  }
+
+  /// Relit l'historique mis en cache localement (résumés sans messages).
+  /// Synchrone : disponible dès la construction du contrôleur.
+  List<Conversation> _readHistoryCache() {
+    final key = historyCacheKey;
+    final cache = LocalCache.instance;
+    if (key == null || cache == null) return const [];
+    final cached = cache.readJson<List<Conversation>>(key, (decoded) {
+      final list = decoded as List<dynamic>;
+      return [
+        for (final entry in list)
+          Conversation.fromJson(entry as Map<String, dynamic>),
+      ];
+    });
+    return cached ?? const [];
+  }
+
+  /// Écrit l'historique courant dans le cache local, au mieux effort.
+  void _writeHistoryCache() {
+    final key = historyCacheKey;
+    final cache = LocalCache.instance;
+    if (key == null || cache == null) return;
+    // ignore: unawaited_futures
+    cache.writeJson(
+      key,
+      [for (final entry in _history) entry.copyWith(messages: const []).toJson()],
+    );
   }
 
   /// Persiste la conversation **puis** le message, dans cet ordre : la
@@ -111,8 +150,15 @@ class LitigationChatController extends ChangeNotifier {
   Future<void> refreshHistory() async {
     final store = conversationStore;
     if (store == null) return;
-    _history = await store.listConversations();
-    notifyListeners();
+    try {
+      _history = await store.listConversations();
+      _writeHistoryCache();
+      notifyListeners();
+    } catch (_) {
+      // Échec réseau : on conserve l'historique déjà affiché (cache ou
+      // session en cours) plutôt que de le vider sous les yeux de
+      // l'utilisateur. La prochaine tentative le rafraîchira.
+    }
   }
 
   /// Bascule vers une consultation précédente. Sans effet si c'est déjà la
@@ -153,6 +199,7 @@ class LitigationChatController extends ChangeNotifier {
 
     await store.deleteConversation(id);
     _history = _history.where((entry) => entry.id != id).toList();
+    _writeHistoryCache();
 
     if (_conversation.id == id) {
       startNewConsultation();

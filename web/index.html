@@ -1,46 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="JurisIA — assistant juridique IA pour le Burkina Faso : litiges et consultations, bibliothèque juridique, espace étudiant, espace professionnel.">
+  <meta name="theme-color" content="#071527">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="jurisia_app">
+  <meta name="apple-mobile-web-app-title" content="JurisIA">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>jurisia_app</title>
+  <title>JurisIA</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /*
+     * Loader HTML/CSS affiché immédiatement, avant même le téléchargement et
+     * l'initialisation de l'engine Flutter — plus aucun écran blanc au
+     * premier chargement. Retiré par le script en pied de page dès que
+     * Flutter a peint sa première image (événement `flutter-first-frame`).
+     */
+    html, body { margin: 0; padding: 0; height: 100%; background-color: #071527; }
+
+    #jurisia-boot {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483647;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      background:
+        radial-gradient(1200px 700px at 50% 22%, rgba(31, 76, 130, 0.35), transparent 60%),
+        linear-gradient(180deg, #071527 0%, #0B1F3A 100%);
+      opacity: 1;
+      transition: opacity 420ms ease;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #jurisia-boot.jurisia-boot--hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #jurisia-boot .jurisia-boot__mark {
+      width: 84px;
+      height: 84px;
+      animation: jurisia-boot-pulse 1900ms ease-in-out infinite;
+    }
+
+    #jurisia-boot .jurisia-boot__wordmark {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      background: linear-gradient(180deg, #E9D48A 0%, #C9A227 50%, #8A6A15 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    #jurisia-boot .jurisia-boot__track {
+      width: 132px;
+      height: 2px;
+      border-radius: 2px;
+      background: rgba(233, 212, 138, 0.16);
+      overflow: hidden;
+    }
+
+    #jurisia-boot .jurisia-boot__track::after {
+      content: "";
+      display: block;
+      width: 40%;
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, transparent, #C9A227, transparent);
+      animation: jurisia-boot-sweep 1300ms ease-in-out infinite;
+    }
+
+    @keyframes jurisia-boot-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.06); opacity: 0.86; }
+    }
+
+    @keyframes jurisia-boot-sweep {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(360%); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #jurisia-boot .jurisia-boot__mark { animation: none; }
+      #jurisia-boot .jurisia-boot__track::after { animation-duration: 2600ms; }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="jurisia-boot" role="status" aria-label="Chargement de JurisIA">
+    <svg class="jurisia-boot__mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="jurisia-boot-gold" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#E9D48A"/>
+          <stop offset="0.5" stop-color="#C9A227"/>
+          <stop offset="1" stop-color="#8A6A15"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#jurisia-boot-gold)" d="M50,4 Q52.3,44.46 69.09,30.91 Q55.54,47.7 96,50 Q55.54,52.3 69.09,69.09 Q52.3,55.54 50,96 Q47.7,55.54 30.91,69.09 Q44.46,52.3 4,50 Q44.46,47.7 30.91,30.91 Q47.7,44.46 50,4 Z"/>
+    </svg>
+    <div class="jurisia-boot__wordmark">JURISIA</div>
+    <div class="jurisia-boot__track"></div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    (function () {
+      var removed = false;
+      function dismissBoot() {
+        if (removed) return;
+        removed = true;
+        var boot = document.getElementById('jurisia-boot');
+        if (!boot) return;
+        boot.classList.add('jurisia-boot--hidden');
+        window.setTimeout(function () {
+          if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+        }, 500);
+      }
+      window.addEventListener('flutter-first-frame', dismissBoot);
+      // Filet de sécurité : si l'événement n'arrive jamais (erreur d'init),
+      // on ne laisse pas le loader bloqué indéfiniment à l'écran.
+      window.setTimeout(dismissBoot, 12000);
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
