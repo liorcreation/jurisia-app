@@ -847,7 +847,7 @@ class _ConfidentialityNote extends StatelessWidget {
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            "Vos échanges sont confidentiels. L'IA aide à comprendre, elle ne remplace pas un avocat.",
+            'Vos échanges sont confidentiels.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
           ),
