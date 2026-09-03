@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/entitlements/entitlement_feature.dart';
 import '../../../../core/entitlements/entitlements_controller.dart';
 import '../../../../core/entitlements/widgets/upgrade_sheet.dart';
-import '../../../../core/legal/legal_document_screen.dart';
-import '../../../../core/legal/legal_documents.dart';
+import '../../../../core/legal/ai_disclaimer_screen.dart';
 import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/validation/input_limits.dart';
 import '../../../../core/widgets/ai_thinking_indicator.dart';
@@ -1072,12 +1071,7 @@ class _DisclaimerLink extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const LegalDocumentScreen(
-            title: 'Avertissement',
-            content: LegalDocuments.aiDisclaimer,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const AiDisclaimerScreen()),
       ),
       borderRadius: BorderRadius.circular(AppRadius.small),
       child: Padding(
@@ -1215,12 +1209,7 @@ class _AiDisclaimerHint extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => const LegalDocumentScreen(
-            title: 'Avertissement',
-            content: LegalDocuments.aiDisclaimer,
-          ),
-        ),
+        MaterialPageRoute(builder: (_) => const AiDisclaimerScreen()),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xs),

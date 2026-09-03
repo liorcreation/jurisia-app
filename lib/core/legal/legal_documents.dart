@@ -176,4 +176,44 @@ JurisIA s'appuie sur un modèle d'intelligence artificielle pour analyser votre 
 
 Pour toute décision importante, faites confirmer l'analyse par un professionnel du droit habilité.
 ''';
+
+  // --- Avertissement IA, forme structurée -------------------------------
+  //  Même contenu que [aiDisclaimer], découpé pour l'écran dédié
+  //  (`AiDisclaimerScreen`). [aiDisclaimer] reste la version markdown de
+  //  référence.
+
+  static const String aiDisclaimerTitle = 'L\'assistance par intelligence artificielle';
+
+  static const String aiDisclaimerIntro =
+      'JurisIA s\'appuie sur un modèle d\'intelligence artificielle pour analyser votre '
+      'situation, répondre à vos questions et générer des documents. Avant d\'aller plus '
+      'loin, prenez un instant pour comprendre ce que cela signifie concrètement.';
+
+  static const List<({String title, String body})> aiDisclaimerPoints = [
+    (
+      title: 'Ce n\'est pas un avis juridique engageant',
+      body: 'L\'IA vous aide à comprendre votre situation ; elle ne se substitue pas à un '
+          'avocat, un notaire ou un huissier de justice.',
+    ),
+    (
+      title: 'Aucune garantie de résultat',
+      body: 'Aucune réponse générée ne garantit l\'issue d\'une démarche ou d\'une '
+          'procédure judiciaire.',
+    ),
+    (
+      title: 'Vérifiez les informations sensibles',
+      body: 'L\'IA peut se tromper, notamment sur des références précises (numéros '
+          'd\'articles, de lois, de décisions) — en cas de doute, consultez un professionnel.',
+    ),
+    (
+      title: 'Vos échanges transitent par un prestataire tiers',
+      body: 'Les messages que vous envoyez sont traités par le fournisseur d\'intelligence '
+          'artificielle Groq, via un relais sécurisé — évitez de partager des informations '
+          'que vous ne souhaitez pas voir transiter par ce prestataire.',
+    ),
+  ];
+
+  static const String aiDisclaimerClosing =
+      'Pour toute décision importante, faites confirmer l\'analyse par un professionnel du '
+      'droit habilité.';
 }
