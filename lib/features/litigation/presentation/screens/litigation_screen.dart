@@ -308,11 +308,9 @@ class _DesktopHeader extends StatelessWidget {
           bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
       child: Row(
         children: [
-          const AppShellMenuButton(),
-          const SizedBox(width: AppSpacing.xs),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,

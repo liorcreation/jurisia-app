@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,6 +8,7 @@ import '../navigation/nav_destinations.dart';
 import '../widgets/glow_focus_field.dart';
 import '../widgets/jurisia_mark.dart';
 import '../widgets/luxury_elevated_button.dart';
+import '../widgets/shimmer_sweep.dart';
 import '../widgets/smoked_glass_surface.dart';
 import '../widgets/tap_scale.dart';
 import '../../theme/app_theme.dart';
@@ -18,12 +21,13 @@ import 'sidebar_sections/sidebar_section_scaffold.dart';
 /// permanent (desktop large), ou rail d'icônes réduit (desktop replié).
 enum SidebarVariant { drawer, permanent, rail }
 
-/// La sidebar unifiée de JurisIA — navigation principale sur toutes les
-/// plateformes. Organisée comme les assistants modernes (marque, action
-/// « Nouvelle consultation », recherche, historique daté), mais dans un
-/// registre « cabinet numérique » propre à JurisIA : panneau de verre fumé
-/// cerclé d'un filet d'or, plaques d'espace facettées comme des pierres
-/// taillées, marque « rose des précisions », monogramme métallique animé.
+/// La sidebar unifiée de JurisIA — la grammaire ChatGPT / Claude (marque,
+/// action « Nouvelle consultation », recherche escamotable, espaces, puis
+/// historique daté), dans un registre « cabinet numérique » propre à
+/// JurisIA : panneau de verre fumé cerclé d'un filet d'or **vivant**, plaques
+/// d'espace facettées, mot-symbole en serif qui capte la lumière, monogramme
+/// métallique animé. Dépliée, seul le mot « JurisIA » figure en tête ; c'est
+/// le rail replié qui porte la marque, bien en évidence.
 class JurisIASidebar extends StatefulWidget {
   const JurisIASidebar({super.key, required this.variant});
 
@@ -35,15 +39,29 @@ class JurisIASidebar extends StatefulWidget {
 
 class _JurisIASidebarState extends State<JurisIASidebar> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   final ValueNotifier<String> _query = ValueNotifier<String>('');
+
+  bool _searchOpen = false;
 
   bool get _isRail => widget.variant == SidebarVariant.rail;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     _query.dispose();
     super.dispose();
+  }
+
+  void _toggleSearch() {
+    setState(() => _searchOpen = !_searchOpen);
+    if (_searchOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _searchFocus.requestFocus());
+    } else {
+      _searchController.clear();
+      _query.value = '';
+    }
   }
 
   @override
@@ -61,28 +79,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.22), width: 0.7),
         child: Stack(
           children: [
-            // Filet de lumière rasante le long du bord supérieur — le détail
-            // qui « vend » le verre.
-            Positioned(
-              top: 0,
-              left: AppSpacing.md,
-              right: AppSpacing.md,
-              child: IgnorePointer(
-                child: Container(
-                  height: 1,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.white.withValues(alpha: 0.16),
-                        AppColors.goldLight.withValues(alpha: 0.12),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            const Positioned.fill(child: IgnorePointer(child: _SidebarAmbience())),
             SafeArea(
               right: false,
               child: _isRail ? _buildRail(context) : _buildExpanded(context),
@@ -102,20 +99,31 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          // La marque, bien représentée — comme ChatGPT une fois la colonne
+          // repliée. Tap = déplier.
           Tooltip(
             message: 'Déplier la navigation',
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppRadius.medium),
-              onTap: shell.toggleNav,
-              child: const Padding(
-                padding: EdgeInsets.all(AppSpacing.sm),
-                child: JurisIAMark(size: 26),
+            child: TapScale(
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: shell.toggleNav,
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: JurisIAAppIconTile(size: 40),
+                  ),
+                ),
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          _RailTick(),
-          const SizedBox(height: AppSpacing.md),
+          _RailIconButton(
+            icon: Icons.search_rounded,
+            tooltip: 'Rechercher',
+            onTap: shell.openNav,
+          ),
+          const SizedBox(height: AppSpacing.xs),
           _RailNewConsultationButton(onTap: () => _startNewConsultation(context)),
           const SizedBox(height: AppSpacing.md),
           for (var i = 0; i < kNavDestinations.length; i++)
@@ -141,17 +149,16 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _BrandHeader(
-          trailing: _HeaderControl(
-            tooltip: isDrawer ? 'Fermer' : 'Replier la navigation',
-            icon: isDrawer ? Icons.close_rounded : Icons.chevron_left_rounded,
-            onPressed: () {
-              if (isDrawer) {
-                Navigator.of(context).maybePop();
-              } else {
-                shell.toggleNav();
-              }
-            },
-          ),
+          onSearch: _toggleSearch,
+          searchActive: _searchOpen,
+          collapseTooltip: isDrawer ? 'Fermer' : 'Replier la navigation',
+          onCollapse: () {
+            if (isDrawer) {
+              Navigator.of(context).maybePop();
+            } else {
+              shell.toggleNav();
+            }
+          },
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
@@ -161,49 +168,11 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
             child: const Text('Nouvelle consultation'),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
-          child: GlowFocusField(
-            borderRadius: AppRadius.pill,
-            child: ValueListenableBuilder<String>(
-              valueListenable: _query,
-              builder: (context, query, _) => TextField(
-                controller: _searchController,
-                onChanged: (value) => _query.value = value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
-                decoration: InputDecoration(
-                  isDense: true,
-                  filled: true,
-                  fillColor: AppColors.legalBlueDark.withValues(alpha: 0.55),
-                  prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.goldLight),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                  hintText: 'Rechercher une consultation…',
-                  contentPadding: const EdgeInsets.symmetric(vertical: 11),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    borderSide: const BorderSide(color: AppColors.cobalt, width: 1),
-                  ),
-                  suffixIcon: query.isEmpty
-                      ? null
-                      : IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 16),
-                          onPressed: () {
-                            _searchController.clear();
-                            _query.value = '';
-                          },
-                        ),
-                ),
-              ),
-            ),
-          ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.fastOutSlowIn,
+          alignment: Alignment.topCenter,
+          child: _searchOpen ? _searchField(context) : const SizedBox(width: double.infinity),
         ),
         Expanded(
           child: ListView(
@@ -217,17 +186,61 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
                   onTap: () => shell.selectModule(i),
                 ),
               const SizedBox(height: AppSpacing.xs),
-              _FadingRule(),
+              const _FadingRule(),
               SidebarContextSection(query: _query),
             ],
           ),
         ),
-        _FadingRule(),
+        const _FadingRule(),
         const Padding(
           padding: EdgeInsets.all(AppSpacing.sm),
           child: SidebarProfileCard(),
         ),
       ],
+    );
+  }
+
+  Widget _searchField(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+      child: GlowFocusField(
+        borderRadius: AppRadius.pill,
+        child: ValueListenableBuilder<String>(
+          valueListenable: _query,
+          builder: (context, query, _) => TextField(
+            controller: _searchController,
+            focusNode: _searchFocus,
+            onChanged: (value) => _query.value = value,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: true,
+              fillColor: AppColors.legalBlueDark.withValues(alpha: 0.55),
+              prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.goldLight),
+              prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              hintText: 'Rechercher une consultation…',
+              contentPadding: const EdgeInsets.symmetric(vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                borderSide: const BorderSide(color: AppColors.cobalt, width: 1),
+              ),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.close_rounded, size: 16),
+                tooltip: 'Fermer la recherche',
+                onPressed: _toggleSearch,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -240,7 +253,8 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
 /// Plaque d'icône facettée — un petit carré à coins très arrondis dans le
 /// registre « pierre taillée » de la marque : verre sombre cerclé d'un filet
 /// d'or au repos, entièrement doré (icône gravée en creux) une fois l'espace
-/// actif.
+/// actif. L'espace actif porte en plus un lent reflet d'or qui la traverse
+/// en boucle — le repère « vous êtes ici », vivant.
 class _FacetedTile extends StatelessWidget {
   const _FacetedTile({
     required this.icon,
@@ -256,7 +270,7 @@ class _FacetedTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
+    final tile = AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.fastOutSlowIn,
       width: size,
@@ -275,7 +289,7 @@ class _FacetedTile extends StatelessWidget {
           width: 0.8,
         ),
         boxShadow: selected
-            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.3), blurRadius: 9)]
+            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.32), blurRadius: 10)]
             : null,
       ),
       child: Icon(
@@ -287,6 +301,12 @@ class _FacetedTile extends StatelessWidget {
                 ? AppColors.goldLight
                 : AppColors.textSecondary,
       ),
+    );
+
+    if (!selected) return tile;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.32),
+      child: ShimmerSweep(duration: const Duration(milliseconds: 3600), child: tile),
     );
   }
 }
@@ -373,13 +393,21 @@ class _ModuleRowState extends State<_ModuleRow> {
   }
 }
 
-/// En-tête de marque : marque « rose des précisions », mot-symbole en serif
-/// à reflet métallique, contrôle de repli, et un filet d'or qui s'efface aux
-/// extrémités.
+/// En-tête de la sidebar dépliée : le mot-symbole « JurisIA » (serif, reflet
+/// métallique qui glisse lentement — vivant), la loupe de recherche, et le
+/// contrôle de repli. Suivi d'un filet d'or que traverse un éclat périodique.
 class _BrandHeader extends StatelessWidget {
-  const _BrandHeader({this.trailing});
+  const _BrandHeader({
+    required this.onSearch,
+    required this.searchActive,
+    required this.collapseTooltip,
+    required this.onCollapse,
+  });
 
-  final Widget? trailing;
+  final VoidCallback onSearch;
+  final bool searchActive;
+  final String collapseTooltip;
+  final VoidCallback onCollapse;
 
   @override
   Widget build(BuildContext context) {
@@ -390,55 +418,58 @@ class _BrandHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.sm, AppSpacing.sm),
           child: Row(
             children: [
-              const JurisIAMark(size: 24),
-              const SizedBox(width: AppSpacing.sm + 2),
-              Expanded(
-                child: ShaderMask(
-                  shaderCallback: (bounds) => AppGradients.goldMetallic.createShader(bounds),
-                  child: const Text(
-                    'JurisIA',
-                    style: TextStyle(
-                      fontFamily: 'Libre Caslon Display',
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
+              ShaderMask(
+                shaderCallback: (bounds) => AppGradients.goldMetallic.createShader(bounds),
+                child: const Text(
+                  'JurisIA',
+                  style: TextStyle(
+                    fontFamily: 'Libre Caslon Display',
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-              ?trailing,
+              const Spacer(),
+              _HeaderControl(
+                tooltip: 'Rechercher une consultation',
+                icon: Icons.search_rounded,
+                active: searchActive,
+                onPressed: onSearch,
+              ),
+              const SizedBox(width: 6),
+              _HeaderControl(
+                tooltip: collapseTooltip,
+                icon: Icons.view_sidebar_rounded,
+                onPressed: onCollapse,
+              ),
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xs),
-          child: Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  AppColors.gold.withValues(alpha: 0.4),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xs),
+          child: _TravelingGlint(),
         ),
       ],
     );
   }
 }
 
-/// Bouton de contrôle de l'en-tête (repli / fermeture) — pastille de verre
-/// discrète plutôt qu'un `IconButton` nu.
+/// Bouton de contrôle de l'en-tête (recherche / repli) — pastille de verre
+/// discrète ; passe à l'or lorsqu'elle est active.
 class _HeaderControl extends StatelessWidget {
-  const _HeaderControl({required this.tooltip, required this.icon, required this.onPressed});
+  const _HeaderControl({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.active = false,
+  });
 
   final String tooltip;
   final IconData icon;
   final VoidCallback onPressed;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -446,20 +477,213 @@ class _HeaderControl extends StatelessWidget {
       message: tooltip,
       child: TapScale(
         child: Material(
-          color: AppColors.legalBlueDark.withValues(alpha: 0.5),
-          shape: const CircleBorder(side: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+          color: active
+              ? AppColors.gold.withValues(alpha: 0.18)
+              : AppColors.legalBlueDark.withValues(alpha: 0.5),
+          shape: CircleBorder(
+            side: BorderSide(
+              color: active ? AppColors.gold.withValues(alpha: 0.6) : AppColors.glassBorder,
+              width: 0.6,
+            ),
+          ),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: Icon(icon, size: 18, color: AppColors.textSecondary),
+              child: Icon(
+                icon,
+                size: 18,
+                color: active ? AppColors.goldLight : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// Filet d'or que traverse un éclat lumineux toutes les quelques secondes —
+/// la lumière qui « accroche » le bord du verre. Rend l'en-tête vivant sans
+/// rien qui distraie.
+class _TravelingGlint extends StatefulWidget {
+  const _TravelingGlint();
+
+  @override
+  State<_TravelingGlint> createState() => _TravelingGlintState();
+}
+
+class _TravelingGlintState extends State<_TravelingGlint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 6400))..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 1,
+      width: double.infinity,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => CustomPaint(painter: _GlintPainter(_controller.value)),
+      ),
+    );
+  }
+}
+
+class _GlintPainter extends CustomPainter {
+  _GlintPainter(this.t);
+
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = LinearGradient(
+          colors: [
+            Colors.transparent,
+            AppColors.gold.withValues(alpha: 0.22),
+            Colors.transparent,
+          ],
+        ).createShader(rect),
+    );
+
+    // Éclat qui traverse (avec un temps mort entre deux passages).
+    final phase = (t * 1.55) - 0.3;
+    if (phase < 0 || phase > 1) return;
+    final centerX = size.width * phase;
+    final bandWidth = size.width * 0.26;
+    final band = Rect.fromLTWH(centerX - bandWidth / 2, -1, bandWidth, size.height + 2);
+    final fade = 1 - (phase - 0.5).abs() * 2; // s'éteint aux extrémités
+    canvas.drawRect(
+      band,
+      Paint()
+        ..blendMode = BlendMode.plus
+        ..shader = LinearGradient(
+          colors: [
+            Colors.transparent,
+            AppColors.goldLight.withValues(alpha: 0.85 * fade.clamp(0.0, 1.0)),
+            Colors.transparent,
+          ],
+        ).createShader(band),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GlintPainter oldDelegate) => oldDelegate.t != t;
+}
+
+/// Atmosphère du panneau : une lueur d'or qui dérive très lentement le long
+/// du bord et quelques grains d'or en suspension — presque imperceptibles,
+/// juste de quoi rendre la colonne vivante plutôt que figée.
+class _SidebarAmbience extends StatefulWidget {
+  const _SidebarAmbience();
+
+  @override
+  State<_SidebarAmbience> createState() => _SidebarAmbienceState();
+}
+
+class _SidebarAmbienceState extends State<_SidebarAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(seconds: 24))..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => CustomPaint(painter: _AmbiencePainter(_controller.value)),
+    );
+  }
+}
+
+class _AmbiencePainter extends CustomPainter {
+  _AmbiencePainter(this.t);
+
+  final double t;
+
+  static final math.Random _rng = math.Random(11);
+  static final List<_Mote> _motes = List.generate(
+    6,
+    (_) => _Mote(
+      x: _rng.nextDouble(),
+      radius: 0.6 + _rng.nextDouble() * 1.3,
+      speed: 0.12 + _rng.nextDouble() * 0.24,
+      drift: _rng.nextDouble() * math.pi * 2,
+      phase: _rng.nextDouble(),
+    ),
+  );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final phase = t * math.pi * 2;
+
+    // Lueur d'or qui glisse doucement le long du bord gauche.
+    final glowCenter = Offset(
+      size.width * (0.12 + 0.05 * math.sin(phase)),
+      size.height * (0.5 + 0.42 * math.sin(phase * 0.6)),
+    );
+    final glowRadius = size.height * 0.4;
+    canvas.drawCircle(
+      glowCenter,
+      glowRadius,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            AppColors.gold.withValues(alpha: 0.07),
+            AppColors.gold.withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(center: glowCenter, radius: glowRadius)),
+    );
+
+    // Grains d'or en suspension.
+    final paint = Paint();
+    for (final mote in _motes) {
+      final progress = (mote.phase + t * mote.speed) % 1.0;
+      final y = size.height * (1.04 - progress * 1.1);
+      final x = size.width * mote.x + math.sin(progress * math.pi * 2 + mote.drift) * 10;
+      final alpha = math.sin(progress * math.pi) * 0.12;
+      if (alpha <= 0) continue;
+      paint.color = AppColors.goldLight.withValues(alpha: alpha);
+      canvas.drawCircle(Offset(x, y), mote.radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AmbiencePainter oldDelegate) => oldDelegate.t != t;
+}
+
+class _Mote {
+  const _Mote({
+    required this.x,
+    required this.radius,
+    required this.speed,
+    required this.drift,
+    required this.phase,
+  });
+
+  final double x;
+  final double radius;
+  final double speed;
+  final double drift;
+  final double phase;
 }
 
 /// Filet de séparation qui s'efface aux extrémités.
@@ -485,29 +709,6 @@ class _FadingRule extends StatelessWidget {
 }
 
 // --- Rail (desktop replié) --------------------------------------------------
-
-/// Petit repère doré vertical en tête de rail, écho du filet de l'en-tête
-/// déplié.
-class _RailTick extends StatelessWidget {
-  const _RailTick();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 22,
-      height: 1,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.transparent,
-            AppColors.gold.withValues(alpha: 0.5),
-            Colors.transparent,
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _RailNewConsultationButton extends StatelessWidget {
   const _RailNewConsultationButton({required this.onTap});
@@ -538,6 +739,37 @@ class _RailNewConsultationButton extends StatelessWidget {
                   ],
                 ),
                 child: const Icon(Icons.add_comment_rounded, size: 20, color: AppColors.nightBlueDeep),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RailIconButton extends StatelessWidget {
+  const _RailIconButton({required this.icon, required this.tooltip, required this.onTap});
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: TapScale(
+        child: Tooltip(
+          message: tooltip,
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Icon(icon, size: 20, color: AppColors.textSecondary),
               ),
             ),
           ),

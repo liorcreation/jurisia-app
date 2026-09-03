@@ -3,14 +3,18 @@ import 'package:provider/provider.dart';
 
 import '../../features/litigation/presentation/controllers/litigation_chat_controller.dart';
 import '../../features/profile/presentation/controllers/profile_controller.dart';
+import '../../features/subscription/presentation/screens/subscription_screen.dart';
+import '../entitlements/entitlements_controller.dart';
+import '../entitlements/plan.dart';
 import '../widgets/glass_container.dart';
 import '../../theme/app_theme.dart';
 import 'profile_monogram.dart';
 import 'profile_sheet.dart';
 
 /// Carte profil en pied de sidebar — le point d'orgue « ultra premium » :
-/// monogramme métallique animé, nom en serif, rôle, et compteur d'activité
-/// du mois. Tap → feuille profil (édition, mentions légales, déconnexion).
+/// monogramme métallique animé, nom en serif, rôle, compteur d'activité du
+/// mois, et un bouton « Mettre à niveau » vers l'offre supérieure. Tap sur la
+/// carte → feuille profil (édition, mentions légales, déconnexion).
 class SidebarProfileCard extends StatelessWidget {
   const SidebarProfileCard({super.key, this.compact = false});
 
@@ -44,59 +48,150 @@ class SidebarProfileCard extends StatelessWidget {
 
     final textTheme = Theme.of(context).textTheme;
     final count = _consultationsThisMonth(context);
+    final entitlements = context.watch<EntitlementsController>();
+    final canUpgrade = entitlements.plan != PlanCode.cabinet;
 
     return GlassContainer(
       onTap: () => showProfileSheet(context),
       borderRadius: AppRadius.medium,
       padding: const EdgeInsets.all(AppSpacing.sm),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          ProfileMonogram(profile: profile, size: 40),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  profile?.displayName ?? 'Mon compte',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
-                ),
-                const SizedBox(height: 1),
-                Row(
+          Row(
+            children: [
+              ProfileMonogram(profile: profile, size: 40),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppGradients.goldSheen),
+                    Text(
+                      profile?.displayName ?? 'Mon compte',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
                     ),
-                    const SizedBox(width: 5),
-                    Flexible(
-                      child: Text(
-                        profile?.roleLabel ?? 'Compte JurisIA',
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AppGradients.goldSheen,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            entitlements.definition.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (count > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        count == 1 ? '1 consultation ce mois' : '$count consultations ce mois',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight),
+                        style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                if (count > 0) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    count == 1 ? '1 consultation ce mois' : '$count consultations ce mois',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
-                  ),
-                ],
+              ),
+              const Icon(Icons.unfold_more_rounded, size: 18, color: AppColors.textSecondary),
+            ],
+          ),
+          if (canUpgrade) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _UpgradeButton(entitlements: entitlements),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Bouton « Mettre à niveau » de la carte profil — pilule de verre à liseré
+/// d'or, éclat discret. Ouvre l'écran des offres.
+class _UpgradeButton extends StatefulWidget {
+  const _UpgradeButton({required this.entitlements});
+
+  final EntitlementsController entitlements;
+
+  @override
+  State<_UpgradeButton> createState() => _UpgradeButtonState();
+}
+
+class _UpgradeButtonState extends State<_UpgradeButton> {
+  bool _hovered = false;
+
+  void _open() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider<EntitlementsController>.value(
+          value: widget.entitlements,
+          child: const SubscriptionScreen(),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 7),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              gradient: LinearGradient(
+                colors: _hovered
+                    ? [
+                        AppColors.gold.withValues(alpha: 0.28),
+                        AppColors.gold.withValues(alpha: 0.14),
+                      ]
+                    : [
+                        AppColors.gold.withValues(alpha: 0.16),
+                        AppColors.gold.withValues(alpha: 0.06),
+                      ],
+              ),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.55), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.goldLight),
+                const SizedBox(width: 6),
+                Text(
+                  'Mettre à niveau',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.goldLight,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                ),
               ],
             ),
           ),
-          const Icon(Icons.unfold_more_rounded, size: 18, color: AppColors.textSecondary),
-        ],
+        ),
       ),
     );
   }
