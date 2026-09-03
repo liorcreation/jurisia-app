@@ -119,6 +119,7 @@ class LegalDocument extends Equatable {
     this.fullContent = '',
     this.articles = const [],
     this.outline = const [],
+    this.summaryOnly = false,
     this.officialSourceName,
     this.fileUrl,
     this.sourceUrl,
@@ -155,6 +156,11 @@ class LegalDocument extends Equatable {
   /// lorsque le texte intégral n'a pas encore été importé.
   final List<String> outline;
 
+  /// `true` lorsque le document ne porte encore qu'une **synthèse** (résumé,
+  /// plan, lien vers la source) et non le texte intégral. Sert à afficher le
+  /// bandeau « Résumé — texte intégral à venir ».
+  final bool summaryOnly;
+
   /// Nom lisible de la source faisant autorité (« Légiburkina »,
   /// « Journal Officiel du Faso », « OHADA »…).
   final String? officialSourceName;
@@ -169,6 +175,10 @@ class LegalDocument extends Equatable {
 
   /// `true` si le texte est disponible article par article.
   bool get isStructured => articles.isNotEmpty;
+
+  /// `true` si la fiche n'expose qu'une synthèse : le drapeau [summaryOnly]
+  /// est posé et aucun texte structuré n'est encore disponible.
+  bool get awaitingFullText => summaryOnly && articles.isEmpty;
 
   /// `true` si le texte intégral (prose ou articles) est consultable dans
   /// l'application.
@@ -187,6 +197,7 @@ class LegalDocument extends Equatable {
     String? fullContent,
     List<LegalArticle>? articles,
     List<String>? outline,
+    bool? summaryOnly,
     String? officialSourceName,
     String? fileUrl,
     String? sourceUrl,
@@ -209,6 +220,7 @@ class LegalDocument extends Equatable {
       fullContent: fullContent ?? this.fullContent,
       articles: articles ?? this.articles,
       outline: outline ?? this.outline,
+      summaryOnly: summaryOnly ?? this.summaryOnly,
       officialSourceName: officialSourceName ?? this.officialSourceName,
       fileUrl: fileUrl ?? this.fileUrl,
       sourceUrl: sourceUrl ?? this.sourceUrl,
@@ -234,6 +246,7 @@ class LegalDocument extends Equatable {
       'fullContent': fullContent,
       'articles': articles.map((a) => a.toJson()).toList(),
       'outline': outline,
+      'summaryOnly': summaryOnly,
       'officialSourceName': officialSourceName,
       'fileUrl': fileUrl,
       'sourceUrl': sourceUrl,
@@ -266,6 +279,7 @@ class LegalDocument extends Equatable {
           .map((e) => LegalArticle.fromJson(e as Map<String, dynamic>))
           .toList(),
       outline: (json['outline'] as List<dynamic>? ?? const []).map((e) => e as String).toList(),
+      summaryOnly: json['summaryOnly'] as bool? ?? false,
       officialSourceName: json['officialSourceName'] as String?,
       fileUrl: json['fileUrl'] as String?,
       sourceUrl: json['sourceUrl'] as String?,
@@ -293,6 +307,7 @@ class LegalDocument extends Equatable {
         fullContent,
         articles,
         outline,
+        summaryOnly,
         officialSourceName,
         fileUrl,
         sourceUrl,

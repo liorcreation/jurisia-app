@@ -18,6 +18,7 @@ import '../widgets/document_card.dart';
 import '../widgets/document_category_badge.dart';
 import '../widgets/document_tag.dart';
 import '../widgets/document_type_icon.dart';
+import '../widgets/summary_only_badge.dart';
 import 'document_detail_screen.dart';
 
 /// Section 2 — Bibliothèque juridique : moteur de recherche intelligent sur
@@ -980,6 +981,10 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
+                      if (doc.awaitingFullText) ...[
+                        const SummaryOnlyBadge(compact: true),
+                        const SizedBox(height: 6),
+                      ],
                       Wrap(
                         spacing: 5,
                         runSpacing: 4,

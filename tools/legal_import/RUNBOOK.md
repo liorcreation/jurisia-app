@@ -167,6 +167,9 @@ constitutionnelle, Cour commune de justice et d'arbitrage OHADA).
   "summary": "Relations individuelles et collectives de travail…",
   "full_content": "",                 // vide si le texte est en articles
   "outline": ["Titre I — Dispositions générales", "..."],
+  "summary_only": true,               // true tant que "articles" est vide ; le badge
+                                      // « Résumé — texte intégral à venir » s'affiche.
+                                      // Repasser à false une fois les articles intégrés et relus.
   "official_source_name": "Légiburkina",
   "source_url": "https://www.legiburkina.bf/...",
   "tags": ["contrat de travail", "licenciement"],

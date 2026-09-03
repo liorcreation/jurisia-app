@@ -102,6 +102,8 @@ class LibraryRepositoryImpl implements LibraryRepository {
             fullContent: row['full_content'] as String? ?? '',
             articles: articlesByDoc[row['id']] ?? const [],
             outline: (row['outline'] as List?)?.map((e) => e as String).toList() ?? const [],
+            summaryOnly: (row['summary_only'] as bool? ?? false) &&
+                (articlesByDoc[row['id']] ?? const []).isEmpty,
             officialSourceName: row['official_source_name'] as String?,
             sourceUrl: row['source_url'] as String?,
             tags: (row['tags'] as List?)?.map((e) => e as String).toList() ?? const [],

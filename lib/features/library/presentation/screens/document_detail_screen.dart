@@ -15,6 +15,7 @@ import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
 import '../widgets/document_category_badge.dart';
 import '../widgets/document_tag.dart';
+import '../widgets/summary_only_badge.dart';
 
 const _months = [
   'janvier',
@@ -235,6 +236,10 @@ class _DesktopReaderState extends State<_DesktopReader> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _DocumentHero(document: doc),
+                            if (doc.awaitingFullText) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              const SummaryOnlyBadge(),
+                            ],
                             const SizedBox(height: AppSpacing.xl),
                             if (showFactsInline) ...[
                               _FactSheet(document: doc),
@@ -1595,6 +1600,10 @@ class _MobileReader extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (document.awaitingFullText) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    const SummaryOnlyBadge(),
+                  ],
                   const SizedBox(height: AppSpacing.lg),
                   if (document.isStructured)
                     GlassContainer(

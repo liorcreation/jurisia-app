@@ -6,6 +6,7 @@ import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../theme/app_theme.dart';
 import 'document_category_badge.dart';
 import 'document_tag.dart';
+import 'summary_only_badge.dart';
 
 /// Carte de résultat de recherche : style glassmorphism, badge de catégorie
 /// doré, référence et bouton de mise en favori rapide.
@@ -54,6 +55,10 @@ class LibraryDocumentCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (document.awaitingFullText) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  const SummaryOnlyBadge(compact: true),
+                ],
               ],
             ),
           ),

@@ -14,6 +14,7 @@ class ImportedDocument {
     this.summary = '',
     this.fullContent = '',
     this.outline = const [],
+    this.summaryOnly = false,
     this.officialSourceName,
     this.sourceUrl,
     this.tags = const [],
@@ -46,6 +47,12 @@ class ImportedDocument {
   final String fullContent;
 
   final List<String> outline;
+
+  /// `true` : la ligne ne porte qu'une synthèse (résumé + plan + lien source) ;
+  /// le texte intégral n'a pas encore été vérifié/intégré. Forcé à `false` si
+  /// des articles sont fournis.
+  final bool summaryOnly;
+
   final String? officialSourceName;
   final String? sourceUrl;
   final List<String> tags;
@@ -64,6 +71,7 @@ class ImportedDocument {
         'summary': summary,
         'full_content': fullContent,
         'outline': outline,
+        'summary_only': summaryOnly && articles.isEmpty,
         'official_source_name': officialSourceName,
         'source_url': sourceUrl,
         'tags': tags,
@@ -100,6 +108,7 @@ class ImportedDocument {
         summary: j['summary'] as String? ?? '',
         fullContent: j['full_content'] as String? ?? '',
         outline: (j['outline'] as List?)?.cast<String>() ?? const [],
+        summaryOnly: j['summary_only'] as bool? ?? false,
         officialSourceName: j['official_source_name'] as String?,
         sourceUrl: j['source_url'] as String?,
         tags: (j['tags'] as List?)?.cast<String>() ?? const [],

@@ -58,6 +58,7 @@ LegalDocument _code({
     summary: summary,
     fullContent: overview,
     outline: outline,
+    summaryOnly: true,
     officialSourceName: sourceName,
     sourceUrl: source,
     tags: tags,
@@ -86,6 +87,7 @@ LegalDocument _ohada({
     summary: summary,
     fullContent: overview,
     outline: outline,
+    summaryOnly: true,
     officialSourceName: 'OHADA',
     sourceUrl: _ohadaTextes,
     tags: ['OHADA', ...tags],
@@ -106,6 +108,7 @@ final List<LegalDocument> _documents = [
     status: LegalDocumentStatus.modifie,
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
+    summaryOnly: true,
     summary: 'Loi fondamentale : forme de l\'État, droits et devoirs, organisation des pouvoirs.',
     fullContent:
         'La Constitution est la norme suprême de l\'ordre juridique burkinabè. Elle proclame '
@@ -932,6 +935,7 @@ final List<LegalDocument> _documents = [
     datePublication: DateTime(2016, 6, 21),
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
+    summaryOnly: true,
     summary: 'Encadre les rapports entre bailleurs et preneurs à usage commercial (complément à l\'AUDCG).',
     fullContent:
         'Cette loi complète, au plan national, le régime OHADA du bail à usage professionnel. '
@@ -956,6 +960,7 @@ final List<LegalDocument> _documents = [
     status: LegalDocumentStatus.modifie,
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
+    summaryOnly: true,
     summary: 'Encadre la collecte et le traitement des données personnelles ; rôle de la CIL.',
     fullContent:
         'Cette loi soumet tout traitement de données à caractère personnel au respect des '
@@ -979,6 +984,7 @@ final List<LegalDocument> _documents = [
     dateEntreeEnVigueur: DateTime(2020, 5, 1),
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
+    summaryOnly: true,
     summary: 'Modalités d\'application des dispositions du Code du travail sur la durée légale du travail.',
     fullContent:
         'Le présent décret précise les modalités d\'application des dispositions légales '
@@ -1000,6 +1006,7 @@ final List<LegalDocument> _documents = [
     datePublication: DateTime(2024, 1, 15),
     officialSourceName: 'Journal Officiel du Faso',
     sourceUrl: _jofb,
+    summaryOnly: true,
     summary: 'Fixe le montant du salaire minimum interprofessionnel garanti (SMIG).',
     fullContent:
         'Le présent arrêté fixe le montant du salaire minimum interprofessionnel garanti '
@@ -1023,6 +1030,7 @@ final List<LegalDocument> _documents = [
     domain: LegalDomain.travail,
     reference: 'Cass. soc., n° 245/2021',
     datePublication: DateTime(2021, 9, 14),
+    summaryOnly: true,
     summary: "Critères d'appréciation du caractère abusif d'un licenciement pour motif personnel.",
     fullContent:
         'La Cour rappelle que le licenciement pour motif personnel doit reposer sur une cause '
@@ -1044,6 +1052,7 @@ final List<LegalDocument> _documents = [
     domain: LegalDomain.civil,
     reference: 'Cass. civ., n° 118/2019',
     datePublication: DateTime(2019, 11, 6),
+    summaryOnly: true,
     summary: "Conditions de la résolution judiciaire d'un contrat de vente pour défaut de livraison.",
     fullContent:
         'La Cour retient que l\'inexécution d\'une obligation essentielle du contrat de vente — '

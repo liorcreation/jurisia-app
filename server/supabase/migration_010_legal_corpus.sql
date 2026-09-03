@@ -21,6 +21,7 @@ create table if not exists public.legal_documents (
   summary               text not null default '',
   full_content          text not null default '',
   outline               text[] not null default '{}',
+  summary_only          boolean not null default false, -- true : synthèse seule, texte intégral à venir
   official_source_name  text,
   source_url            text,
   tags                  text[] not null default '{}',
