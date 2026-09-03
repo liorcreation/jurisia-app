@@ -46,6 +46,26 @@ class LibraryController extends ChangeNotifier {
   List<LegalDocument> get favoriteDocuments =>
       searchUseCase(const LibrarySearchQuery(favoritesOnly: true));
 
+  /// L'intégralité du catalogue, hors filtres — pour l'en-tête (compte total)
+  /// et les compteurs par catégorie du bandeau de navigation.
+  List<LegalDocument> get allDocuments => searchUseCase(const LibrarySearchQuery());
+
+  /// `true` quand aucun critère n'est actif (mot-clé, type, branche, favoris).
+  bool get hasActiveFilters =>
+      _keyword.trim().isNotEmpty ||
+      _selectedType != null ||
+      _selectedDomain != null ||
+      _favoritesOnly;
+
+  /// Remet tous les critères à zéro.
+  void clearFilters() {
+    _keyword = '';
+    _selectedType = null;
+    _selectedDomain = null;
+    _favoritesOnly = false;
+    _runSearch();
+  }
+
   void updateKeyword(String value) {
     _keyword = value;
     _runSearch();
