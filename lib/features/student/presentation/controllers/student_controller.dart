@@ -38,6 +38,16 @@ class StudentController extends ChangeNotifier {
 
   bool isLevelUnlocked(AcademicLevel level) => repository.isLevelUnlocked(level);
 
+  /// Modules d'un niveau donné (avec leur état de progression courant),
+  /// quel que soit le niveau actuellement sélectionné.
+  List<CourseModule> modulesForLevel(AcademicLevel level) => getModulesUseCase(level);
+
+  /// `true` si tous les modules du niveau ont été validés (moyenne ≥ 10/20).
+  bool isLevelCompleted(AcademicLevel level) {
+    final modules = getModulesUseCase(level);
+    return modules.isNotEmpty && modules.every((module) => module.isCompleted);
+  }
+
   void selectLevel(AcademicLevel level) {
     _selectedLevel = level;
     notifyListeners();
