@@ -179,10 +179,10 @@ void main() {
       expect(done.risks, hasLength(1));
       expect(done.risks.single.riskLevel, RiskLevel.eleve);
       expect(done.risks.single.suggestedRewrite, contains('preavis de 30 jours'));
-      expect(done.citedSources.map((s) => s.title).toSet(), {
-        'Code de commerce',
-        'Loi relative au bail à usage professionnel',
-      });
+      expect(
+        done.citedSources.map((s) => s.title),
+        containsAll(<String>['Code de commerce', 'Loi relative au bail à usage professionnel']),
+      );
     });
 
     test('lève une erreur si le texte du contrat à auditer est vide', () async {

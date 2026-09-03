@@ -99,11 +99,57 @@ class _DesktopReader extends StatefulWidget {
 
 class _DesktopReaderState extends State<_DesktopReader> {
   final ScrollController _scroll = ScrollController();
+  late final List<GlobalKey> _articleKeys;
+  int _activeArticle = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _articleKeys = List.generate(widget.document.articles.length, (_) => GlobalKey());
+    if (widget.document.isStructured) _scroll.addListener(_trackActiveArticle);
+  }
 
   @override
   void dispose() {
+    _scroll.removeListener(_trackActiveArticle);
     _scroll.dispose();
     super.dispose();
+  }
+
+  void _trackActiveArticle() {
+    if (!_scroll.hasClients) return;
+    var current = 0;
+    for (var i = 0; i < _articleKeys.length; i++) {
+      final ctx = _articleKeys[i].currentContext;
+      final box = ctx?.findRenderObject() as RenderBox?;
+      if (box == null) continue;
+      final dy = box.localToGlobal(Offset.zero).dy;
+      if (dy <= 220) current = i;
+    }
+    if (current != _activeArticle) setState(() => _activeArticle = current);
+  }
+
+  void _scrollToArticle(int index) {
+    final ctx = _articleKeys[index].currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.fastOutSlowIn,
+      alignment: 0.06,
+    );
+  }
+
+  /// Texte plein assemblé (prose ou articles concaténés) pour la copie / le
+  /// « téléchargement ».
+  String get _assembledText {
+    final doc = widget.document;
+    if (doc.fullContent.trim().isNotEmpty) return doc.fullContent;
+    if (doc.articles.isEmpty) return '';
+    return doc.articles.map((a) {
+      final head = a.heading.isEmpty ? '' : ' — ${a.heading}';
+      return 'Article ${a.number}$head\n${a.text}';
+    }).join('\n\n');
   }
 
   void _openRelated(String id) {
@@ -117,13 +163,44 @@ class _DesktopReaderState extends State<_DesktopReader> {
     );
   }
 
+  void _openSource() {
+    final url = widget.document.sourceUrl;
+    if (url != null && url.isNotEmpty) {
+      launchUrl(Uri.parse(url), webOnlyWindowName: '_blank');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final doc = widget.document;
+    final structured = doc.isStructured;
+    final hasProse = !structured && doc.fullContent.trim().isNotEmpty;
+    final copyText = _assembledText;
     final related = [
       for (final id in doc.relatedDocumentIds)
         if (widget.controller.documentById(id) != null) widget.controller.documentById(id)!,
     ];
+
+    void doCopy() => _copyToClipboard(context, copyText, message: 'Texte copié dans le presse-papiers.');
+    void doDownload() {
+      widget.controller.recordDownload(doc.id);
+      _copyToClipboard(context, copyText, message: 'Document copié : collez-le dans un fichier pour le conserver.');
+    }
+
+    final actions = _ActionStack(
+      isFavorite: doc.isFavorite,
+      sourceUrl: doc.sourceUrl,
+      sourceName: doc.officialSourceName,
+      onToggleFavorite: () => widget.controller.toggleBookmark(doc.id),
+      onCopy: copyText.isEmpty ? null : doCopy,
+      onDownload: copyText.isEmpty ? null : doDownload,
+    );
+
+    final Widget body = structured
+        ? _ArticleList(articles: doc.articles, itemKeys: _articleKeys)
+        : hasProse
+            ? _ReadingBody(content: doc.fullContent)
+            : _OutlineFallback(document: doc, onSource: _openSource);
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -138,76 +215,96 @@ class _DesktopReaderState extends State<_DesktopReader> {
                   _ReaderHeader(
                     document: doc,
                     isFavorite: doc.isFavorite,
+                    canCopy: copyText.isNotEmpty,
                     onBack: () => Navigator.of(context).maybePop(),
                     onToggleFavorite: () => widget.controller.toggleBookmark(doc.id),
-                    onCopy: () => _copyToClipboard(
-                      context,
-                      doc.fullContent,
-                      message: 'Texte copié dans le presse-papiers.',
-                    ),
-                    onDownload: () {
-                      widget.controller.recordDownload(doc.id);
-                      _copyToClipboard(
-                        context,
-                        doc.fullContent,
-                        message: 'Document copié : collez-le dans un fichier pour le conserver.',
-                      );
-                    },
+                    onCopy: doCopy,
+                    onDownload: doDownload,
+                    onSource: doc.sourceUrl != null ? _openSource : null,
                   ),
                   Expanded(
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final wide = constraints.maxWidth >= 1060;
+                        // Colonne principale : entête, fiche + actions quand
+                        // elles ne sont pas dans un rail, puis le corps.
+                        final railHoldsFacts = wide && !structured;
+                        final showFactsInline = !railHoldsFacts;
 
-                        final reading = SingleChildScrollView(
+                        final mainColumn = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _DocumentHero(document: doc),
+                            const SizedBox(height: AppSpacing.xl),
+                            if (showFactsInline) ...[
+                              _FactSheet(document: doc),
+                              // Sur un texte structuré, les actions vivent
+                              // dans l'en-tête ; inutile de les répéter ici.
+                              if (!structured) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                actions,
+                              ],
+                              const SizedBox(height: AppSpacing.xl),
+                            ],
+                            if (structured && !wide) ...[
+                              _SommairePanel(
+                                articles: doc.articles,
+                                active: _activeArticle,
+                                onTap: _scrollToArticle,
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                            ],
+                            body,
+                            if (showFactsInline && related.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.xxl),
+                              _RelatedDocs(documents: related, onOpen: _openRelated),
+                            ],
+                            const SizedBox(height: AppSpacing.xxl),
+                          ],
+                        );
+
+                        final scroller = SingleChildScrollView(
                           controller: _scroll,
                           padding: wide
-                              ? const EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.xl, AppSpacing.lg, AppSpacing.xxl)
+                              ? EdgeInsets.fromLTRB(
+                                  structured ? AppSpacing.xl : AppSpacing.xxl,
+                                  AppSpacing.xl,
+                                  AppSpacing.lg,
+                                  AppSpacing.xxl,
+                                )
                               : const EdgeInsets.all(AppSpacing.xl),
                           child: Align(
                             alignment: wide ? Alignment.topLeft : Alignment.topCenter,
                             child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: wide ? 740 : 800),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _DocumentHero(document: doc),
-                                  const SizedBox(height: AppSpacing.xl),
-                                  if (!wide) ...[
-                                    _FactSheet(document: doc),
-                                    const SizedBox(height: AppSpacing.md),
-                                    _ActionStack(
-                                      isFavorite: doc.isFavorite,
-                                      sourceUrl: doc.sourceUrl,
-                                      onToggleFavorite: () => widget.controller.toggleBookmark(doc.id),
-                                      onCopy: () => _copyToClipboard(context, doc.fullContent,
-                                          message: 'Texte copié dans le presse-papiers.'),
-                                      onDownload: () {
-                                        widget.controller.recordDownload(doc.id);
-                                        _copyToClipboard(context, doc.fullContent,
-                                            message: 'Document copié : collez-le dans un fichier.');
-                                      },
-                                    ),
-                                    const SizedBox(height: AppSpacing.xl),
-                                  ],
-                                  _ReadingBody(content: doc.fullContent),
-                                  if (!wide && related.isNotEmpty) ...[
-                                    const SizedBox(height: AppSpacing.xxl),
-                                    _RelatedDocs(documents: related, onOpen: _openRelated),
-                                  ],
-                                  const SizedBox(height: AppSpacing.xxl),
-                                ],
-                              ),
+                              constraints: BoxConstraints(maxWidth: wide ? (structured ? 720 : 740) : 800),
+                              child: mainColumn,
                             ),
                           ),
                         );
 
-                        if (!wide) return reading;
+                        if (!wide) return scroller;
+
+                        if (structured) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 300,
+                                child: _SommaireRail(
+                                  articles: doc.articles,
+                                  active: _activeArticle,
+                                  onTap: _scrollToArticle,
+                                ),
+                              ),
+                              Expanded(child: scroller),
+                            ],
+                          );
+                        }
 
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: reading),
+                            Expanded(child: scroller),
                             SizedBox(
                               width: 352,
                               child: SingleChildScrollView(
@@ -217,18 +314,7 @@ class _DesktopReaderState extends State<_DesktopReader> {
                                   children: [
                                     _FactSheet(document: doc),
                                     const SizedBox(height: AppSpacing.md),
-                                    _ActionStack(
-                                      isFavorite: doc.isFavorite,
-                                      sourceUrl: doc.sourceUrl,
-                                      onToggleFavorite: () => widget.controller.toggleBookmark(doc.id),
-                                      onCopy: () => _copyToClipboard(context, doc.fullContent,
-                                          message: 'Texte copié dans le presse-papiers.'),
-                                      onDownload: () {
-                                        widget.controller.recordDownload(doc.id);
-                                        _copyToClipboard(context, doc.fullContent,
-                                            message: 'Document copié : collez-le dans un fichier.');
-                                      },
-                                    ),
+                                    actions,
                                     if (related.isNotEmpty) ...[
                                       const SizedBox(height: AppSpacing.lg),
                                       _RelatedDocs(documents: related, onOpen: _openRelated),
@@ -311,18 +397,22 @@ class _ReaderHeader extends StatelessWidget {
   const _ReaderHeader({
     required this.document,
     required this.isFavorite,
+    required this.canCopy,
     required this.onBack,
     required this.onToggleFavorite,
     required this.onCopy,
     required this.onDownload,
+    this.onSource,
   });
 
   final LegalDocument document;
   final bool isFavorite;
+  final bool canCopy;
   final VoidCallback onBack;
   final VoidCallback onToggleFavorite;
   final VoidCallback onCopy;
   final VoidCallback onDownload;
+  final VoidCallback? onSource;
 
   @override
   Widget build(BuildContext context) {
@@ -373,10 +463,16 @@ class _ReaderHeader extends StatelessWidget {
             active: isFavorite,
             onTap: onToggleFavorite,
           ),
-          const SizedBox(width: 6),
-          _RoundIcon(icon: Icons.copy_rounded, tooltip: 'Copier le texte', onTap: onCopy),
-          const SizedBox(width: 6),
-          _RoundIcon(icon: Icons.download_rounded, tooltip: 'Télécharger', onTap: onDownload),
+          if (onSource != null) ...[
+            const SizedBox(width: 6),
+            _RoundIcon(icon: Icons.open_in_new_rounded, tooltip: 'Source officielle', onTap: onSource),
+          ],
+          if (canCopy) ...[
+            const SizedBox(width: 6),
+            _RoundIcon(icon: Icons.copy_rounded, tooltip: 'Copier le texte', onTap: onCopy),
+            const SizedBox(width: 6),
+            _RoundIcon(icon: Icons.download_rounded, tooltip: 'Télécharger', onTap: onDownload),
+          ],
         ],
       ),
     );
@@ -393,7 +489,7 @@ class _RoundIcon extends StatelessWidget {
 
   final IconData icon;
   final String tooltip;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool active;
 
   @override
@@ -511,8 +607,15 @@ class _DocumentHero extends StatelessWidget {
                 label: 'En vigueur depuis le ${_formatDate(document.dateEntreeEnVigueur!)}',
               ),
             _MetaItem(icon: Icons.balance_rounded, label: document.domain.label),
-            if (words > 0)
+            if (document.isStructured)
+              _MetaItem(
+                icon: Icons.format_list_numbered_rounded,
+                label: '${document.articles.length} article${document.articles.length > 1 ? "s" : ""}',
+              )
+            else if (words > 0)
               _MetaItem(icon: Icons.notes_rounded, label: '≈ ${_thousands(words)} mots'),
+            if (document.status != LegalDocumentStatus.enVigueur)
+              _MetaItem(icon: Icons.gavel_rounded, label: document.status.label),
           ],
         ),
       ],
@@ -640,6 +743,412 @@ class _DropCapParagraph extends StatelessWidget {
   }
 }
 
+// --- Texte structuré : articles + sommaire -------------------------------
+
+TextStyle? _articleReadingStyle(BuildContext context) =>
+    Theme.of(context).textTheme.bodyLarge?.copyWith(
+          fontFamily: 'Lora',
+          color: AppColors.textPrimary,
+          height: 1.85,
+          fontSize: 16.5,
+        );
+
+/// Renvoie les segments de [current] qui n'apparaissent pas dans [previous]
+/// (nouveaux titres de division à afficher au-dessus de l'article).
+List<String> _newDivisions(List<String> previous, List<String> current) {
+  final result = <String>[];
+  for (var i = 0; i < current.length; i++) {
+    if (i >= previous.length || previous[i] != current[i]) {
+      result.addAll(current.sublist(i));
+      break;
+    }
+  }
+  return result;
+}
+
+class _ArticleList extends StatelessWidget {
+  const _ArticleList({required this.articles, required this.itemKeys});
+
+  final List<LegalArticle> articles;
+  final List<GlobalKey> itemKeys;
+
+  @override
+  Widget build(BuildContext context) {
+    final reading = _articleReadingStyle(context);
+    final children = <Widget>[];
+    var previousPath = const <String>[];
+
+    for (var i = 0; i < articles.length; i++) {
+      final divisions = _newDivisions(previousPath, articles[i].path);
+      for (var d = 0; d < divisions.length; d++) {
+        children.add(_DivisionHeading(divisions[d], isFirst: i == 0 && d == 0));
+      }
+      children.add(
+        KeyedSubtree(
+          key: itemKeys[i],
+          child: Padding(
+            padding: EdgeInsets.only(top: i == 0 && divisions.isEmpty ? 0 : AppSpacing.xl),
+            child: _ArticleBlock(article: articles[i], readingStyle: reading),
+          ),
+        ),
+      );
+      previousPath = articles[i].path;
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+  }
+}
+
+class _DivisionHeading extends StatelessWidget {
+  const _DivisionHeading(this.text, {this.isFirst = false});
+
+  final String text;
+  final bool isFirst;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(top: isFirst ? 0 : AppSpacing.xxl, bottom: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            text.toUpperCase(),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.goldLight,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                  height: 1.3,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 52,
+            height: 1.5,
+            decoration: BoxDecoration(
+              gradient: AppGradients.goldSheen,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArticleBlock extends StatelessWidget {
+  const _ArticleBlock({required this.article, required this.readingStyle});
+
+  final LegalArticle article;
+  final TextStyle? readingStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.small),
+                color: AppColors.gold.withValues(alpha: 0.13),
+                border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.7),
+              ),
+              child: Text(
+                'Art. ${article.number}',
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.gold,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            if (article.heading.isNotEmpty) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    article.heading,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontFamily: 'Libre Caslon Display',
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SelectableText(article.text, textAlign: TextAlign.justify, style: readingStyle),
+      ],
+    );
+  }
+}
+
+/// Sommaire en rail latéral (desktop large) avec surlignage de l'article
+/// courant.
+class _SommaireRail extends StatelessWidget {
+  const _SommaireRail({required this.articles, required this.active, required this.onTap});
+
+  final List<LegalArticle> articles;
+  final int active;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.sm, AppSpacing.xxl),
+      child: _SommaireBody(articles: articles, active: active, onTap: onTap),
+    );
+  }
+}
+
+/// Sommaire replié en panneau, en tête de colonne (desktop étroit).
+class _SommairePanel extends StatelessWidget {
+  const _SommairePanel({required this.articles, required this.active, required this.onTap});
+
+  final List<LegalArticle> articles;
+  final int active;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: _SommaireBody(articles: articles, active: active, onTap: onTap),
+    );
+  }
+}
+
+class _SommaireBody extends StatelessWidget {
+  const _SommaireBody({required this.articles, required this.active, required this.onTap});
+
+  final List<LegalArticle> articles;
+  final int active;
+  final ValueChanged<int> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final children = <Widget>[
+      const _MiniLabel('Sommaire'),
+      const SizedBox(height: AppSpacing.sm),
+    ];
+    var previousPath = const <String>[];
+
+    for (var i = 0; i < articles.length; i++) {
+      for (final division in _newDivisions(previousPath, articles[i].path)) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, AppSpacing.sm, 4, 4),
+            child: Text(
+              division.toUpperCase(),
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                fontSize: 9.5,
+              ),
+            ),
+          ),
+        );
+      }
+      children.add(
+        _SommaireItem(
+          number: articles[i].number,
+          heading: articles[i].heading,
+          active: i == active,
+          onTap: () => onTap(i),
+        ),
+      );
+      previousPath = articles[i].path;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
+  }
+}
+
+class _SommaireItem extends StatefulWidget {
+  const _SommaireItem({
+    required this.number,
+    required this.heading,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String number;
+  final String heading;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  State<_SommaireItem> createState() => _SommaireItemState();
+}
+
+class _SommaireItemState extends State<_SommaireItem> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final active = widget.active;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(AppRadius.small),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.symmetric(vertical: 1),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 6, AppSpacing.sm, 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.small),
+              color: active
+                  ? AppColors.gold.withValues(alpha: 0.14)
+                  : _hovered
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.transparent,
+              border: Border(
+                left: BorderSide(
+                  color: active ? AppColors.gold : Colors.transparent,
+                  width: 2,
+                ),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 34,
+                  child: Text(
+                    'Art. ${widget.number}',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: active ? AppColors.gold : AppColors.textDisabled,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    widget.heading.isEmpty ? 'Article ${widget.number}' : widget.heading,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelSmall?.copyWith(
+                      color: active ? AppColors.textPrimary : AppColors.textSecondary,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Affiché quand le texte intégral n'est pas encore importé : plan du texte
+/// et lien vers la source officielle.
+class _OutlineFallback extends StatelessWidget {
+  const _OutlineFallback({required this.document, required this.onSource});
+
+  final LegalDocument document;
+  final VoidCallback onSource;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GlassContainer(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.hourglass_top_rounded, size: 16, color: AppColors.goldLight),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      "Le texte intégral, article par article, est en cours d'intégration "
+                      'dans JurisIA.',
+                      style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'En attendant, consultez la version officielle et à jour :',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _ActionButton(
+                icon: Icons.open_in_new_rounded,
+                label: 'Consulter sur ${document.officialSourceName ?? "la source officielle"}',
+                filled: true,
+                onTap: onSource,
+              ),
+            ],
+          ),
+        ),
+        if (document.outline.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          const _MiniLabel('Plan du texte'),
+          const SizedBox(height: AppSpacing.sm),
+          for (final line in document.outline)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 7),
+                    width: 5,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppGradients.goldSheen,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm + 2),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
 class _FactSheet extends StatelessWidget {
   const _FactSheet({required this.document});
 
@@ -715,6 +1224,7 @@ class _ActionStack extends StatelessWidget {
   const _ActionStack({
     required this.isFavorite,
     required this.sourceUrl,
+    required this.sourceName,
     required this.onToggleFavorite,
     required this.onCopy,
     required this.onDownload,
@@ -722,9 +1232,10 @@ class _ActionStack extends StatelessWidget {
 
   final bool isFavorite;
   final String? sourceUrl;
+  final String? sourceName;
   final VoidCallback onToggleFavorite;
-  final VoidCallback onCopy;
-  final VoidCallback onDownload;
+  final VoidCallback? onCopy;
+  final VoidCallback? onDownload;
 
   @override
   Widget build(BuildContext context) {
@@ -737,15 +1248,19 @@ class _ActionStack extends StatelessWidget {
           filled: isFavorite,
           onTap: onToggleFavorite,
         ),
-        const SizedBox(height: 8),
-        _ActionButton(icon: Icons.copy_rounded, label: 'Copier le texte', onTap: onCopy),
-        const SizedBox(height: 8),
-        _ActionButton(icon: Icons.download_rounded, label: 'Télécharger', onTap: onDownload),
+        if (onCopy != null) ...[
+          const SizedBox(height: 8),
+          _ActionButton(icon: Icons.copy_rounded, label: 'Copier le texte', onTap: onCopy!),
+        ],
+        if (onDownload != null) ...[
+          const SizedBox(height: 8),
+          _ActionButton(icon: Icons.download_rounded, label: 'Télécharger', onTap: onDownload!),
+        ],
         if (sourceUrl != null && sourceUrl!.isNotEmpty) ...[
           const SizedBox(height: 8),
           _ActionButton(
             icon: Icons.open_in_new_rounded,
-            label: 'Source officielle',
+            label: 'Consulter sur ${sourceName ?? "la source officielle"}',
             onTap: () => launchUrl(Uri.parse(sourceUrl!), webOnlyWindowName: '_blank'),
           ),
         ],
@@ -1081,15 +1596,48 @@ class _MobileReader extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  GlassContainer(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: SelectableText(
-                      document.fullContent.isNotEmpty
-                          ? document.fullContent
-                          : "Le texte intégral de ce document n'est pas encore disponible.",
-                      style: readingStyle,
+                  if (document.isStructured)
+                    GlassContainer(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: _ArticleList(
+                        articles: document.articles,
+                        itemKeys: List.generate(document.articles.length, (_) => GlobalKey()),
+                      ),
+                    )
+                  else if (document.fullContent.trim().isNotEmpty)
+                    GlassContainer(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: SelectableText(document.fullContent, style: readingStyle),
+                    )
+                  else
+                    GlassContainer(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Le texte intégral, article par article, est en cours d'intégration.",
+                            style: readingStyle?.copyWith(fontSize: 14.5),
+                          ),
+                          if (document.sourceUrl != null) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            TextButton.icon(
+                              onPressed: () => launchUrl(
+                                Uri.parse(document.sourceUrl!),
+                                webOnlyWindowName: '_blank',
+                              ),
+                              icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                              label: Text('Consulter sur ${document.officialSourceName ?? "la source"}'),
+                            ),
+                          ],
+                          for (final line in document.outline)
+                            Padding(
+                              padding: const EdgeInsets.only(top: AppSpacing.sm),
+                              child: Text('•  $line', style: Theme.of(context).textTheme.bodyMedium),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: AppSpacing.xl),
                 ],
               ),

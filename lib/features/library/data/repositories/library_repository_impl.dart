@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../models/legal_document/legal_document_model.dart';
+import '../../../../models/legal_document/legal_domain.dart';
 import '../../domain/entities/library_search_query.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../datasources/legal_document_local_datasource.dart';
@@ -24,23 +25,29 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   @override
   Future<void> hydrate() async {
-    if (!_persistenceEnabled) return;
-    final client = supabaseClient!;
+    final client = supabaseClient;
+    if (client == null) return;
 
+    // 1. Corpus : le serveur (alimenté par tools/legal_import/) fait
+    //    autorité ; le catalogue local ne subsiste que pour les textes que
+    //    le serveur ne connaît pas encore, et hors ligne.
+    await _mergeServerCorpus(client);
+
+    // 2. État personnel : favoris + compteurs de téléchargement.
+    if (!_persistenceEnabled) return;
     try {
       final favoriteRows = await client
           .from('library_favorites')
           .select('document_id')
           .eq('user_id', userId!);
-      final favoriteIds = (favoriteRows as List)
-          .map((row) => row['document_id'] as String)
-          .toSet();
+      final favoriteIds =
+          (favoriteRows as List).map((row) => row['document_id'] as String).toSet();
 
-      final statsRows = await client
-          .from('library_document_stats')
-          .select('document_id, download_count');
+      final statsRows =
+          await client.from('library_document_stats').select('document_id, download_count');
       final downloadCounts = {
-        for (final row in statsRows as List) row['document_id'] as String: row['download_count'] as int,
+        for (final row in statsRows as List)
+          row['document_id'] as String: row['download_count'] as int,
       };
 
       for (var i = 0; i < _documents.length; i++) {
@@ -51,11 +58,68 @@ class LibraryRepositoryImpl implements LibraryRepository {
         );
       }
     } catch (error) {
-      // Meilleur effort : en cas d'échec réseau, la bibliothèque reste
-      // utilisable avec l'état local par défaut (aucun favori, compteurs à
-      // zéro) plutôt que de bloquer l'écran.
       // ignore: avoid_print
       print('Échec du chargement des favoris/téléchargements Supabase : $error');
+    }
+  }
+
+  Future<void> _mergeServerCorpus(SupabaseClient client) async {
+    try {
+      final docRows = await client.from('legal_documents').select();
+      if ((docRows as List).isEmpty) return;
+
+      final articleRows = await client.from('legal_articles').select().order('ord');
+      final articlesByDoc = <String, List<LegalArticle>>{};
+      for (final row in articleRows as List) {
+        final id = row['document_id'] as String;
+        (articlesByDoc[id] ??= <LegalArticle>[]).add(
+          LegalArticle(
+            number: row['number'] as String,
+            heading: row['heading'] as String? ?? '',
+            text: row['body'] as String? ?? '',
+            path: (row['path'] as List?)?.map((e) => e as String).toList() ?? const [],
+          ),
+        );
+      }
+
+      DateTime? parseDate(Object? v) => v == null ? null : DateTime.tryParse(v as String);
+
+      final serverDocs = <LegalDocument>[
+        for (final row in docRows)
+          LegalDocument(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            type: LegalDocumentType.values.firstWhere(
+              (t) => t.name == row['type'],
+              orElse: () => LegalDocumentType.loi,
+            ),
+            domain: LegalDomain.fromName(row['domain'] as String),
+            reference: row['reference'] as String? ?? '',
+            datePublication: parseDate(row['date_publication']) ?? DateTime(2000),
+            dateEntreeEnVigueur: parseDate(row['date_entree_en_vigueur']),
+            status: LegalDocumentStatusLabel.fromName(row['status'] as String?),
+            summary: row['summary'] as String? ?? '',
+            fullContent: row['full_content'] as String? ?? '',
+            articles: articlesByDoc[row['id']] ?? const [],
+            outline: (row['outline'] as List?)?.map((e) => e as String).toList() ?? const [],
+            officialSourceName: row['official_source_name'] as String?,
+            sourceUrl: row['source_url'] as String?,
+            tags: (row['tags'] as List?)?.map((e) => e as String).toList() ?? const [],
+            relatedDocumentIds:
+                (row['related_ids'] as List?)?.map((e) => e as String).toList() ?? const [],
+          ),
+      ];
+
+      final serverIds = serverDocs.map((d) => d.id).toSet();
+      final localOnly = _documents.where((d) => !serverIds.contains(d.id)).toList();
+      _documents
+        ..clear()
+        ..addAll(serverDocs)
+        ..addAll(localOnly);
+    } catch (error) {
+      // Corpus serveur indisponible : on garde le catalogue local.
+      // ignore: avoid_print
+      print('Corpus Supabase indisponible, catalogue local utilisé : $error');
     }
   }
 
@@ -84,7 +148,9 @@ class LibraryRepositoryImpl implements LibraryRepository {
       document.reference,
       document.summary,
       document.fullContent,
+      ...document.outline,
       ...document.tags,
+      for (final article in document.articles) '${article.number} ${article.heading} ${article.text}',
     ].join(' | ').toLowerCase();
     return haystack.contains(keyword);
   }
