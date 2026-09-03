@@ -37,12 +37,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 22px;
+      gap: 26px;
       background:
-        radial-gradient(1200px 700px at 50% 22%, rgba(31, 76, 130, 0.35), transparent 60%),
+        radial-gradient(760px 760px at 50% 46%, rgba(201, 162, 39, 0.10), transparent 62%),
+        radial-gradient(1200px 700px at 84% 6%, rgba(201, 162, 39, 0.12), transparent 60%),
+        radial-gradient(1200px 800px at 8% 96%, rgba(46, 111, 242, 0.10), transparent 60%),
         linear-gradient(180deg, #071527 0%, #0B1F3A 100%);
       opacity: 1;
-      transition: opacity 420ms ease;
+      transition: opacity 460ms ease;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
@@ -51,53 +53,46 @@
       pointer-events: none;
     }
 
+    /* Halo doux derrière la marque. */
     #jurisia-boot .jurisia-boot__mark {
-      width: 84px;
-      height: 84px;
-      animation: jurisia-boot-pulse 1900ms ease-in-out infinite;
+      width: 96px;
+      height: 96px;
+      filter: drop-shadow(0 0 26px rgba(233, 212, 138, 0.28));
+      animation: jurisia-boot-breathe 2600ms ease-in-out infinite;
     }
 
     #jurisia-boot .jurisia-boot__wordmark {
-      font-size: 26px;
-      font-weight: 600;
-      letter-spacing: 3px;
-      background: linear-gradient(180deg, #E9D48A 0%, #C9A227 50%, #8A6A15 100%);
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: linear-gradient(115deg, #E9D48A 0%, #C9A227 45%, #8A6A15 60%, #E9D48A 100%);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
 
-    #jurisia-boot .jurisia-boot__track {
+    #jurisia-boot .jurisia-boot__rule {
       width: 132px;
-      height: 2px;
-      border-radius: 2px;
-      background: rgba(233, 212, 138, 0.16);
-      overflow: hidden;
-    }
-
-    #jurisia-boot .jurisia-boot__track::after {
-      content: "";
-      display: block;
-      width: 40%;
-      height: 100%;
-      border-radius: 2px;
+      height: 1px;
       background: linear-gradient(90deg, transparent, #C9A227, transparent);
-      animation: jurisia-boot-sweep 1300ms ease-in-out infinite;
+      opacity: 0.7;
     }
 
-    @keyframes jurisia-boot-pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.06); opacity: 0.86; }
+    #jurisia-boot .jurisia-boot__tagline {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 3.4px;
+      color: #E9D48A;
+      opacity: 0.75;
     }
 
-    @keyframes jurisia-boot-sweep {
-      0% { transform: translateX(-120%); }
-      100% { transform: translateX(360%); }
+    @keyframes jurisia-boot-breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.035); }
     }
 
     @media (prefers-reduced-motion: reduce) {
       #jurisia-boot .jurisia-boot__mark { animation: none; }
-      #jurisia-boot .jurisia-boot__track::after { animation-duration: 2600ms; }
     }
   </style>
 </head>
@@ -113,8 +108,9 @@
       </defs>
       <path fill="url(#jurisia-boot-gold)" d="M50,4 Q52.3,44.46 69.09,30.91 Q55.54,47.7 96,50 Q55.54,52.3 69.09,69.09 Q52.3,55.54 50,96 Q47.7,55.54 30.91,69.09 Q44.46,52.3 4,50 Q44.46,47.7 30.91,30.91 Q47.7,44.46 50,4 Z"/>
     </svg>
-    <div class="jurisia-boot__wordmark">JURISIA</div>
-    <div class="jurisia-boot__track"></div>
+    <div class="jurisia-boot__wordmark">JurisIA</div>
+    <div class="jurisia-boot__rule"></div>
+    <div class="jurisia-boot__tagline">ASSISTANT JURIDIQUE</div>
   </div>
 
   <script>

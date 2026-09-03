@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bleu Nuit profond de la charte JurisIA (AppColors.nightBlueDeep) :
+         fond de l'écran de lancement natif, pour qu'aucun flash blanc ne
+         précède le sceau animé de l'application. -->
+    <color name="jurisia_night">#FF071527</color>
+</resources>
