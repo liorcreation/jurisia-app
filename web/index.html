@@ -22,56 +22,23 @@
 
   <style>
     /*
-     * Voile plein le temps que l'engine Flutter se télécharge et
-     * s'initialise — il empêche tout flash blanc, sans RIEN afficher :
-     * ni marque, ni mot-symbole, ni indicateur de chargement. Le seul
-     * écran de démarrage visible est celui, animé, de l'app (« Sceau
-     * Radiant »). Retiré en fondu dès que Flutter a peint sa première
-     * image (événement `flutter-first-frame`).
+     * Aucun écran de chargement HTML : le seul écran de démarrage est
+     * celui, animé, de l'app (« Sceau Radiant »). On donne juste au
+     * document le même dégradé Bleu Nuit que ce sceau, pour que le court
+     * instant où l'engine Flutter se télécharge soit un fond identique —
+     * ni flash blanc, ni transition visible vers l'animation.
      */
-    html, body { margin: 0; padding: 0; height: 100%; background-color: #071527; }
-
-    #jurisia-boot {
-      position: fixed;
-      inset: 0;
-      z-index: 2147483647;
-      background:
-        radial-gradient(1200px 700px at 84% 6%, rgba(201, 162, 39, 0.12), transparent 60%),
-        radial-gradient(1200px 800px at 8% 96%, rgba(46, 111, 242, 0.10), transparent 60%),
-        linear-gradient(180deg, #071527 0%, #0B1F3A 100%);
-      opacity: 1;
-      transition: opacity 420ms ease;
-    }
-
-    #jurisia-boot.jurisia-boot--hidden {
-      opacity: 0;
-      pointer-events: none;
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: #071527;
+      background-image: linear-gradient(180deg, #071527 0%, #0B1F3A 100%);
+      background-attachment: fixed;
     }
   </style>
 </head>
 <body>
-  <div id="jurisia-boot" aria-hidden="true"></div>
-
-  <script>
-    (function () {
-      var removed = false;
-      function dismissBoot() {
-        if (removed) return;
-        removed = true;
-        var boot = document.getElementById('jurisia-boot');
-        if (!boot) return;
-        boot.classList.add('jurisia-boot--hidden');
-        window.setTimeout(function () {
-          if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
-        }, 500);
-      }
-      window.addEventListener('flutter-first-frame', dismissBoot);
-      // Filet de sécurité : si l'événement n'arrive jamais (erreur d'init),
-      // on ne laisse pas le loader bloqué indéfiniment à l'écran.
-      window.setTimeout(dismissBoot, 12000);
-    })();
-  </script>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
