@@ -18,11 +18,16 @@ class DraftingIntakeSheet extends StatefulWidget {
     required this.mode,
     required this.templates,
     required this.onSubmit,
+    this.initialTemplate,
   });
 
   final DraftingMode mode;
   final List<ProfessionalTemplate> templates;
   final ValueChanged<DraftingRequest> onSubmit;
+
+  /// Modèle présélectionné à l'ouverture (mode rédaction), lorsque la
+  /// feuille est lancée depuis une carte de modèle précise.
+  final ProfessionalTemplate? initialTemplate;
 
   @override
   State<DraftingIntakeSheet> createState() => _DraftingIntakeSheetState();
@@ -30,6 +35,12 @@ class DraftingIntakeSheet extends StatefulWidget {
 
 class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
   ProfessionalTemplate? _selectedTemplate;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTemplate = widget.initialTemplate;
+  }
   LegalDomain? _selectedDomain;
   final Map<String, TextEditingController> _fieldControllers = {};
   final TextEditingController _mainTextController = TextEditingController();
