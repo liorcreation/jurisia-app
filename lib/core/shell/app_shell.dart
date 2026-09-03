@@ -92,11 +92,11 @@ class AppShellScope extends InheritedWidget {
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
-  /// Largeur minimale / maximale / par défaut de la sidebar permanente.
-  static const double minSidebarWidth = 264;
-  static const double maxSidebarWidth = 420;
-  static const double defaultSidebarWidth = 304;
-  static const double railWidth = 76;
+  /// Largeurs **fixes** de la sidebar permanente : dépliée et repliée (rail).
+  /// L'utilisateur ne redimensionne pas la colonne — seul le bouton
+  /// « Replier la navigation » (ou ⌘/Ctrl B) bascule entre les deux.
+  static const double sidebarWidth = 316;
+  static const double railWidth = 80;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -105,41 +105,32 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> implements AppShellController {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  static const String _prefWidthKey = 'shell.sidebar.width';
   static const String _prefCollapsedKey = 'shell.sidebar.collapsed';
 
   int _selectedIndex = 0;
   bool _railCollapsed = false;
-  double _sidebarWidth = AppShell.defaultSidebarWidth;
 
   @override
   void initState() {
     super.initState();
-    _restoreSidebarLayout();
+    _restoreCollapsedState();
   }
 
-  Future<void> _restoreSidebarLayout() async {
+  Future<void> _restoreCollapsedState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final width = prefs.getDouble(_prefWidthKey);
       final collapsed = prefs.getBool(_prefCollapsedKey);
-      if (!mounted) return;
-      setState(() {
-        if (width != null) {
-          _sidebarWidth = width.clamp(AppShell.minSidebarWidth, AppShell.maxSidebarWidth);
-        }
-        if (collapsed != null) _railCollapsed = collapsed;
-      });
+      if (!mounted || collapsed == null) return;
+      setState(() => _railCollapsed = collapsed);
     } catch (_) {
-      // Persistance indisponible (ex. test de widget) : on garde les valeurs
-      // par défaut, sans bruit.
+      // Persistance indisponible (ex. test de widget) : on garde l'état
+      // déplié par défaut, sans bruit.
     }
   }
 
-  Future<void> _persistSidebarLayout() async {
+  Future<void> _persistCollapsedState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(_prefWidthKey, _sidebarWidth);
       await prefs.setBool(_prefCollapsedKey, _railCollapsed);
     } catch (_) {
       // sans effet si indisponible
@@ -186,7 +177,7 @@ class _AppShellState extends State<AppShell> implements AppShellController {
   void toggleNav() {
     if (_isDesktop) {
       setState(() => _railCollapsed = !_railCollapsed);
-      _persistSidebarLayout();
+      _persistCollapsedState();
     } else {
       _scaffoldKey.currentState?.openDrawer();
     }
@@ -195,15 +186,6 @@ class _AppShellState extends State<AppShell> implements AppShellController {
   void _newConsultation() {
     context.read<LitigationChatController>().startNewConsultation();
     selectModule(0);
-  }
-
-  void _resizeSidebar(double delta) {
-    setState(() {
-      _sidebarWidth = (_sidebarWidth + delta).clamp(
-        AppShell.minSidebarWidth,
-        AppShell.maxSidebarWidth,
-      );
-    });
   }
 
   // --- build ------------------------------------------------------------
@@ -229,12 +211,7 @@ class _AppShellState extends State<AppShell> implements AppShellController {
         body: isDesktop
             ? Row(
                 children: [
-                  _DesktopSidebar(
-                    collapsed: _railCollapsed,
-                    width: _sidebarWidth,
-                    onResize: _resizeSidebar,
-                    onResizeEnd: _persistSidebarLayout,
-                  ),
+                  _DesktopSidebar(collapsed: _railCollapsed),
                   Expanded(child: body),
                 ],
               )
@@ -305,54 +282,36 @@ const List<LogicalKeyboardKey> _digitKeys = [
   LogicalKeyboardKey.digit5,
 ];
 
-/// Enveloppe de la sidebar permanente sur desktop : marge flottante, ombre
-/// portée, et une poignée de redimensionnement sur le bord droit (double-clic
-/// pour replier).
+/// Enveloppe de la sidebar permanente sur desktop : **largeur fixe** (dépliée
+/// ou rail), marge flottante symétrique, ombre portée. Aucune poignée de
+/// redimensionnement — la colonne ne se règle qu'avec le bouton « Replier la
+/// navigation ». La transition entre les deux largeurs est animée.
 class _DesktopSidebar extends StatelessWidget {
-  const _DesktopSidebar({
-    required this.collapsed,
-    required this.width,
-    required this.onResize,
-    required this.onResizeEnd,
-  });
+  const _DesktopSidebar({required this.collapsed});
 
   final bool collapsed;
-  final double width;
-  final ValueChanged<double> onResize;
-  final VoidCallback onResizeEnd;
 
   @override
   Widget build(BuildContext context) {
+    final targetWidth = collapsed ? AppShell.railWidth : AppShell.sidebarWidth;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 260),
+      duration: const Duration(milliseconds: 240),
       curve: Curves.fastOutSlowIn,
-      width: collapsed ? AppShell.railWidth : width,
-      padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: JurisIASidebar(
-              variant: collapsed ? SidebarVariant.rail : SidebarVariant.permanent,
-            ),
+      width: targetWidth,
+      padding: const EdgeInsets.all(12),
+      // Le contenu est toujours mis en page à sa largeur cible et laissé
+      // dépasser à gauche ; c'est le `ClipRect` qui le révèle / le masque
+      // pendant que la largeur s'anime — une transition nette, sans
+      // écrasement ni débordement.
+      child: ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.centerLeft,
+          minWidth: targetWidth - 24,
+          maxWidth: targetWidth - 24,
+          child: JurisIASidebar(
+            variant: collapsed ? SidebarVariant.rail : SidebarVariant.permanent,
           ),
-          if (!collapsed)
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: -4,
-              width: 12,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.resizeLeftRight,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragUpdate: (details) => onResize(details.delta.dx),
-                  onHorizontalDragEnd: (_) => onResizeEnd(),
-                  onDoubleTap: () => AppShellScope.of(context).toggleNav(),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../features/subscription/presentation/screens/subscription_screen.dar
 import '../entitlements/entitlements_controller.dart';
 import '../entitlements/plan.dart';
 import '../widgets/glass_container.dart';
+import '../widgets/tap_scale.dart';
 import '../../theme/app_theme.dart';
 import 'profile_monogram.dart';
 import 'profile_sheet.dart';
@@ -32,24 +33,37 @@ class SidebarProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = context.watch<ProfileController>().profile;
 
+    final entitlements = context.watch<EntitlementsController>();
+    final canUpgrade = entitlements.plan != PlanCode.cabinet;
+
     if (compact) {
       return Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-        child: Tooltip(
-          message: profile?.displayName ?? 'Mon compte',
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: () => showProfileSheet(context),
-            child: ProfileMonogram(profile: profile, size: 36),
-          ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (canUpgrade) ...[
+              _UpgradeButton(entitlements: entitlements, compact: true),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            Tooltip(
+              message: profile?.displayName ?? 'Mon compte',
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => showProfileSheet(context),
+                  child: ProfileMonogram(profile: profile, size: 36),
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }
 
     final textTheme = Theme.of(context).textTheme;
     final count = _consultationsThisMonth(context);
-    final entitlements = context.watch<EntitlementsController>();
-    final canUpgrade = entitlements.plan != PlanCode.cabinet;
 
     return GlassContainer(
       onTap: () => showProfileSheet(context),
@@ -120,12 +134,15 @@ class SidebarProfileCard extends StatelessWidget {
   }
 }
 
-/// Bouton « Mettre à niveau » de la carte profil — pilule de verre à liseré
-/// d'or, éclat discret. Ouvre l'écran des offres.
+/// Bouton « Mettre à niveau » — pilule de verre à liseré d'or sur la carte
+/// profil dépliée, pastille d'or ronde dans le rail replié. Ouvre l'écran
+/// des offres dans les deux cas, pour que la montée en gamme reste toujours
+/// à un clic.
 class _UpgradeButton extends StatefulWidget {
-  const _UpgradeButton({required this.entitlements});
+  const _UpgradeButton({required this.entitlements, this.compact = false});
 
   final EntitlementsController entitlements;
+  final bool compact;
 
   @override
   State<_UpgradeButton> createState() => _UpgradeButtonState();
@@ -147,6 +164,43 @@ class _UpgradeButtonState extends State<_UpgradeButton> {
 
   @override
   Widget build(BuildContext context) {
+    final goldFill = LinearGradient(
+      colors: _hovered
+          ? [AppColors.gold.withValues(alpha: 0.30), AppColors.gold.withValues(alpha: 0.15)]
+          : [AppColors.gold.withValues(alpha: 0.16), AppColors.gold.withValues(alpha: 0.06)],
+    );
+
+    if (widget.compact) {
+      return MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: Tooltip(
+          message: 'Mettre à niveau',
+          child: TapScale(
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _open,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: goldFill,
+                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.6), width: 0.8),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, size: 15, color: AppColors.goldLight),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -162,17 +216,7 @@ class _UpgradeButtonState extends State<_UpgradeButton> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
-              gradient: LinearGradient(
-                colors: _hovered
-                    ? [
-                        AppColors.gold.withValues(alpha: 0.28),
-                        AppColors.gold.withValues(alpha: 0.14),
-                      ]
-                    : [
-                        AppColors.gold.withValues(alpha: 0.16),
-                        AppColors.gold.withValues(alpha: 0.06),
-                      ],
-              ),
+              gradient: goldFill,
               border: Border.all(color: AppColors.gold.withValues(alpha: 0.55), width: 0.8),
             ),
             child: Row(
