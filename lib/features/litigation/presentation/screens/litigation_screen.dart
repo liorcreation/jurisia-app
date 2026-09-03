@@ -965,9 +965,8 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,
                               counterText: '',
-                              hintText:
-                                  'Décrivez votre situation : les faits, les dates, les personnes '
-                                  'concernées, ce que vous cherchez…',
+                              hintText: 'Décrivez votre situation…',
+                              hintMaxLines: 1,
                             ),
                           ),
                         ),
