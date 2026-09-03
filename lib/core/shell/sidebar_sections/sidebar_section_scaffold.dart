@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/glass_container.dart';
-import '../../widgets/tap_scale.dart';
 import '../../../theme/app_theme.dart';
 
 /// Habillage commun des sections contextuelles de la sidebar (hors
-/// historique Litiges) : un titre en capitales espacées, puis les lignes.
+/// historique Litiges) : un intitulé de groupe en petites capitales, puis
+/// des lignes légères — la grammaire ChatGPT / Claude, sans carte de verre
+/// par ligne (plus léger à faire défiler, moins de bruit visuel).
 class SidebarSection extends StatelessWidget {
   const SidebarSection({super.key, required this.title, required this.children, this.action});
 
@@ -18,32 +18,49 @@ class SidebarSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.sm, AppSpacing.xs),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textDisabled,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: AppLetterSpacing.caps,
-                      ),
-                ),
-              ),
-              ?action,
-            ],
-          ),
-        ),
+        SidebarGroupLabel(title, action: action),
         ...children,
       ],
     );
   }
 }
 
-/// Une ligne cliquable compacte d'une section contextuelle.
-class SidebarSectionTile extends StatelessWidget {
+/// Intitulé de groupe partagé par toutes les sections de la sidebar
+/// (« Espaces », « Aujourd'hui », « Favoris »…) — un seul traitement pour
+/// que la colonne se lise d'un bloc.
+class SidebarGroupLabel extends StatelessWidget {
+  const SidebarGroupLabel(this.text, {super.key, this.action});
+
+  final String text;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.sm, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text.toUpperCase(),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textDisabled,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: AppLetterSpacing.caps,
+                    fontSize: 10.5,
+                  ),
+            ),
+          ),
+          ?action,
+        ],
+      ),
+    );
+  }
+}
+
+/// Une ligne cliquable compacte d'une section contextuelle : icône dorée,
+/// titre (et sous-titre optionnel), fond qui se révèle au survol.
+class SidebarSectionTile extends StatefulWidget {
   const SidebarSectionTile({
     super.key,
     required this.icon,
@@ -60,43 +77,66 @@ class SidebarSectionTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<SidebarSectionTile> createState() => _SidebarSectionTileState();
+}
+
+class _SidebarSectionTileState extends State<SidebarSectionTile> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
-      child: TapScale(
-        child: GlassContainer(
-          onTap: onTap,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
-          child: Row(
-            children: [
-              Icon(icon, size: 16, color: AppColors.gold),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall,
-                    ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 1),
-                      Text(
-                        subtitle!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall,
-                      ),
-                    ],
-                  ],
-                ),
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 1),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 8, AppSpacing.sm, 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                color: _hovered
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.transparent,
               ),
-              ?trailing,
-            ],
+              child: Row(
+                children: [
+                  Icon(widget.icon, size: 15, color: AppColors.gold),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleSmall?.copyWith(fontSize: 13),
+                        ),
+                        if (widget.subtitle != null && widget.subtitle!.isNotEmpty) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            widget.subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  ?widget.trailing,
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -114,7 +154,10 @@ class SidebarSectionEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.sm),
-      child: Text(text, style: Theme.of(context).textTheme.labelSmall),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(height: 1.4),
+      ),
     );
   }
 }

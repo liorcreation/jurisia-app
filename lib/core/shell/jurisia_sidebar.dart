@@ -6,27 +6,17 @@ import '../navigation/nav_destinations.dart';
 import '../widgets/glow_focus_field.dart';
 import '../widgets/jurisia_mark.dart';
 import '../widgets/luxury_elevated_button.dart';
-import '../widgets/shimmer_sweep.dart';
 import '../widgets/smoked_glass_surface.dart';
 import '../widgets/tap_scale.dart';
 import '../../theme/app_theme.dart';
 import 'app_shell.dart';
 import 'sidebar_context_section.dart';
 import 'sidebar_profile_card.dart';
+import 'sidebar_sections/sidebar_section_scaffold.dart';
 
 /// Comment la sidebar est présentée : contenu d'un `Drawer` (mobile), panneau
 /// permanent (desktop large), ou rail d'icônes réduit (desktop replié).
 enum SidebarVariant { drawer, permanent, rail }
-
-/// Une phrase de contexte par espace, dans l'ordre de [kNavDestinations] —
-/// révélée sous le libellé de l'espace actif, comme une plaque de cabinet.
-const List<String> _kModuleBlurbs = [
-  "Consultations avec l'assistant IA",
-  'Codes, lois et jurisprudence',
-  'Cours, modules et évaluations',
-  "Rédaction d'actes et audits",
-  'Trouver le professionnel adapté',
-];
 
 /// La sidebar unifiée de JurisIA — navigation principale sur toutes les
 /// plateformes. Organisée comme les assistants modernes (marque, action
@@ -217,17 +207,17 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
         ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.xs, AppSpacing.sm, AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 2, AppSpacing.sm, AppSpacing.md),
             children: [
-              const _SectionLabel('Espaces'),
+              const SidebarGroupLabel('Espaces'),
               for (var i = 0; i < kNavDestinations.length; i++)
                 _ModuleRow(
                   destination: kNavDestinations[i],
-                  blurb: _kModuleBlurbs[i],
                   selected: shell.selectedIndex == i,
                   onTap: () => shell.selectModule(i),
                 ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.xs),
+              _FadingRule(),
               SidebarContextSection(query: _query),
             ],
           ),
@@ -247,15 +237,16 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
   }
 }
 
-/// Plaque d'icône facettée — un carré à coins très arrondis dans le registre
-/// « pierre taillée » de la marque : verre sombre cerclé d'un filet d'or au
-/// repos, entièrement doré (icône gravée en creux) une fois l'espace actif.
+/// Plaque d'icône facettée — un petit carré à coins très arrondis dans le
+/// registre « pierre taillée » de la marque : verre sombre cerclé d'un filet
+/// d'or au repos, entièrement doré (icône gravée en creux) une fois l'espace
+/// actif.
 class _FacetedTile extends StatelessWidget {
   const _FacetedTile({
     required this.icon,
     required this.selected,
     this.hovered = false,
-    this.size = 34,
+    this.size = 26,
   });
 
   final IconData icon;
@@ -265,31 +256,31 @@ class _FacetedTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tile = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       curve: Curves.fastOutSlowIn,
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.34),
+        borderRadius: BorderRadius.circular(size * 0.32),
         gradient: selected ? AppGradients.goldMetallic : null,
-        color: selected ? null : AppColors.legalBlueDark.withValues(alpha: 0.55),
+        color: selected ? null : AppColors.legalBlueDark.withValues(alpha: 0.5),
         border: Border.all(
           color: selected
               ? Colors.transparent
               : hovered
-                  ? AppColors.gold.withValues(alpha: 0.4)
+                  ? AppColors.gold.withValues(alpha: 0.38)
                   : AppColors.glassBorder,
-          width: 0.9,
+          width: 0.8,
         ),
         boxShadow: selected
-            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 12)]
+            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.3), blurRadius: 9)]
             : null,
       ),
       child: Icon(
         icon,
-        size: size * 0.5,
+        size: size * 0.56,
         color: selected
             ? AppColors.nightBlueDeep
             : hovered
@@ -297,30 +288,20 @@ class _FacetedTile extends StatelessWidget {
                 : AppColors.textSecondary,
       ),
     );
-
-    if (!selected) return tile;
-
-    // Plaque active : un lent reflet d'or la traverse en boucle — le repère
-    // « vous êtes ici », vivant plutôt que figé.
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(size * 0.34),
-      child: ShimmerSweep(duration: const Duration(milliseconds: 3800), child: tile),
-    );
   }
 }
 
-/// Ligne d'espace de la sidebar dépliée : plaque facettée + libellé, avec
-/// révélation animée d'une phrase de contexte quand l'espace est actif.
+/// Ligne d'espace de la sidebar dépliée : petite plaque facettée + libellé,
+/// hauteur uniforme (densité « ChatGPT »). L'espace actif porte un fond doré
+/// discret et son libellé passe à l'or.
 class _ModuleRow extends StatefulWidget {
   const _ModuleRow({
     required this.destination,
-    required this.blurb,
     required this.selected,
     required this.onTap,
   });
 
   final NavDestination destination;
-  final String blurb;
   final bool selected;
   final VoidCallback onTap;
 
@@ -337,41 +318,26 @@ class _ModuleRowState extends State<_ModuleRow> {
     final selected = widget.selected;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 1),
       child: MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
         child: Material(
           type: MaterialType.transparency,
-          borderRadius: BorderRadius.circular(AppRadius.medium),
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(AppRadius.medium),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
+              duration: const Duration(milliseconds: 180),
               curve: Curves.fastOutSlowIn,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 9),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 7),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.medium),
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: selected
-                      ? [
-                          AppColors.gold.withValues(alpha: 0.16),
-                          AppColors.gold.withValues(alpha: 0.03),
-                        ]
-                      : _hovered
-                          ? [
-                              AppColors.legalBlueLight.withValues(alpha: 0.22),
-                              AppColors.legalBlueLight.withValues(alpha: 0.04),
-                            ]
-                          : const [Colors.transparent, Colors.transparent],
-                ),
-                border: Border.all(
-                  color: selected ? AppColors.gold.withValues(alpha: 0.45) : Colors.transparent,
-                  width: 0.8,
-                ),
+                color: selected
+                    ? AppColors.gold.withValues(alpha: 0.13)
+                    : _hovered
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.transparent,
               ),
               child: Row(
                 children: [
@@ -382,41 +348,19 @@ class _ModuleRowState extends State<_ModuleRow> {
                   ),
                   const SizedBox(width: AppSpacing.sm + 2),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          widget.destination.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleSmall?.copyWith(
-                            color: selected
-                                ? AppColors.gold
-                                : _hovered
-                                    ? AppColors.textPrimary
-                                    : AppColors.textSecondary,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
-                          ),
-                        ),
-                        AnimatedSize(
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.fastOutSlowIn,
-                          alignment: Alignment.topLeft,
-                          child: selected
-                              ? Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: Text(
-                                    widget.blurb,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: textTheme.labelSmall?.copyWith(
-                                      color: AppColors.goldLight.withValues(alpha: 0.85),
-                                    ),
-                                  ),
-                                )
-                              : const SizedBox(width: double.infinity),
-                        ),
-                      ],
+                    child: Text(
+                      widget.destination.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontSize: 13.5,
+                        color: selected
+                            ? AppColors.gold
+                            : _hovered
+                                ? AppColors.textPrimary
+                                : AppColors.textSecondary,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -518,42 +462,7 @@ class _HeaderControl extends StatelessWidget {
   }
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs),
-      child: Row(
-        children: [
-          Container(
-            width: 12,
-            height: 1.5,
-            decoration: BoxDecoration(
-              gradient: AppGradients.goldSheen,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 7),
-          Text(
-            text.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textDisabled,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: AppLetterSpacing.caps,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Filet de séparation qui s'efface aux extrémités, au-dessus de la carte
-/// profil.
+/// Filet de séparation qui s'efface aux extrémités.
 class _FadingRule extends StatelessWidget {
   const _FadingRule();
 
