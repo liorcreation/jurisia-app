@@ -929,45 +929,49 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                   boxShadow: _focused
                       ? [
                           BoxShadow(
-                            color: AppColors.cobalt.withValues(alpha: 0.28),
-                            blurRadius: 22,
-                            spreadRadius: 1,
+                            color: AppColors.cobalt.withValues(alpha: 0.26),
+                            blurRadius: 20,
+                            spreadRadius: 0.5,
                           ),
                         ]
-                      : AppShadows.card,
+                      : [
+                          BoxShadow(
+                            color: AppColors.nightBlueDeep.withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                 ),
                 child: GlassContainer(
                   borderRadius: AppRadius.large,
                   borderColor: _focused ? AppColors.cobalt : AppColors.glassBorder,
                   borderWidth: _focused ? 1.1 : 0.5,
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.md, 4, 6, 4),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.md, 7, 7, 7),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                          child: TextField(
-                            controller: widget.controller,
-                            focusNode: widget.focusNode,
-                            enabled: widget.enabled,
-                            minLines: 1,
-                            maxLines: 7,
-                            maxLength: AppInputLimits.chatMessage,
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              height: 1.4,
-                            ),
-                            decoration: const InputDecoration(
-                              isCollapsed: true,
-                              filled: false,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              counterText: '',
-                              hintText: 'Décrivez votre situation…',
-                              hintMaxLines: 1,
-                            ),
+                        child: TextField(
+                          controller: widget.controller,
+                          focusNode: widget.focusNode,
+                          enabled: widget.enabled,
+                          minLines: 1,
+                          maxLines: 6,
+                          maxLength: AppInputLimits.chatMessage,
+                          cursorColor: AppColors.cobalt,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                            height: 1.3,
+                          ),
+                          decoration: const InputDecoration(
+                            isCollapsed: true,
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            counterText: '',
+                            hintText: 'Décrivez votre situation…',
+                            hintMaxLines: 1,
                           ),
                         ),
                       ),
@@ -1020,6 +1024,8 @@ class _DesktopComposerState extends State<_DesktopComposer> {
   }
 }
 
+/// Petit bouton d'envoi rond en or brossé, centré verticalement dans le
+/// composeur — le geste, pas l'encombrement.
 class _SendButton extends StatelessWidget {
   const _SendButton({required this.enabled, required this.onTap});
 
@@ -1028,20 +1034,32 @@ class _SendButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: enabled ? AppGradients.goldMetallic : null,
-        color: enabled ? null : AppColors.legalBlueDark,
-        shape: BoxShape.circle,
-        boxShadow: enabled ? AppShadows.goldGlowSoft : null,
-      ),
-      child: IconButton(
-        tooltip: 'Envoyer  (⏎)',
-        icon: Icon(
-          Icons.arrow_upward_rounded,
-          color: enabled ? AppColors.nightBlueDeep : AppColors.textDisabled,
+    return Tooltip(
+      message: 'Envoyer  (⏎)',
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: enabled ? AppGradients.goldMetallic : null,
+              color: enabled ? null : AppColors.legalBlueDark,
+              boxShadow: enabled
+                  ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 8)]
+                  : null,
+            ),
+            child: Icon(
+              Icons.arrow_upward_rounded,
+              size: 17,
+              color: enabled ? AppColors.nightBlueDeep : AppColors.textDisabled,
+            ),
+          ),
         ),
-        onPressed: onTap,
       ),
     );
   }
