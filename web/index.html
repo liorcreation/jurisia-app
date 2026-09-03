@@ -22,13 +22,12 @@
 
   <style>
     /*
-     * Voile de chargement affiché immédiatement, le temps que l'engine
-     * Flutter se télécharge et s'initialise — il empêche tout flash blanc.
-     * Volontairement SANS marque ni mot-symbole : le logo n'apparaît qu'une
-     * seule fois, dans l'écran de démarrage animé de l'app (« Sceau
-     * Radiant »). Ici, juste le fond signature et trois points d'or qui
-     * respirent. Retiré dès que Flutter a peint sa première image
-     * (événement `flutter-first-frame`).
+     * Voile plein le temps que l'engine Flutter se télécharge et
+     * s'initialise — il empêche tout flash blanc, sans RIEN afficher :
+     * ni marque, ni mot-symbole, ni indicateur de chargement. Le seul
+     * écran de démarrage visible est celui, animé, de l'app (« Sceau
+     * Radiant »). Retiré en fondu dès que Flutter a peint sa première
+     * image (événement `flutter-first-frame`).
      */
     html, body { margin: 0; padding: 0; height: 100%; background-color: #071527; }
 
@@ -36,9 +35,6 @@
       position: fixed;
       inset: 0;
       z-index: 2147483647;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background:
         radial-gradient(1200px 700px at 84% 6%, rgba(201, 162, 39, 0.12), transparent 60%),
         radial-gradient(1200px 800px at 8% 96%, rgba(46, 111, 242, 0.10), transparent 60%),
@@ -51,38 +47,10 @@
       opacity: 0;
       pointer-events: none;
     }
-
-    #jurisia-boot .jurisia-boot__dots {
-      display: flex;
-      gap: 9px;
-    }
-
-    #jurisia-boot .jurisia-boot__dots i {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #E9D48A;
-      opacity: 0.35;
-      animation: jurisia-boot-pulse 1400ms ease-in-out infinite;
-    }
-
-    #jurisia-boot .jurisia-boot__dots i:nth-child(2) { animation-delay: 180ms; }
-    #jurisia-boot .jurisia-boot__dots i:nth-child(3) { animation-delay: 360ms; }
-
-    @keyframes jurisia-boot-pulse {
-      0%, 100% { opacity: 0.28; transform: scale(0.85); }
-      50% { opacity: 0.95; transform: scale(1); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      #jurisia-boot .jurisia-boot__dots i { animation: none; opacity: 0.6; }
-    }
   </style>
 </head>
 <body>
-  <div id="jurisia-boot" role="status" aria-label="Chargement de JurisIA">
-    <div class="jurisia-boot__dots" aria-hidden="true"><i></i><i></i><i></i></div>
-  </div>
+  <div id="jurisia-boot" aria-hidden="true"></div>
 
   <script>
     (function () {
