@@ -85,11 +85,37 @@ class _WorkspaceView extends StatelessWidget {
       return _DesktopWorkspace(controller: controller);
     }
 
+    final chrome = _modeChrome(controller.request.mode);
+
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: Text(result?.title ?? _loadingLabel(controller.request.mode)),
+          titleSpacing: 0,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                chrome.label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.goldLight,
+                      letterSpacing: AppLetterSpacing.label,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                result?.title ?? _loadingLabel(controller.request.mode),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontFamily: 'Libre Caslon Display'),
+              ),
+            ],
+          ),
           actions: [
             if (result != null)
               TapScale(
@@ -104,52 +130,37 @@ class _WorkspaceView extends StatelessWidget {
               ),
           ],
         ),
-        body: SafeArea(child: _buildBody(context, controller)),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              const Positioned.fill(child: IgnorePointer(child: _WsAmbience())),
+              _buildBody(context, controller),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildBody(BuildContext context, DraftingWorkspaceController controller) {
     if (controller.status == DraftingStatus.error && controller.result == null) {
-      return _ErrorState(
-        message: controller.errorMessage ?? 'Une erreur est survenue.',
-        onRetry: controller.regenerate,
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: _DesktopWsError(
+          message: controller.errorMessage ?? 'Une erreur est survenue.',
+          onRetry: controller.regenerate,
+        ),
       );
     }
 
     if (controller.status == DraftingStatus.generating && controller.streamingText.isEmpty) {
-      return Center(
-        child: AiThinkingIndicator(label: _loadingLabel(controller.request.mode)),
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: _DesktopWsGenerating(mode: controller.request.mode),
       );
     }
 
     return _DocumentView(controller: controller);
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 40),
-            const SizedBox(height: AppSpacing.md),
-            Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: AppSpacing.md),
-            ElevatedButton(onPressed: onRetry, child: const Text('Réessayer')),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -162,10 +173,11 @@ class _DocumentView extends StatelessWidget {
   Widget build(BuildContext context) {
     final result = controller.result;
     final text = result?.content ?? controller.streamingText;
+    final generating = controller.isGenerating;
     final readingStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
       fontFamily: 'Lora',
       color: AppColors.textPrimary,
-      height: 1.8,
+      height: 1.85,
       fontSize: 16,
     );
 
@@ -196,6 +208,27 @@ class _DocumentView extends StatelessWidget {
                               .bodyMedium
                               ?.copyWith(color: AppColors.textPrimary),
                         ),
+                      ),
+                    ),
+                  if (generating && result != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: Row(
+                        children: [
+                          const SizedBox(
+                            width: 13,
+                            height: 13,
+                            child: CircularProgressIndicator(strokeWidth: 1.8, color: AppColors.goldLight),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'Application de l\'ajustement…',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(color: AppColors.goldLight),
+                          ),
+                        ],
                       ),
                     ),
                   GlassContainer(
@@ -236,21 +269,48 @@ class _AdjustmentToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final enabled = !controller.isGenerating;
     return SizedBox(
-      height: 44,
+      height: 40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: QuickAdjustment.values.length,
         separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, index) {
           final adjustment = QuickAdjustment.values[index];
-          return ActionChip(
-            label: Text(adjustment.label),
-            onPressed: controller.isGenerating ? null : () => controller.applyAdjustment(adjustment),
-            backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
-            side: const BorderSide(color: AppColors.glassBorder),
-            labelStyle: Theme.of(context).textTheme.labelMedium,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+          return TapScale(
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: enabled ? () => controller.applyAdjustment(adjustment) : null,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Opacity(
+                  opacity: enabled ? 1 : 0.45,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.legalBlueDark.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_fix_high_rounded, size: 13, color: AppColors.goldLight),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          adjustment.label,
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: AppColors.textPrimary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),

@@ -128,30 +128,59 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
           return SmokedGlassSurface(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.large)),
             border: const Border(top: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassBorder,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.glassBorder,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-                Text(_sheetTitle(), style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: AppSpacing.md),
-                ..._buildFormFields(context),
-                const SizedBox(height: AppSpacing.lg),
-                LuxuryElevatedButton(
-                  onPressed: _canSubmit ? _submit : null,
-                  child: Text(_submitLabel()),
+                _IntakeDialogHeader(
+                  mode: widget.mode,
+                  title: _sheetTitle(),
+                  onClose: () => Navigator.of(context).maybePop(),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    children: [
+                      ..._buildFormFields(context),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.textDisabled),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Le document généré doit être relu par un professionnel avant utilisation.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: AppColors.textDisabled),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      LuxuryElevatedButton(
+                        onPressed: _canSubmit ? _submit : null,
+                        icon: Icons.auto_awesome_rounded,
+                        child: Text(_submitLabel()),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
