@@ -16,6 +16,9 @@ on:
 
 env:
   FLUTTER_VERSION: '3.44.6'
+  # Pas un secret (un DSN Sentry ne permet que d'ENVOYER des événements,
+  # jamais de les lire) — voir lib/core/monitoring/crash_reporting.dart.
+  SENTRY_DSN: 'https://95d9589cbac4e78a05502ce23d2cf937@o4512029762912256.ingest.de.sentry.io/4512029795156048'
 
 jobs:
   analyze-and-test:
@@ -65,7 +68,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
       - run: flutter pub get
-      - run: flutter build web --release
+      - run: flutter build web --release --dart-define=SENTRY_DSN=${{ env.SENTRY_DSN }}
       # Déploiement Cloudflare Pages — seulement sur main, jamais depuis une
       # pull request (le code n'est pas encore relu/mergé). CLOUDFLARE_API_TOKEN
       # est le seul secret à poser (Settings > Secrets and variables > Actions) ;
@@ -94,7 +97,7 @@ jobs:
       - run: flutter pub get
       # Console d'administration : point d'entrée séparé, jamais dans le
       # bundle grand public (lib/main.dart ne l'importe pas).
-      - run: flutter build web --release -t lib/admin_main.dart
+      - run: flutter build web --release -t lib/admin_main.dart --dart-define=SENTRY_DSN=${{ env.SENTRY_DSN }}
       # web/ est un dossier UNIQUE partagé par les deux cibles de build : sans
       # ce patch, l'onglet de l'admin afficherait le même titre que l'app
       # grand public (voir admin-and-subscription-plan dans les mémoires du
