@@ -83,6 +83,11 @@ class StaffIdentity {
       roles.contains(StaffRole.admin) ||
       roles.contains(StaffRole.analyst);
 
+  /// Accorder / retirer un rôle de personnel — réservé aux super
+  /// administrateurs (voir migration_011_staff_management.sql). Le reste du
+  /// personnel peut consulter la liste, jamais la modifier.
+  bool get canManageStaff => roles.contains(StaffRole.superAdmin);
+
   /// Le plus haut rôle, pour l'affichage.
   StaffRole? get primary {
     for (final role in StaffRole.values) {

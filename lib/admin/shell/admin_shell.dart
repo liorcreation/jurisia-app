@@ -6,6 +6,7 @@ import '../auth/staff_role.dart';
 import '../features/audit/admin_audit_screen.dart';
 import '../features/contact_requests/admin_contact_requests_screen.dart';
 import '../features/dashboard/admin_dashboard_screen.dart';
+import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
 
@@ -58,6 +59,11 @@ class _AdminShellState extends State<AdminShell> {
         label: 'Journal d\'audit',
         icon: Icons.receipt_long_rounded,
         screen: AdminAuditScreen(),
+      ),
+      _AdminDestination(
+        label: 'Personnel',
+        icon: Icons.badge_rounded,
+        screen: AdminStaffScreen(identity: identity),
       ),
     ];
   }
