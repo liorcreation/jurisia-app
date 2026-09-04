@@ -14,13 +14,13 @@ import '../../../../core/widgets/chat_bubble.dart';
 import '../../../../core/widgets/chat_composer.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
-import '../../../../core/widgets/gold_fab.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../core/widgets/ios_large_title_bar.dart';
 import '../../../../core/widgets/ios_new_consultation_sheet.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/markdown_text.dart';
+import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/chat/conversation_model.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
@@ -142,12 +142,12 @@ class _LitigationViewState extends State<_LitigationView> {
     final showConversation =
         hasUserMessage || controller.isSending || controller.errorMessage != null;
 
-    final newConsultationAction = IconButton(
-      tooltip: 'Nouvelle consultation',
-      icon: const Icon(Icons.add_comment_outlined),
-      onPressed: controller.isSending
-          ? null
-          : () => _startNewConsultation(context, controller, platformStyle),
+    final canStartNew = !controller.isSending;
+    final newConsultationAction = _NewConsultationButton(
+      enabled: canStartNew,
+      onTap: canStartNew
+          ? () => _startNewConsultation(context, controller, platformStyle)
+          : null,
     );
 
     final chatBody = Column(
@@ -206,15 +206,8 @@ class _LitigationViewState extends State<_LitigationView> {
             : AppBar(
                 title: const Text('Litiges et consultations'),
                 leading: const AppShellMenuButton(),
-                actions: platformStyle == AppPlatformStyle.android ? null : [newConsultationAction],
+                actions: [newConsultationAction],
               ),
-        floatingActionButton: platformStyle == AppPlatformStyle.android
-            ? GoldFab(
-                tooltip: 'Nouvelle consultation',
-                icon: Icons.add_comment_rounded,
-                onPressed: controller.isSending ? null : controller.startNewConsultation,
-              )
-            : null,
         body: SafeArea(child: chatBody),
       ),
     );
@@ -1152,6 +1145,74 @@ class _Kbd extends StatelessWidget {
 // ===========================================================================
 //  MOBILE / iOS / Android — le fil de bulles
 // ===========================================================================
+
+/// Action « Nouvelle consultation » de la barre d'app, sur les trois
+/// registres mobiles. Un jeton circulaire en or brossé (contour + halo
+/// discret), placé là où l'on attend le « nouveau » — jamais un bouton
+/// flottant qui viendrait recouvrir la flèche d'envoi du composeur.
+class _NewConsultationButton extends StatelessWidget {
+  const _NewConsultationButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: TapScale(
+        child: Tooltip(
+          message: 'Nouvelle consultation',
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.fastOutSlowIn,
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: enabled
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.gold.withValues(alpha: 0.18),
+                            AppColors.gold.withValues(alpha: 0.06),
+                          ],
+                        )
+                      : null,
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: enabled ? 0.5 : 0.16),
+                    width: 0.9,
+                  ),
+                  boxShadow: enabled
+                      ? [
+                          BoxShadow(
+                            color: AppColors.gold.withValues(alpha: 0.18),
+                            blurRadius: 10,
+                            spreadRadius: -2,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(
+                  Icons.add_comment_rounded,
+                  size: 18,
+                  color: enabled ? AppColors.goldLight : AppColors.textDisabled,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _ChatBubble extends StatelessWidget {
   const _ChatBubble({required this.message});
