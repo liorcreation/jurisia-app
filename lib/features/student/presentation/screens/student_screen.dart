@@ -711,39 +711,50 @@ class _ModuleSpine extends StatelessWidget {
       );
     }
 
-    return Column(
-      children: [
-        for (var i = 0; i < modules.length; i++)
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _StationRail(
-                  status: _statusOf(modules[i]),
-                  topActive: i > 0 && modules[i - 1].isCompleted,
-                  bottomActive: modules[i].isCompleted,
-                  isFirst: i == 0,
-                  isLast: i == modules.length - 1,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: i == modules.length - 1 ? 0 : AppSpacing.lg,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Registre replié (téléphone, petite tablette) : la carte n'a pas la
+        // largeur pour un pied à deux colonnes ni un gouvernail large.
+        final compact = constraints.maxWidth < 560;
+        final railGap = compact ? AppSpacing.sm : AppSpacing.md;
+
+        return Column(
+          children: [
+            for (var i = 0; i < modules.length; i++)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _StationRail(
+                      status: _statusOf(modules[i]),
+                      topActive: i > 0 && modules[i - 1].isCompleted,
+                      bottomActive: modules[i].isCompleted,
+                      isFirst: i == 0,
+                      isLast: i == modules.length - 1,
+                      compact: compact,
                     ),
-                    child: EntranceFadeSlide(
-                      index: i,
-                      child: _DesktopModuleCard(
-                        module: modules[i],
-                        onOpen: () => onOpenModule(modules[i].id),
+                    SizedBox(width: railGap),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          bottom: i == modules.length - 1 ? 0 : AppSpacing.lg,
+                        ),
+                        child: EntranceFadeSlide(
+                          index: i,
+                          child: _DesktopModuleCard(
+                            module: modules[i],
+                            onOpen: () => onOpenModule(modules[i].id),
+                            compact: compact,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-      ],
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -755,6 +766,7 @@ class _StationRail extends StatelessWidget {
     required this.bottomActive,
     required this.isFirst,
     required this.isLast,
+    this.compact = false,
   });
 
   final ModuleStatus status;
@@ -762,20 +774,24 @@ class _StationRail extends StatelessWidget {
   final bool bottomActive;
   final bool isFirst;
   final bool isLast;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final faint = AppColors.gold.withValues(alpha: 0.14);
+    // La toile du sceau (avec sa volée de particules) fait 1,9× sa taille :
+    // le gouvernail doit rester au moins aussi large pour ne pas la rogner.
+    final badgeSize = compact ? 30.0 : 40.0;
 
     Color line(bool active, bool hidden) =>
         hidden ? Colors.transparent : (active ? AppColors.gold : faint);
 
     return SizedBox(
-      width: 76,
+      width: compact ? 58 : 76,
       child: Column(
         children: [
           Container(width: 2, height: 14, color: line(topActive, isFirst)),
-          ModuleStatusBadge(status: status, size: 40),
+          ModuleStatusBadge(status: status, size: badgeSize),
           Expanded(child: Container(width: 2, color: line(bottomActive, isLast))),
         ],
       ),
@@ -784,10 +800,15 @@ class _StationRail extends StatelessWidget {
 }
 
 class _DesktopModuleCard extends StatefulWidget {
-  const _DesktopModuleCard({required this.module, required this.onOpen});
+  const _DesktopModuleCard({
+    required this.module,
+    required this.onOpen,
+    this.compact = false,
+  });
 
   final CourseModule module;
   final VoidCallback onOpen;
+  final bool compact;
 
   @override
   State<_DesktopModuleCard> createState() => _DesktopModuleCardState();
@@ -800,6 +821,7 @@ class _DesktopModuleCardState extends State<_DesktopModuleCard> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final module = widget.module;
+    final compact = widget.compact;
     final locked = !module.isUnlocked;
     final minutes = module.lessons.fold<int>(0, (sum, lesson) => sum + lesson.estimatedMinutes);
 
@@ -819,32 +841,52 @@ class _DesktopModuleCardState extends State<_DesktopModuleCard> {
         opacity: locked ? 0.6 : 1,
         child: GlassContainer(
           onTap: locked ? null : widget.onOpen,
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
           borderColor: border,
           borderWidth: (_hovered && !locked) || module.isCompleted ? 0.9 : 0.5,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // En-tête : la pastille de statut à gauche, et — en registre
+              // replié — le numéro du module en grand chiffre fantôme à
+              // droite, comme un folio d'ouvrage. Aucune tension horizontale.
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Eyebrow('Module ${module.order}'),
-                  const Spacer(),
-                  _ModulePill(status: _statusOf(module)),
+                  if (compact) ...[
+                    _ModulePill(status: _statusOf(module)),
+                    const Spacer(),
+                    Text(
+                      module.order.toString().padLeft(2, '0'),
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontFamily: 'Libre Caslon Display',
+                        color: AppColors.gold.withValues(alpha: 0.2),
+                        height: 1,
+                      ),
+                    ),
+                  ] else ...[
+                    _Eyebrow('Module ${module.order}'),
+                    const Spacer(),
+                    _ModulePill(status: _statusOf(module)),
+                  ],
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: compact ? 6 : AppSpacing.sm),
               Text(
                 module.title,
-                style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: (compact ? textTheme.titleMedium : textTheme.titleLarge)
+                    ?.copyWith(fontFamily: 'Libre Caslon Display'),
               ),
               const SizedBox(height: 6),
               Text(
                 module.description,
+                maxLines: compact ? 3 : null,
+                overflow: compact ? TextOverflow.ellipsis : null,
                 style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.4),
               ),
               const SizedBox(height: AppSpacing.md),
               Wrap(
-                spacing: AppSpacing.md,
+                spacing: compact ? AppSpacing.sm : AppSpacing.md,
                 runSpacing: AppSpacing.xs,
                 children: [
                   _MetaBit(icon: _domainIcon(module.domain), label: module.domain.label),
@@ -860,7 +902,11 @@ class _DesktopModuleCardState extends State<_DesktopModuleCard> {
               const SizedBox(height: AppSpacing.md),
               const Divider(height: 1),
               const SizedBox(height: AppSpacing.md),
-              _ModuleCardFooter(module: module, onOpen: locked ? null : widget.onOpen),
+              _ModuleCardFooter(
+                module: module,
+                onOpen: locked ? null : widget.onOpen,
+                compact: compact,
+              ),
             ],
           ),
         ),
@@ -870,62 +916,100 @@ class _DesktopModuleCardState extends State<_DesktopModuleCard> {
 }
 
 class _ModuleCardFooter extends StatelessWidget {
-  const _ModuleCardFooter({required this.module, required this.onOpen});
+  const _ModuleCardFooter({
+    required this.module,
+    required this.onOpen,
+    this.compact = false,
+  });
 
   final CourseModule module;
   final VoidCallback? onOpen;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final locked = !module.isUnlocked;
 
+    final Widget status;
+    if (module.lastScore != null) {
+      status = _ScoreTag(score: module.lastScore!);
+    } else if (!locked) {
+      status = Text(
+        module.isCompleted ? 'Validé' : 'Pas encore évalué',
+        style: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
+      );
+    } else {
+      status = const SizedBox.shrink();
+    }
+
+    final Widget cta;
+    if (locked) {
+      cta = Row(
+        mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock_rounded, size: 14, color: AppColors.textDisabled),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              'Module précédent à valider',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(color: AppColors.textDisabled),
+            ),
+          ),
+        ],
+      );
+    } else if (module.isCompleted) {
+      cta = OutlinedButton.icon(
+        onPressed: onOpen,
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
+        ),
+        icon: const Icon(Icons.replay_rounded, size: 16),
+        label: const Text('Revoir le module'),
+      );
+    } else {
+      cta = FilledButton.icon(
+        onPressed: onOpen,
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.gold,
+          foregroundColor: AppColors.nightBlueDeep,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
+          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        icon: Icon(
+          module.lastScore != null ? Icons.refresh_rounded : Icons.play_arrow_rounded,
+          size: 18,
+        ),
+        label: Text(module.lastScore != null ? 'Reprendre' : 'Commencer le module'),
+      );
+    }
+
+    // Registre replié : tout s'empile, le bouton prend toute la largeur —
+    // aucune rangée à deux blocs qui déborde sur les petits écrans.
+    if (compact) {
+      final hasStatus = module.lastScore != null || !locked;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (hasStatus) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: status),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          cta,
+        ],
+      );
+    }
+
     return Row(
       children: [
-        if (module.lastScore != null)
-          _ScoreTag(score: module.lastScore!)
-        else if (!locked)
-          Text(
-            module.isCompleted ? 'Validé' : 'Pas encore évalué',
-            style: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
-          ),
+        status,
         const Spacer(),
-        if (locked)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.lock_rounded, size: 14, color: AppColors.textDisabled),
-              const SizedBox(width: 6),
-              Text(
-                'Module précédent à valider',
-                style: textTheme.labelMedium?.copyWith(color: AppColors.textDisabled),
-              ),
-            ],
-          )
-        else if (module.isCompleted)
-          OutlinedButton.icon(
-            onPressed: onOpen,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
-            ),
-            icon: const Icon(Icons.replay_rounded, size: 16),
-            label: const Text('Revoir le module'),
-          )
-        else
-          FilledButton.icon(
-            onPressed: onOpen,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.gold,
-              foregroundColor: AppColors.nightBlueDeep,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
-              textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            icon: Icon(
-              module.lastScore != null ? Icons.refresh_rounded : Icons.play_arrow_rounded,
-              size: 18,
-            ),
-            label: Text(module.lastScore != null ? 'Reprendre' : 'Commencer le module'),
-          ),
+        cta,
       ],
     );
   }
