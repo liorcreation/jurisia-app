@@ -63,270 +63,33 @@ class _StudentView extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Espace étudiant'),
+          title: Text(selectedLevel == null ? 'Espace étudiant' : selectedLevel.fullLabel),
           leading: selectedLevel == null
               ? const AppShellMenuButton()
               : IconButton(
+                  tooltip: 'Tous les niveaux',
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   onPressed: controller.backToLevelSelection,
                 ),
         ),
-        body: SafeArea(
-          child: selectedLevel == null
-              ? _LevelSelector(controller: controller)
-              : _ModulePath(
-                  level: selectedLevel,
-                  modules: controller.modulesForSelectedLevel,
-                  progress: controller.progressForSelectedLevel,
-                  onOpenModule: (moduleId) => _openModule(context, controller, moduleId),
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LevelSelector extends StatelessWidget {
-  const _LevelSelector({required this.controller});
-
-  final StudentController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Quel est votre niveau ?', style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            "Sélectionnez votre niveau universitaire pour accéder à votre parcours dédié.",
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 1.3,
-              children: [
-                for (var i = 0; i < AcademicLevel.values.length; i++)
-                  EntranceFadeSlide(
-                    index: i,
-                    child: _LevelTile(
-                      level: AcademicLevel.values[i],
-                      unlocked: controller.isLevelUnlocked(AcademicLevel.values[i]),
-                      onTap: () {
-                        final level = AcademicLevel.values[i];
-                        if (controller.isLevelUnlocked(level)) {
-                          controller.selectLevel(level);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Terminez le niveau précédent pour débloquer celui-ci.'),
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LevelTile extends StatelessWidget {
-  const _LevelTile({required this.level, required this.unlocked, required this.onTap});
-
-  final AcademicLevel level;
-  final bool unlocked;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: unlocked ? 1 : 0.6,
-      child: GlassContainer(
-        onTap: onTap,
-        child: Stack(
+        body: Stack(
           children: [
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => AppGradients.goldMetallic.createShader(bounds),
-                    child: Text(
-                      level.shortLabel,
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    level.fullLabel,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-            if (!unlocked)
-              const Positioned(
-                top: 0,
-                right: 0,
-                child: Icon(Icons.lock_rounded, color: AppColors.gold, size: 20),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ModulePath extends StatelessWidget {
-  const _ModulePath({
-    required this.level,
-    required this.modules,
-    required this.progress,
-    required this.onOpenModule,
-  });
-
-  final AcademicLevel level;
-  final List<CourseModule> modules;
-  final StudentProgress? progress;
-  final ValueChanged<String> onOpenModule;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final total = modules.length;
-    final validated = modules.where((m) => m.isCompleted).length;
-    final average = progress?.overallAverage ?? 0;
-    final percentage = total == 0 ? 0.0 : validated / total;
-
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        Text(level.fullLabel, style: textTheme.headlineSmall),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Progressez module par module. La moyenne de 10/20 débloque le module suivant.',
-          style: textTheme.bodyMedium,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        GlassContainer(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Progression du niveau', style: textTheme.titleSmall),
-                  Text('$validated / $total modules', style: textTheme.labelMedium),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: Stack(
-                  children: [
-                    const LinearProgressIndicator(
-                      value: 1,
-                      minHeight: 8,
-                      backgroundColor: AppColors.legalBlueDark,
-                      valueColor: AlwaysStoppedAnimation(Colors.transparent),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: percentage,
-                      child: Container(
-                        height: 8,
-                        decoration: const BoxDecoration(gradient: AppGradients.goldMetallic),
+            const Positioned.fill(child: IgnorePointer(child: _StudentAmbience())),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
+                ),
+                child: selectedLevel == null
+                    ? _LevelGallery(controller: controller)
+                    : _LevelWorkspace(
+                        level: selectedLevel,
+                        controller: controller,
+                        onOpenModule: (moduleId) => _openModule(context, controller, moduleId),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              if (average > 0) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Moyenne actuelle : ${average.toStringAsFixed(1)}/20',
-                  style: textTheme.bodyMedium,
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        for (var i = 0; i < modules.length; i++) ...[
-          EntranceFadeSlide(
-            index: i,
-            child: _ModuleCard(module: modules[i], onTap: () => onOpenModule(modules[i].id)),
-          ),
-          if (i != modules.length - 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Center(
-                child: Icon(
-                  Icons.arrow_downward_rounded,
-                  color: modules[i].isCompleted ? AppColors.gold : AppColors.textDisabled,
-                ),
-              ),
-            ),
-        ],
-      ],
-    );
-  }
-}
-
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({required this.module, required this.onTap});
-
-  final CourseModule module;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final locked = !module.isUnlocked;
-    final status = locked
-        ? ModuleStatus.locked
-        : module.isCompleted
-            ? ModuleStatus.completed
-            : ModuleStatus.inProgress;
-
-    return Opacity(
-      opacity: locked ? 0.55 : 1,
-      child: GlassContainer(
-        borderColor: module.isCompleted ? AppColors.gold : AppColors.glassBorder,
-        onTap: locked ? null : onTap,
-        child: Row(
-          children: [
-            ModuleStatusBadge(status: status),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Module ${module.order} — ${module.title}', style: textTheme.titleMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(module.description, style: textTheme.bodyMedium),
-                  if (module.lastScore != null) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Dernière note : ${module.lastScore!.toStringAsFixed(1)}/20',
-                      style: textTheme.labelMedium?.copyWith(color: AppColors.gold),
-                    ),
-                  ] else if (!locked) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text('En cours', style: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary)),
-                  ],
-                ],
               ),
             ),
           ],
@@ -335,7 +98,6 @@ class _ModuleCard extends StatelessWidget {
     );
   }
 }
-
 // ===========================================================================
 //  DESKTOP — « Le cursus » : de la Licence au Master
 // ===========================================================================
@@ -677,13 +439,17 @@ class _CursusLadder extends StatelessWidget {
         ];
 
         if (!wide) {
+          final cols = constraints.maxWidth < 480 ? 1 : 2;
+          final cardWidth = cols == 1
+              ? constraints.maxWidth
+              : (constraints.maxWidth - AppSpacing.md) / 2;
           return Wrap(
             spacing: AppSpacing.md,
             runSpacing: AppSpacing.md,
             children: [
               for (var i = 0; i < cards.length; i++)
                 SizedBox(
-                  width: (constraints.maxWidth - AppSpacing.md) / 2,
+                  width: cardWidth,
                   child: EntranceFadeSlide(index: i, child: cards[i]),
                 ),
             ],

@@ -92,11 +92,16 @@ class ModuleDetailScreen extends StatelessWidget {
             onPressed: () => _openEvaluation(context, studentController, module.id),
           ),
           body: SafeArea(
-            child: TabBarView(
+            child: Stack(
               children: [
-                _CourseTab(module: module),
-                _RevisionTab(module: module),
-                _TutorTab(module: module),
+                const Positioned.fill(child: IgnorePointer(child: _ModuleAmbience())),
+                TabBarView(
+                  children: [
+                    _CourseTab(module: module),
+                    _RevisionTab(module: module),
+                    _TutorTab(module: module),
+                  ],
+                ),
               ],
             ),
           ),
@@ -122,29 +127,13 @@ class _CourseTab extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.xxl),
       itemCount: module.lessons.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) {
-        final lesson = module.lessons[index];
-        return GlassContainer(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(child: Text(lesson.title, style: textTheme.titleMedium)),
-                  Icon(Icons.schedule_rounded, size: 16, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('${lesson.estimatedMinutes} min', style: textTheme.labelSmall),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(lesson.content, style: textTheme.bodyLarge?.copyWith(height: 1.5)),
-            ],
-          ),
-        );
-      },
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xl),
+      itemBuilder: (context, index) => _LessonBlock(
+        order: index + 1,
+        lesson: module.lessons[index],
+      ),
     );
   }
 }
@@ -156,96 +145,15 @@ class _RevisionTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final hasRevision = module.revisionSheets.isNotEmpty;
+    final hasExercises = module.exercises.isNotEmpty;
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.xxl),
       children: [
-        if (module.revisionSheets.isNotEmpty) ...[
-          Text('Fiches de révision', style: textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          for (final sheet in module.revisionSheets)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: GlassContainer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(sheet.title, style: textTheme.titleMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    for (final point in sheet.keyPoints)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.circle, size: 6, color: AppColors.gold),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(child: Text(point, style: textTheme.bodyMedium)),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-        if (module.exercises.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text('Exercices d\'entraînement', style: textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          for (final exercise in module.exercises)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: GlassContainer(
-                child: _ExerciseTile(statement: exercise.statement, correction: exercise.correctionGuideline),
-              ),
-            ),
-        ],
-      ],
-    );
-  }
-}
-
-class _ExerciseTile extends StatefulWidget {
-  const _ExerciseTile({required this.statement, required this.correction});
-
-  final String statement;
-  final String correction;
-
-  @override
-  State<_ExerciseTile> createState() => _ExerciseTileState();
-}
-
-class _ExerciseTileState extends State<_ExerciseTile> {
-  bool _showCorrection = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(widget.statement, style: textTheme.bodyLarge),
-        const SizedBox(height: AppSpacing.sm),
-        if (_showCorrection)
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: AppColors.legalBlueDark.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(AppRadius.small),
-            ),
-            child: Text(widget.correction, style: textTheme.bodyMedium),
-          )
-        else
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () => setState(() => _showCorrection = true),
-              child: const Text('Voir la correction'),
-            ),
-          ),
+        if (hasRevision) _RevisionPanel(module: module),
+        if (hasRevision && hasExercises) const SizedBox(height: AppSpacing.xl),
+        if (hasExercises) _ExercisesSection(module: module),
       ],
     );
   }
