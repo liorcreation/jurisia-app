@@ -59,3 +59,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Signature de release Android — jamais versionnés (voir android/README
+# ou le commentaire en tête de android/key.properties).
+/android/key.properties
+/android/*.jks
+/android/*.keystore
