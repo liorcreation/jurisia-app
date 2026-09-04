@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'core/auth/auth_gate.dart';
+import 'core/monitoring/crash_reporting.dart';
 import 'core/storage/local_cache.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/widgets/splash_screen.dart';
@@ -9,19 +10,21 @@ import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Future.wait([
-    SupabaseConfig.initialize(),
-    LocalCache.initialize(),
-  ]);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppColors.nightBlueDeep,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-  runApp(const JurisIAApp());
+  await CrashReporting.runGuarded(() async {
+    await Future.wait([
+      SupabaseConfig.initialize(),
+      LocalCache.initialize(),
+    ]);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.nightBlueDeep,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+    runApp(const JurisIAApp());
+  });
 }
 
 /// Point d'entrée de l'application JurisIA : assistant juridique

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'admin/admin_app.dart';
+import 'core/monitoring/crash_reporting.dart';
 import 'core/storage/local_cache.dart';
 import 'core/supabase/supabase_config.dart';
 import 'theme/app_theme.dart';
@@ -21,17 +22,22 @@ import 'theme/app_theme.dart';
 /// `staff_roles`, voir `server/supabase/migration_006_roles_and_audit.sql`).
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Future.wait([
-    SupabaseConfig.initialize(),
-    LocalCache.initialize(),
-  ]);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppColors.nightBlueDeep,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ),
-  );
-  runApp(const JurisIAAdminApp());
+  // Environnement distinct de l'app grand public dans Sentry, pour ne
+  // jamais confondre une erreur de la console avec une erreur utilisateur —
+  // partage toutefois le même SENTRY_DSN (un seul projet Sentry suffit).
+  await CrashReporting.runGuarded(() async {
+    await Future.wait([
+      SupabaseConfig.initialize(),
+      LocalCache.initialize(),
+    ]);
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppColors.nightBlueDeep,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+    runApp(const JurisIAAdminApp());
+  }, environment: 'admin');
 }
