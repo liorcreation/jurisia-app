@@ -157,6 +157,7 @@ class _DesktopEvalHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final attempt = controller.evaluation?.attemptNumber;
+    final compact = MediaQuery.sizeOf(context).width < 600;
 
     return Container(
       decoration: BoxDecoration(
@@ -165,7 +166,12 @@ class _DesktopEvalHeader extends StatelessWidget {
           bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xs,
+        AppSpacing.sm,
+        compact ? AppSpacing.sm : AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -173,15 +179,24 @@ class _DesktopEvalHeader extends StatelessWidget {
             icon: const Icon(Icons.close_rounded, size: 20),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
-          const SizedBox(width: AppSpacing.xs),
-          const Icon(Icons.fact_check_rounded, size: 18, color: AppColors.gold),
+          if (!compact) ...[
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(Icons.fact_check_rounded, size: 18, color: AppColors.gold),
+          ],
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Évaluation du module', style: textTheme.headlineSmall),
+                Text(
+                  compact ? 'Évaluation' : 'Évaluation du module',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: compact
+                      ? textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display')
+                      : textTheme.headlineSmall,
+                ),
                 if (module != null)
                   Text(
                     module!.title,
@@ -192,7 +207,8 @@ class _DesktopEvalHeader extends StatelessWidget {
               ],
             ),
           ),
-          if (attempt != null)
+          if (attempt != null) ...[
+            const SizedBox(width: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 5),
               decoration: BoxDecoration(
@@ -201,10 +217,11 @@ class _DesktopEvalHeader extends StatelessWidget {
                 border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
               ),
               child: Text(
-                'Tentative n° $attempt',
+                compact ? 'N° $attempt' : 'Tentative n° $attempt',
                 style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700),
               ),
             ),
+          ],
         ],
       ),
     );
@@ -407,9 +424,15 @@ class _DesktopEvalFormState extends State<_DesktopEvalForm> {
       onJump: _scrollTo,
     );
 
+    final compact = MediaQuery.sizeOf(context).width < 600;
     final scroller = SingleChildScrollView(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+      padding: EdgeInsets.fromLTRB(
+        compact ? AppSpacing.lg : AppSpacing.xl,
+        compact ? AppSpacing.lg : AppSpacing.xl,
+        compact ? AppSpacing.lg : AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -786,10 +809,20 @@ class _DesktopQuestionCard extends StatelessWidget {
                   letterSpacing: AppLetterSpacing.label,
                 ),
               ),
-              const Spacer(),
-              _MiniTag(_typeLabel(question.type)),
-              const SizedBox(width: 6),
-              _MiniTag('${question.points.toStringAsFixed(question.points % 1 == 0 ? 0 : 1)} pts'),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    _MiniTag(_typeLabel(question.type)),
+                    _MiniTag(
+                      '${question.points.toStringAsFixed(question.points % 1 == 0 ? 0 : 1)} pts',
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -938,9 +971,10 @@ class _DesktopResult extends StatelessWidget {
     final result = controller.result!;
     final evaluation = controller.evaluation!;
     final passed = result.passed;
+    final hPad = MediaQuery.sizeOf(context).width < 600 ? AppSpacing.lg : AppSpacing.xl;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xxl, AppSpacing.xl, AppSpacing.xxl),
+      padding: EdgeInsets.fromLTRB(hPad, AppSpacing.xxl, hPad, AppSpacing.xxl),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),

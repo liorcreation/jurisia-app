@@ -72,43 +72,163 @@ class ModuleDetailScreen extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: DefaultTabController(
         length: 3,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: Text(module.title),
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Cours'),
-                Tab(text: 'Révisions'),
-                Tab(text: 'Assistant IA'),
-              ],
-            ),
-          ),
-          floatingActionButton: FloatingActionButton.extended(
-            backgroundColor: AppColors.gold,
-            foregroundColor: AppColors.nightBlueDeep,
-            icon: const Icon(Icons.fact_check_rounded),
-            label: const Text('Passer l\'évaluation'),
-            onPressed: () => _openEvaluation(context, studentController, module.id),
-          ),
-          body: SafeArea(
-            child: Stack(
-              children: [
-                const Positioned.fill(child: IgnorePointer(child: _ModuleAmbience())),
-                TabBarView(
+        child: Builder(
+          builder: (context) {
+            final tabController = DefaultTabController.of(context);
+            return Scaffold(
+              backgroundColor: Colors.transparent,
+              appBar: AppBar(
+                titleSpacing: 0,
+                title: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CourseTab(module: module),
-                    _RevisionTab(module: module),
-                    _TutorTab(module: module),
+                    Text(
+                      'Module ${module.order} · ${module.level.shortLabel}',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppColors.goldLight,
+                            letterSpacing: AppLetterSpacing.label,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      module.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontFamily: 'Libre Caslon Display'),
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
+                bottom: const TabBar(
+                  tabs: [
+                    Tab(text: 'Cours'),
+                    Tab(text: 'Révisions'),
+                    Tab(text: 'Assistant IA'),
+                  ],
+                ),
+              ),
+              // Barre d'évaluation persistante en pied — l'action maîtresse
+              // du module, jamais un bouton flottant en travers de la flèche
+              // d'envoi du tuteur. Elle s'efface sur l'onglet « Assistant IA »,
+              // où le composeur occupe déjà le bas de l'écran.
+              bottomNavigationBar: AnimatedBuilder(
+                animation: tabController,
+                builder: (context, _) {
+                  final onTutor = tabController.index == 2;
+                  return AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.fastOutSlowIn,
+                    alignment: Alignment.topCenter,
+                    child: onTutor
+                        ? const SizedBox(width: double.infinity)
+                        : _ModuleEvalBar(
+                            module: module,
+                            onEvaluate: () =>
+                                _openEvaluation(context, studentController, module.id),
+                          ),
+                  );
+                },
+              ),
+              body: SafeArea(
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: _ModuleAmbience())),
+                    TabBarView(
+                      children: [
+                        _CourseTab(module: module),
+                        _RevisionTab(module: module),
+                        _TutorTab(module: module),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
+}
+
+/// Pied d'écran de la vue module (mobile) : rappelle la meilleure note si
+/// elle existe, et porte le bouton « Passer / Repasser l'évaluation » en
+/// pleine largeur — même registre que la barre de l'écran d'évaluation.
+class _ModuleEvalBar extends StatelessWidget {
+  const _ModuleEvalBar({required this.module, required this.onEvaluate});
+
+  final CourseModule module;
+  final VoidCallback onEvaluate;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final score = module.lastScore;
+    final passed = module.isCompleted;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppGradients.smokedGlass,
+        border: Border(
+          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (score != null) ...[
+              Row(
+                children: [
+                  Icon(
+                    passed ? Icons.verified_rounded : Icons.trending_up_rounded,
+                    size: 14,
+                    color: passed ? AppColors.success : AppColors.warning,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Meilleure note ${score.toStringAsFixed(1)}/20',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: passed ? AppColors.success : AppColors.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            FilledButton.icon(
+              onPressed: onEvaluate,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.gold,
+                foregroundColor: AppColors.nightBlueDeep,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              icon: const Icon(Icons.fact_check_rounded, size: 17),
+              label: Text(score != null ? 'Repasser l\'évaluation' : 'Passer l\'évaluation'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Marges du contenu d'un onglet mobile : resserrées sur téléphone,
+/// et surtout **bornées à ~720 px de colonne de lecture** au-delà — sur une
+/// tablette on ne veut pas de lignes qui filent d'un bord à l'autre.
+EdgeInsets _tabReadingPadding(BuildContext context) {
+  final width = MediaQuery.sizeOf(context).width;
+  final side = width > 720 + AppSpacing.md * 2 ? (width - 720) / 2 : AppSpacing.md;
+  return EdgeInsets.fromLTRB(side, AppSpacing.lg, side, AppSpacing.xxl);
 }
 
 class _CourseTab extends StatelessWidget {
@@ -127,7 +247,7 @@ class _CourseTab extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.xxl),
+      padding: _tabReadingPadding(context),
       itemCount: module.lessons.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xl),
       itemBuilder: (context, index) => _LessonBlock(
@@ -149,7 +269,7 @@ class _RevisionTab extends StatelessWidget {
     final hasExercises = module.exercises.isNotEmpty;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.lg, AppSpacing.md, AppSpacing.xxl),
+      padding: _tabReadingPadding(context),
       children: [
         if (hasRevision) _RevisionPanel(module: module),
         if (hasRevision && hasExercises) const SizedBox(height: AppSpacing.xl),

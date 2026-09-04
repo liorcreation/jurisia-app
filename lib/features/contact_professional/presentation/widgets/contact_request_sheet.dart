@@ -176,34 +176,56 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
           return SmokedGlassSurface(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.large)),
             border: const Border(top: BorderSide(color: AppColors.glassBorder, width: 0.6)),
-            child: ListView(
-              controller: scrollController,
-              padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.glassBorder,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.glassBorder,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-                Text(
-                  'Contacter un ${widget.category.label.toLowerCase()}',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                _ContactDialogHeader(
+                  category: widget.category,
+                  onClose: () => Navigator.of(context).maybePop(),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(widget.category.description, style: Theme.of(context).textTheme.bodyMedium),
-                if (notice != null) ...[const SizedBox(height: AppSpacing.md), notice],
-                const SizedBox(height: AppSpacing.lg),
-                _fieldsCard(),
-                if (error != null) ...[const SizedBox(height: AppSpacing.sm), error],
-                const SizedBox(height: AppSpacing.lg),
-                _submitButton(controller, submitting),
-                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                    ),
+                    children: [
+                      if (notice != null) ...[notice, const SizedBox(height: AppSpacing.md)],
+                      _fieldsCard(),
+                      if (error != null) ...[const SizedBox(height: AppSpacing.sm), error],
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          const Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.textDisabled),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: AppColors.textDisabled),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _submitButton(controller, submitting),
+                      const SizedBox(height: AppSpacing.md),
+                    ],
+                  ),
+                ),
               ],
             ),
           );
