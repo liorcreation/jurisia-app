@@ -35,15 +35,26 @@ class _ContactProfessionalView extends StatelessWidget {
   void _openRequestSheet(BuildContext context, ProfessionalCategory category) {
     final controller = context.read<ContactProfessionalController>();
     controller.resetStatus();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => ChangeNotifierProvider<ContactProfessionalController>.value(
-        value: controller,
-        child: ContactRequestSheet(category: category),
-      ),
-    );
+
+    Widget sheet() => ChangeNotifierProvider<ContactProfessionalController>.value(
+          value: controller,
+          child: ContactRequestSheet(category: category),
+        );
+
+    if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
+      showDialog<void>(
+        context: context,
+        barrierColor: AppColors.nightBlueDeep.withValues(alpha: 0.55),
+        builder: (_) => sheet(),
+      );
+    } else {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => sheet(),
+      );
+    }
   }
 
   @override

@@ -30,21 +30,31 @@ class ProfessionalScreen extends StatelessWidget {
   const ProfessionalScreen({super.key});
 
   void _openIntake(BuildContext context, DraftingMode mode, {ProfessionalTemplate? template}) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => DraftingIntakeSheet(
-        mode: mode,
-        templates: _templateDataSource.getAll(),
-        initialTemplate: template,
-        onSubmit: (request) {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => DraftingWorkspaceScreen(request: request)),
-          );
-        },
-      ),
+    final sheet = DraftingIntakeSheet(
+      mode: mode,
+      templates: _templateDataSource.getAll(),
+      initialTemplate: template,
+      onSubmit: (request) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => DraftingWorkspaceScreen(request: request)),
+        );
+      },
     );
+
+    if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
+      showDialog<void>(
+        context: context,
+        barrierColor: AppColors.nightBlueDeep.withValues(alpha: 0.55),
+        builder: (_) => sheet,
+      );
+    } else {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => sheet,
+      );
+    }
   }
 
   @override

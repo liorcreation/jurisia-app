@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/validation/input_limits.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/glow_focus_field.dart';
+import '../../../../core/widgets/gradient_icon_badge.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/smoked_glass_surface.dart';
 import '../../../../models/legal_document/legal_domain.dart';
@@ -108,6 +110,13 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
+      return _buildDesktopDialog(context);
+    }
+    return _buildMobileSheet(context);
+  }
+
+  Widget _buildMobileSheet(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: DraggableScrollableSheet(
@@ -147,6 +156,81 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDesktopDialog(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.86;
+
+    return Dialog(
+      insetPadding: const EdgeInsets.all(AppSpacing.xl),
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.large)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 660, maxHeight: maxHeight),
+        child: SmokedGlassSurface(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _IntakeDialogHeader(
+                mode: widget.mode,
+                title: _sheetTitle(),
+                onClose: () => Navigator.of(context).maybePop(),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _buildFormFields(context),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: AppColors.gold.withValues(alpha: 0.14), width: 0.6),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.textDisabled),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Le document généré doit être relu par un professionnel avant utilisation.',
+                            style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    LuxuryElevatedButton(
+                      onPressed: _canSubmit ? _submit : null,
+                      icon: Icons.auto_awesome_rounded,
+                      child: Text(_submitLabel()),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -288,6 +372,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
       _DomainPicker(
         selected: _selectedDomain,
         onSelected: (domain) => setState(() => _selectedDomain = domain),
+        wrap: AppPlatformStyle.of(context) == AppPlatformStyle.desktop,
       ),
     ];
   }
@@ -313,16 +398,129 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
       _DomainPicker(
         selected: _selectedDomain,
         onSelected: (domain) => setState(() => _selectedDomain = domain),
+        wrap: AppPlatformStyle.of(context) == AppPlatformStyle.desktop,
       ),
     ];
   }
 }
 
+({IconData icon, Color tint, String eyebrow, String subtitle}) _modeIntakeStyle(DraftingMode mode) {
+  switch (mode) {
+    case DraftingMode.redaction:
+      return (
+        icon: Icons.draw_rounded,
+        tint: AppColors.metalDeepGold,
+        eyebrow: 'RÉDACTION D\'ACTE',
+        subtitle: 'Renseignez le contexte, l\'IA rédige l\'acte au fil de l\'eau.',
+      );
+    case DraftingMode.audit:
+      return (
+        icon: Icons.rule_rounded,
+        tint: AppColors.metalCobalt,
+        eyebrow: 'AUDIT DE CONTRAT',
+        subtitle: 'Collez le contrat : l\'IA isole les clauses fragiles et les réécrit.',
+      );
+    case DraftingMode.consultation:
+      return (
+        icon: Icons.balance_rounded,
+        tint: AppColors.metalEmerald,
+        eyebrow: 'CONSULTATION APPROFONDIE',
+        subtitle: 'Posez la question de droit : réponse argumentée, sources à l\'appui.',
+      );
+  }
+}
+
+class _IntakeDialogHeader extends StatelessWidget {
+  const _IntakeDialogHeader({required this.mode, required this.title, required this.onClose});
+
+  final DraftingMode mode;
+  final String title;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final style = _modeIntakeStyle(mode);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.md, AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [style.tint.withValues(alpha: 0.14), style.tint.withValues(alpha: 0.03)],
+        ),
+        border: Border(
+          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 0.6),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GradientIconBadge(
+            icon: style.icon,
+            size: 44,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.lerp(style.tint, Colors.white, 0.35)!,
+                style.tint,
+                Color.lerp(style.tint, AppColors.nightBlueDeep, 0.35)!,
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  style.eyebrow,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.goldLight,
+                    letterSpacing: AppLetterSpacing.caps,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  title,
+                  style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  style.subtitle,
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Fermer',
+            icon: const Icon(Icons.close_rounded, size: 20),
+            onPressed: onClose,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DomainPicker extends StatelessWidget {
-  const _DomainPicker({required this.selected, required this.onSelected});
+  const _DomainPicker({required this.selected, required this.onSelected, this.wrap = false});
 
   final LegalDomain? selected;
   final ValueChanged<LegalDomain?> onSelected;
+  final bool wrap;
+
+  Widget _chip(BuildContext context, LegalDomain domain) => ChoiceChip(
+        label: Text(domain.label),
+        selected: selected == domain,
+        onSelected: (_) => onSelected(selected == domain ? null : domain),
+        selectedColor: AppColors.gold.withValues(alpha: 0.22),
+        backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
+        visualDensity: VisualDensity.compact,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -331,27 +529,26 @@ class _DomainPicker extends StatelessWidget {
       children: [
         Text('Branche du droit (facultatif)', style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: AppSpacing.xs),
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final domain in LegalDomain.values)
-                Padding(
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
-                  child: ChoiceChip(
-                    label: Text(domain.label),
-                    selected: selected == domain,
-                    onSelected: (_) => onSelected(selected == domain ? null : domain),
-                    selectedColor: AppColors.gold.withValues(alpha: 0.22),
-                    backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
-                    visualDensity: VisualDensity.compact,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+        if (wrap)
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [for (final domain in LegalDomain.values) _chip(context, domain)],
+          )
+        else
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final domain in LegalDomain.values)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: _chip(context, domain),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
