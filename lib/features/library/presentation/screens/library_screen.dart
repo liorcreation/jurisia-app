@@ -14,7 +14,6 @@ import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
-import '../widgets/document_card.dart';
 import '../widgets/document_category_badge.dart';
 import '../widgets/document_tag.dart';
 import '../widgets/document_type_icon.dart';
@@ -66,18 +65,54 @@ class _LibraryViewState extends State<_LibraryView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<LibraryController>();
-    final results = controller.results;
+
+    void clearAll() {
+      controller.clearFilters();
+      _searchController.clear();
+    }
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
       return _DesktopLibrary(
         controller: controller,
         searchController: _searchController,
         onOpenDetail: (id) => _openDetail(context, controller, id),
-        onClearAll: () {
-          controller.clearFilters();
-          _searchController.clear();
-        },
+        onClearAll: clearAll,
       );
+    }
+
+    return _MobileLibrary(
+      controller: controller,
+      searchController: _searchController,
+      onOpenDetail: (id) => _openDetail(context, controller, id),
+      onClearAll: clearAll,
+    );
+  }
+}
+
+// ===========================================================================
+//  MOBILE / TABLETTE — « la bibliothèque de poche »
+// ===========================================================================
+
+class _MobileLibrary extends StatelessWidget {
+  const _MobileLibrary({
+    required this.controller,
+    required this.searchController,
+    required this.onOpenDetail,
+    required this.onClearAll,
+  });
+
+  final LibraryController controller;
+  final TextEditingController searchController;
+  final ValueChanged<String> onOpenDetail;
+  final VoidCallback onClearAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final results = controller.results;
+    final all = controller.allDocuments;
+    final counts = <LegalDocumentType, int>{};
+    for (final document in all) {
+      counts[document.type] = (counts[document.type] ?? 0) + 1;
     }
 
     return LuxuryScaffoldBackground(
@@ -88,7 +123,9 @@ class _LibraryViewState extends State<_LibraryView> {
           leading: const AppShellMenuButton(),
           actions: [
             IconButton(
-              tooltip: controller.favoritesOnly ? 'Afficher tous les documents' : 'Afficher les favoris',
+              tooltip: controller.favoritesOnly
+                  ? 'Afficher tous les documents'
+                  : 'Afficher les favoris',
               icon: Icon(
                 controller.favoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
                 color: AppColors.gold,
@@ -97,106 +134,191 @@ class _LibraryViewState extends State<_LibraryView> {
             ),
           ],
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-                child: GlassContainer(
-                  borderRadius: AppRadius.pill,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: TextField(
-                    controller: _searchController,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      prefixIcon: const Icon(Icons.search, color: AppColors.gold),
-                      hintText: 'Mot-clé, article, texte, domaine…',
-                      suffixIcon: controller.keyword.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
-                              onPressed: () {
-                                _searchController.clear();
-                                controller.updateKeyword('');
-                              },
-                            ),
+        body: Stack(
+          children: [
+            const Positioned.fill(child: IgnorePointer(child: _LibraryAmbience())),
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                    child: _RadiantSearchField(
+                      controller: searchController,
+                      onChanged: controller.updateKeyword,
+                      onClear: () {
+                        searchController.clear();
+                        controller.updateKeyword('');
+                      },
                     ),
-                    onChanged: controller.updateKeyword,
                   ),
-                ),
-              ),
-              SizedBox(
-                height: 56,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  children: [
-                    _FilterChip(
-                      label: 'Tous',
-                      selected: controller.selectedType == null,
-                      onSelected: () => controller.selectType(null),
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      children: [
+                        _MobileFacet(
+                          gradient: AppGradients.goldMetallic,
+                          icon: Icons.apps_rounded,
+                          label: 'Tous',
+                          count: all.length,
+                          selected: controller.selectedType == null,
+                          onTap: () => controller.selectType(null),
+                        ),
+                        for (final type in LegalDocumentType.values)
+                          _MobileFacet(
+                            gradient: metallicGradientForDocumentType(type),
+                            icon: iconForDocumentType(type),
+                            label: type.label,
+                            count: counts[type] ?? 0,
+                            selected: controller.selectedType == type,
+                            onTap: () => controller.selectType(type),
+                          ),
+                      ],
                     ),
-                    for (final type in LegalDocumentType.values)
-                      Padding(
-                        padding: const EdgeInsets.only(left: AppSpacing.sm),
-                        child: _FilterChip(
-                          label: type.label,
-                          selected: controller.selectedType == type,
-                          onSelected: () => controller.selectType(type),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 44,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  children: [
-                    for (final domain in LegalDomain.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: _FilterChip(
-                          label: domain.label,
-                          selected: controller.selectedDomain == domain,
-                          onSelected: () => controller.selectDomain(domain),
-                          compact: true,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Expanded(
-                child: results.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Aucun document ne correspond à votre recherche.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
-                        itemCount: results.length,
-                        itemBuilder: (context, index) {
-                          final doc = results[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: EntranceFadeSlide(
-                              index: index,
-                              child: LibraryDocumentCard(
-                                document: doc,
-                                onToggleFavorite: () => controller.toggleBookmark(doc.id),
-                                onTap: () => _openDetail(context, controller, doc.id),
-                              ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    height: 36,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      children: [
+                        for (final domain in LegalDomain.values)
+                          Padding(
+                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            child: _FilterChip(
+                              label: domain.label,
+                              selected: controller.selectedDomain == domain,
+                              onSelected: () => controller.selectDomain(domain),
+                              compact: true,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                    child: _ResultsBar(
+                      count: results.length,
+                      hasFilters: controller.hasActiveFilters,
+                      onClear: onClearAll,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Expanded(
+                    child: results.isEmpty
+                        ? _EmptyResults(onClear: onClearAll)
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.md,
+                              AppSpacing.xs,
+                              AppSpacing.md,
+                              AppSpacing.xl,
+                            ),
+                            itemCount: results.length,
+                            itemBuilder: (context, index) {
+                              final doc = results[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                child: EntranceFadeSlide(
+                                  index: index,
+                                  child: _LibraryDocCard(
+                                    document: doc,
+                                    onOpen: () => onOpenDetail(doc.id),
+                                    onToggleFavorite: () => controller.toggleBookmark(doc.id),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileFacet extends StatelessWidget {
+  const _MobileFacet({
+    required this.gradient,
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Gradient gradient;
+  final IconData icon;
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: TapScale(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(4, 4, AppSpacing.sm + 2, 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                color: selected
+                    ? AppColors.gold.withValues(alpha: 0.14)
+                    : AppColors.legalBlueDark.withValues(alpha: 0.45),
+                border: Border.all(
+                  color: selected
+                      ? AppColors.gold.withValues(alpha: 0.5)
+                      : AppColors.glassBorder,
+                  width: selected ? 1 : 0.6,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: gradient,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Icon(icon, size: 13, color: AppColors.nightBlueDeep),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$count',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: selected ? AppColors.goldLight : AppColors.textDisabled,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

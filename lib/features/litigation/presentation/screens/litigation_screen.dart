@@ -138,6 +138,9 @@ class _LitigationViewState extends State<_LitigationView> {
     final messages = controller.conversation.messages;
     final itemCount =
         messages.length + (controller.isSending ? 1 : 0) + (controller.errorMessage != null ? 1 : 0);
+    final hasUserMessage = messages.any((m) => m.sender == MessageSender.user);
+    final showConversation =
+        hasUserMessage || controller.isSending || controller.errorMessage != null;
 
     final newConsultationAction = IconButton(
       tooltip: 'Nouvelle consultation',
@@ -150,34 +153,36 @@ class _LitigationViewState extends State<_LitigationView> {
     final chatBody = Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              if (index < messages.length) {
-                return _ChatBubble(message: messages[index]);
-              }
+          child: showConversation
+              ? ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                  itemCount: itemCount,
+                  itemBuilder: (context, index) {
+                    if (index < messages.length) {
+                      return _ChatBubble(message: messages[index]);
+                    }
 
-              var remaining = index - messages.length;
+                    var remaining = index - messages.length;
 
-              if (controller.isSending) {
-                if (remaining == 0) {
-                  return _AssistantThinkingBubble(streamingText: controller.streamingText);
-                }
-                remaining -= 1;
-              }
+                    if (controller.isSending) {
+                      if (remaining == 0) {
+                        return _AssistantThinkingBubble(streamingText: controller.streamingText);
+                      }
+                      remaining -= 1;
+                    }
 
-              return ChatErrorBubble(
-                message: controller.errorMessage ?? '',
-                onRetry: controller.canRetry ? controller.retry : null,
-                onDismiss: controller.dismissError,
-              );
-            },
-          ),
+                    return ChatErrorBubble(
+                      message: controller.errorMessage ?? '',
+                      onRetry: controller.canRetry ? controller.retry : null,
+                      onDismiss: controller.dismissError,
+                    );
+                  },
+                )
+              : _WelcomeHero(onUseStarter: _useStarter),
         ),
         _AiDisclaimerHint(),
         ChatComposer(
@@ -695,12 +700,18 @@ class _WelcomeHero extends StatelessWidget {
               Row(
                 children: [
                   const Expanded(child: Divider(color: AppColors.divider, endIndent: AppSpacing.md)),
-                  Text(
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
                     "OU PARTEZ D'UNE SITUATION COURANTE",
+                    maxLines: 1,
                     style: textTheme.labelSmall?.copyWith(
                       color: AppColors.textDisabled,
                       letterSpacing: AppLetterSpacing.caps,
                       fontWeight: FontWeight.w700,
+                    ),
+                      ),
                     ),
                   ),
                   const Expanded(child: Divider(color: AppColors.divider, indent: AppSpacing.md)),
