@@ -65,6 +65,8 @@ class ProfessionalScreen extends StatelessWidget {
       );
     }
 
+    final recent = context.watch<ProfessionalDocumentsController>().recentResults;
+
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -73,99 +75,25 @@ class ProfessionalScreen extends StatelessWidget {
           leading: const AppShellMenuButton(),
         ),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: Stack(
             children: [
-              Text(
-                'Ingénierie juridique assistée par IA',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                "Rédigez des actes sur mesure, auditez un contrat ou obtenez une note de synthèse "
-                "approfondie, enrichis par les textes de la bibliothèque juridique.",
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              EntranceFadeSlide(
-                index: 0,
-                child: _ActionCard(
-                  icon: Icons.edit_document,
-                  emoji: '✍️',
-                  title: 'Rédaction d\'Actes & Contrats',
-                  subtitle: 'Bail commercial, contrat de prestation, statuts SARL/SAS, contrat de travail…',
-                  onTap: () => _openIntake(context, DraftingMode.redaction),
+              const Positioned.fill(child: IgnorePointer(child: _AtelierAmbience())),
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              EntranceFadeSlide(
-                index: 1,
-                child: _ActionCard(
-                  icon: Icons.fact_check_rounded,
-                  emoji: '🔍',
-                  title: 'Audit & Analyse de Clauses',
-                  subtitle: 'Détection de clauses abusives ou à risque et propositions de reformulation.',
-                  onTap: () => _openIntake(context, DraftingMode.audit),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              EntranceFadeSlide(
-                index: 2,
-                child: _ActionCard(
-                  icon: Icons.balance_rounded,
-                  emoji: '⚖️',
-                  title: 'Consultation Approfondie & Note de Synthèse',
-                  subtitle:
-                      'Analyse argumentée d\'une question de droit complexe, textes et jurisprudence à l\'appui.',
-                  onTap: () => _openIntake(context, DraftingMode.consultation),
+                child: _AtelierBody(
+                  recent: recent,
+                  onOpenIntake: (mode, {template}) =>
+                      _openIntake(context, mode, template: template),
                 ),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({
-    required this.icon,
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String emoji;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return GlassContainer(
-      onTap: onTap,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GradientIconBadge(icon: icon, size: 48),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$emoji $title', style: textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(subtitle, style: textTheme.bodyMedium),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
-        ],
       ),
     );
   }
@@ -443,12 +371,16 @@ class _AtelierBody extends StatelessWidget {
         ];
 
         if (constraints.maxWidth < 900) {
+          // Empilé : chaque carte contient un `Spacer` (pour aligner le
+          // bas des cartes en rangée sur desktop). `IntrinsicHeight` borne
+          // sa hauteur pour que le `Spacer` se réduise à zéro au lieu de
+          // planter dans un défilement à hauteur libre.
           return Column(
             children: [
               for (var i = 0; i < cards.length; i++)
                 Padding(
                   padding: EdgeInsets.only(bottom: i == cards.length - 1 ? 0 : AppSpacing.md),
-                  child: cards[i],
+                  child: IntrinsicHeight(child: cards[i]),
                 ),
             ],
           );

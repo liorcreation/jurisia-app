@@ -76,54 +76,21 @@ class _ContactProfessionalView extends StatelessWidget {
           leading: const AppShellMenuButton(),
         ),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: Stack(
             children: [
-              Text(
-                'Mise en relation avec un professionnel du droit',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Choisissez le type de professionnel qu\'il vous faut : votre demande est transmise '
-                'et un partenaire vous recontacte directement.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: ProfessionalCategory.values.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: AppSpacing.md,
-                  crossAxisSpacing: AppSpacing.md,
-                  childAspectRatio: 0.92,
+              const Positioned.fill(child: IgnorePointer(child: _ContactAmbience())),
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
                 ),
-                itemBuilder: (context, index) {
-                  final category = ProfessionalCategory.values[index];
-                  return EntranceFadeSlide(
-                    index: index,
-                    child: ProfessionalCategoryCard(
-                      category: category,
-                      onTap: () => _openRequestSheet(context, category),
-                    ),
-                  );
-                },
+                child: _ContactBody(
+                  requests: controller.requests,
+                  onOpenRequest: (category) => _openRequestSheet(context, category),
+                ),
               ),
-              if (controller.requests.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xl),
-                Text('Mes demandes', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.sm),
-                for (var i = 0; i < controller.requests.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: EntranceFadeSlide(
-                      index: ProfessionalCategory.values.length + i,
-                      child: _ContactRequestTile(request: controller.requests[i]),
-                    ),
-                  ),
-              ],
             ],
           ),
         ),
@@ -132,68 +99,8 @@ class _ContactProfessionalView extends StatelessWidget {
   }
 }
 
-class _ContactRequestTile extends StatelessWidget {
-  const _ContactRequestTile({required this.request});
-
-  final ContactRequest request;
-
-  Color _statusColor(ContactRequestStatus status) {
-    switch (status) {
-      case ContactRequestStatus.pending:
-        return AppColors.warning;
-      case ContactRequestStatus.contacted:
-        return AppColors.success;
-      case ContactRequestStatus.closed:
-        return AppColors.textSecondary;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final statusColor = _statusColor(request.status);
-
-    return GlassContainer(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GradientIconBadge(icon: iconForCategory(request.category), size: 40),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(request.category.label, style: textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Text(
-                  request.message,
-                  style: textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Text(
-              request.status.label,
-              style: textTheme.labelSmall?.copyWith(color: statusColor, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ===========================================================================
-//  DESKTOP — « La mise en relation »
+//  « La mise en relation » — corps partagé desktop / mobile
 // ===========================================================================
 
 typedef _OpenRequest = void Function(ProfessionalCategory category);

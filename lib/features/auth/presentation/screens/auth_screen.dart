@@ -118,7 +118,6 @@ class _AuthViewState extends State<_AuthView> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<AuthController>();
-    final isSignIn = controller.mode == AuthMode.signIn;
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
       return _DesktopAuthView(
@@ -137,174 +136,61 @@ class _AuthViewState extends State<_AuthView> {
       );
     }
 
+    final isCompact = MediaQuery.sizeOf(context).height < 680;
+
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.xl,
+                AppSpacing.lg,
+                AppSpacing.xl,
+              ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
+                constraints: const BoxConstraints(maxWidth: 440),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const JurisIAMark(size: 56),
+                    _AuthSeal(size: isCompact ? 52 : 66),
                     const SizedBox(height: AppSpacing.md),
-                    Text('JurisIA', style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: AppSpacing.xxl),
-                    GlassContainer(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            isSignIn ? 'Connexion' : 'Créer un compte',
-                            style: Theme.of(context).textTheme.titleLarge,
-                            textAlign: TextAlign.center,
+                    Text(
+                      'JurisIA',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontFamily: 'Libre Caslon Display',
                           ),
-                          const SizedBox(height: AppSpacing.lg),
-                          if (!SupabaseConfig.isReady) ...[
-                            _ConfigWarning(),
-                            const SizedBox(height: AppSpacing.md),
-                          ],
-                          if (!isSignIn) ...[
-                            GlowFocusField(
-                              child: TextField(
-                                controller: _nameController,
-                                enabled: SupabaseConfig.isReady && !controller.isSubmitting,
-                                textCapitalization: TextCapitalization.words,
-                                maxLength: AppInputLimits.fullName,
-                                autofillHints: const [AutofillHints.name],
-                                decoration: const InputDecoration(
-                                  labelText: 'Nom complet',
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            DropdownButtonFormField<UserProfession>(
-                              initialValue: controller.profession,
-                              isExpanded: true,
-                              decoration: const InputDecoration(labelText: 'Vous êtes'),
-                              items: [
-                                for (final profession in UserProfession.values)
-                                  DropdownMenuItem(
-                                    value: profession,
-                                    child: Text(profession.label),
-                                  ),
-                              ],
-                              onChanged: controller.isSubmitting ? null : controller.setProfession,
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                          ],
-                          GlowFocusField(
-                            child: TextField(
-                              controller: _emailController,
-                              enabled: SupabaseConfig.isReady && !controller.isSubmitting,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              decoration: const InputDecoration(labelText: 'E-mail'),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          GlowFocusField(
-                            child: TextField(
-                              controller: _passwordController,
-                              enabled: SupabaseConfig.isReady && !controller.isSubmitting,
-                              obscureText: true,
-                              autofillHints: const [AutofillHints.password],
-                              decoration: const InputDecoration(labelText: 'Mot de passe'),
-                              onSubmitted: (_) => _submit(controller),
-                            ),
-                          ),
-                          if (!isSignIn) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Checkbox(
-                                  value: controller.termsAccepted,
-                                  onChanged: controller.isSubmitting
-                                      ? null
-                                      : (value) => controller.setTermsAccepted(value ?? false),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 12),
-                                    child: Text.rich(
-                                      TextSpan(
-                                        style: Theme.of(context).textTheme.bodySmall,
-                                        children: [
-                                          const TextSpan(text: "J'accepte les "),
-                                          TextSpan(
-                                            text: 'CGU',
-                                            style: const TextStyle(
-                                              color: AppColors.gold,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                            recognizer: _termsRecognizer,
-                                          ),
-                                          const TextSpan(text: ' et la '),
-                                          TextSpan(
-                                            text: 'politique de confidentialité',
-                                            style: const TextStyle(
-                                              color: AppColors.gold,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                            recognizer: _privacyRecognizer,
-                                          ),
-                                          const TextSpan(text: '.'),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (controller.errorMessage != null) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            Text(
-                              controller.errorMessage!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: AppColors.error),
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.lg),
-                          LuxuryElevatedButton(
-                            onPressed: SupabaseConfig.isReady && !controller.isSubmitting
-                                ? () => _submit(controller)
-                                : null,
-                            child: controller.isSubmitting
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.nightBlueDeep,
-                                    ),
-                                  )
-                                : Text(isSignIn ? 'Se connecter' : 'Créer mon compte'),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          TextButton(
-                            onPressed: controller.isSubmitting ? null : controller.toggleMode,
-                            child: Text(
-                              isSignIn
-                                  ? "Pas encore de compte ? Créer un compte"
-                                  : 'Déjà un compte ? Se connecter',
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    if (!isCompact) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'L\'assistant juridique du Burkina & de l\'OHADA',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                    SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
+                    _AuthForm(
+                      controller: controller,
+                      nameController: _nameController,
+                      emailController: _emailController,
+                      passwordController: _passwordController,
+                      termsRecognizer: _termsRecognizer,
+                      privacyRecognizer: _privacyRecognizer,
+                      onSubmit: () => _submit(controller),
+                      onOpenDocument: _openDocument,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
                     Wrap(
                       alignment: WrapAlignment.center,
-                      spacing: AppSpacing.md,
+                      spacing: AppSpacing.sm,
                       children: [
                         TextButton(
                           onPressed: () => _openDocument('CGU', LegalDocuments.termsOfService),
@@ -958,12 +844,16 @@ class _ModeToggleTab extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.pill),
               gradient: active ? AppGradients.goldMetallic : null,
             ),
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: active ? AppColors.nightBlueDeep : AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: active ? AppColors.nightBlueDeep : AppColors.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
             ),
           ),
         ),
