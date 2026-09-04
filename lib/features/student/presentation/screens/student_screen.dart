@@ -346,8 +346,18 @@ class _ModuleAnatomy extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final perRow = constraints.maxWidth >= 900 ? 5 : 2;
-        final width = (constraints.maxWidth - AppSpacing.md * (perRow - 1)) / perRow;
+        final wide = constraints.maxWidth >= 900;
+        final full = constraints.maxWidth;
+        final fifth = (full - AppSpacing.md * 4) / 5;
+        final half = (full - AppSpacing.md) / 2;
+
+        double widthFor(int i) {
+          if (wide) return fifth;
+          // Deux colonnes : la dernière étape — l'évaluation, le point
+          // d'orgue du module — occupe toute la largeur au lieu de rester
+          // seule dans sa rangée.
+          return i == _steps.length - 1 ? full : half;
+        }
 
         return Wrap(
           spacing: AppSpacing.md,
@@ -355,7 +365,7 @@ class _ModuleAnatomy extends StatelessWidget {
           children: [
             for (var i = 0; i < _steps.length; i++)
               SizedBox(
-                width: width,
+                width: widthFor(i),
                 child: EntranceFadeSlide(
                   index: i,
                   child: GlassContainer(
