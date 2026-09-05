@@ -17,10 +17,10 @@ import 'admin_document_draft_repository.dart';
 
 /// Console — CMS Bibliothèque : la file des brouillons de textes et leur
 /// circuit de relecture (voir migration_012_legal_document_review.sql).
-/// L'édition riche d'un article reste hors scope de cette première version
-/// (cadrage, phase 3) — le formulaire accepte les articles au format JSON,
-/// identique à la sortie de `tools/legal_import` (fetch/parse), pour rester
-/// utilisable dès aujourd'hui sans éditeur structuré dédié.
+/// L'éditeur d'articles est structuré (numéro, intitulé, fil hiérarchique,
+/// corps, réordonnancement) — voir `_ArticleEditorItem`/`_ArticleEditorCard`
+/// — tout en restant compatible avec la sortie de `tools/legal_import`
+/// (fetch/parse) via le bouton « Importer un JSON ».
 class AdminLibraryCmsScreen extends StatelessWidget {
   const AdminLibraryCmsScreen({super.key, required this.identity});
 
@@ -373,9 +373,52 @@ class _MiniTag extends StatelessWidget {
   }
 }
 
+/// Un article en cours d'édition — mêmes champs qu'`ImportedArticle`
+/// (tools/legal_import) : `number`, `heading`, `body`, `path` (fil
+/// hiérarchique, ex. Livre I › Titre II). L'ordre dans la liste EST l'ordre
+/// de publication (`ord`), il n'y a pas de champ dédié.
+class _ArticleEditorItem {
+  _ArticleEditorItem({String? number, String? heading, String? body, List<String>? path})
+      : number = TextEditingController(text: number ?? ''),
+        heading = TextEditingController(text: heading ?? ''),
+        body = TextEditingController(text: body ?? ''),
+        path = TextEditingController(text: (path ?? const []).join(' › '));
+
+  factory _ArticleEditorItem.fromJson(Map<String, dynamic> j) => _ArticleEditorItem(
+        number: j['number'] as String?,
+        heading: j['heading'] as String?,
+        body: j['body'] as String?,
+        path: (j['path'] as List?)?.cast<String>(),
+      );
+
+  final TextEditingController number;
+  final TextEditingController heading;
+  final TextEditingController body;
+  final TextEditingController path;
+
+  bool get isBlank => number.text.trim().isEmpty && body.text.trim().isEmpty;
+
+  Map<String, dynamic> toJson() => {
+        'number': number.text.trim(),
+        'heading': heading.text.trim(),
+        'body': body.text.trim(),
+        'path': path.text.split('›').map((p) => p.trim()).where((p) => p.isNotEmpty).toList(),
+      };
+
+  void dispose() {
+    number.dispose();
+    heading.dispose();
+    body.dispose();
+    path.dispose();
+  }
+}
+
 /// Formulaire de brouillon — les champs de `ImportedDocument.toJson()`
-/// (voir tools/legal_import), plus un champ JSON libre pour les articles
-/// tant qu'il n'y a pas d'éditeur structuré dédié.
+/// (voir tools/legal_import), avec un éditeur d'articles structuré (numéro,
+/// intitulé, fil hiérarchique, corps) plutôt qu'un JSON brut — tout en
+/// restant strictement compatible avec la sortie de `tools/legal_import
+/// fetch`/`parse` (mêmes champs, on peut toujours coller ce JSON via
+/// « Importer un JSON » puis continuer à l'éditer ici article par article).
 class _DraftEditorDialog extends StatefulWidget {
   const _DraftEditorDialog({this.draft});
 
@@ -398,11 +441,10 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
   late final _tags = TextEditingController(
     text: ((widget.draft?.payload['tags'] as List?)?.cast<String>() ?? const <String>[]).join(', '),
   );
-  late final _articlesJson = TextEditingController(
-    text: widget.draft?.payload['articles'] != null
-        ? const JsonEncoder.withIndent('  ').convert(widget.draft!.payload['articles'])
-        : '',
-  );
+  late final List<_ArticleEditorItem> _articles = [
+    for (final a in (widget.draft?.payload['articles'] as List? ?? const []))
+      _ArticleEditorItem.fromJson((a as Map).cast<String, dynamic>()),
+  ];
 
   late LegalDocumentType _type = LegalDocumentType.values.firstWhere(
     (t) => t.name == widget.draft?.payload['type'],
@@ -417,41 +459,96 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
     orElse: () => LegalDocumentStatus.enVigueur,
   );
 
-  String? _articlesError;
   bool _saving = false;
 
   @override
   void dispose() {
     for (final c in [
       _documentId, _title, _reference, _summary, _fullContent,
-      _sourceUrl, _officialSource, _tags, _articlesJson,
+      _sourceUrl, _officialSource, _tags,
     ]) {
       c.dispose();
+    }
+    for (final a in _articles) {
+      a.dispose();
     }
     super.dispose();
   }
 
-  List<dynamic>? _parseArticles() {
-    final raw = _articlesJson.text.trim();
-    if (raw.isEmpty) return const [];
+  Future<void> _importJson() async {
+    final pasteController = TextEditingController();
+    final raw = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Importer un JSON'),
+        content: SizedBox(
+          width: 480,
+          child: TextField(
+            controller: pasteController,
+            maxLines: 12,
+            autofocus: true,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
+            decoration: const InputDecoration(
+              hintText: 'Collez ici la sortie de tools/legal_import fetch/parse '
+                  '(ou un export précédent) : { "title": ..., "articles": [...] }',
+              alignLabelWithHint: true,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(pasteController.text),
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
+    pasteController.dispose();
+    if (raw == null || raw.trim().isEmpty || !mounted) return;
+
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) throw const FormatException('doit être un tableau JSON');
-      return decoded;
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      setState(() {
+        _title.text = decoded['title'] as String? ?? _title.text;
+        _reference.text = decoded['reference'] as String? ?? _reference.text;
+        _summary.text = decoded['summary'] as String? ?? _summary.text;
+        _fullContent.text = decoded['full_content'] as String? ?? _fullContent.text;
+        _sourceUrl.text = decoded['source_url'] as String? ?? _sourceUrl.text;
+        _officialSource.text = decoded['official_source_name'] as String? ?? _officialSource.text;
+        final tags = (decoded['tags'] as List?)?.cast<String>();
+        if (tags != null) _tags.text = tags.join(', ');
+        final type = LegalDocumentType.values.where((t) => t.name == decoded['type']).firstOrNull;
+        if (type != null) _type = type;
+        final domain = LegalDomain.values.where((d) => d.name == decoded['domain']).firstOrNull;
+        if (domain != null) _domain = domain;
+
+        for (final a in _articles) {
+          a.dispose();
+        }
+        _articles
+          ..clear()
+          ..addAll([
+            for (final a in (decoded['articles'] as List? ?? const []))
+              _ArticleEditorItem.fromJson((a as Map).cast<String, dynamic>()),
+          ]);
+      });
     } catch (error) {
-      setState(() => _articlesError = 'JSON invalide : $error');
-      return null;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('JSON invalide : $error')),
+        );
+      }
     }
   }
 
   Future<void> _save({required bool andSubmit}) async {
     if (_documentId.text.trim().isEmpty || _title.text.trim().isEmpty) return;
-    final articles = _parseArticles();
-    if (articles == null) return;
-    setState(() {
-      _articlesError = null;
-      _saving = true;
-    });
+    final articles = [
+      for (final a in _articles)
+        if (!a.isBlank) a.toJson(),
+    ];
+    setState(() => _saving = true);
 
     final payload = <String, dynamic>{
       'id': _documentId.text.trim(),
@@ -498,7 +595,7 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
     final isNew = widget.draft == null;
     return Dialog(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640, maxHeight: 720),
+        constraints: const BoxConstraints(maxWidth: 720, maxHeight: 840),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
@@ -610,17 +707,53 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.sm),
-                      TextField(
-                        controller: _articlesJson,
-                        maxLines: 6,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
-                        decoration: InputDecoration(
-                          labelText: 'Articles (JSON — sortie de tools/legal_import fetch/parse)',
-                          alignLabelWithHint: true,
-                          errorText: _articlesError,
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          Text('Articles', style: Theme.of(context).textTheme.titleSmall),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _importJson,
+                            icon: const Icon(Icons.upload_file_rounded, size: 16),
+                            label: const Text('Importer un JSON'),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          OutlinedButton.icon(
+                            onPressed: () => setState(() => _articles.add(_ArticleEditorItem())),
+                            icon: const Icon(Icons.add_rounded, size: 16),
+                            label: const Text('Ajouter un article'),
+                          ),
+                        ],
                       ),
+                      if (_articles.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                          child: Text(
+                            'Aucun article — laissez vide pour un texte en prose (« Texte intégral » '
+                            'ci-dessus), ou ajoutez les articles un par un.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ),
+                      for (var i = 0; i < _articles.length; i++)
+                        _ArticleEditorCard(
+                          key: ObjectKey(_articles[i]),
+                          item: _articles[i],
+                          index: i,
+                          canMoveUp: i > 0,
+                          canMoveDown: i < _articles.length - 1,
+                          onMoveUp: () => setState(() {
+                            final item = _articles.removeAt(i);
+                            _articles.insert(i - 1, item);
+                          }),
+                          onMoveDown: () => setState(() {
+                            final item = _articles.removeAt(i);
+                            _articles.insert(i + 1, item);
+                          }),
+                          onDelete: () => setState(() => _articles.removeAt(i).dispose()),
+                        ),
                     ],
                   ),
                 ),
@@ -648,6 +781,114 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Une carte d'édition pour un article : numéro, intitulé, fil hiérarchique
+/// et corps du texte, avec réordonnancement (monter/descendre) et
+/// suppression. L'ordre des cartes dans le formulaire EST l'ordre de
+/// publication de l'article.
+class _ArticleEditorCard extends StatelessWidget {
+  const _ArticleEditorCard({
+    super.key,
+    required this.item,
+    required this.index,
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onMoveUp,
+    required this.onMoveDown,
+    required this.onDelete,
+  });
+
+  final _ArticleEditorItem item;
+  final int index;
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.legalBlueDark.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Article ${index + 1}',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelSmall
+                    ?.copyWith(color: AppColors.textDisabled, fontWeight: FontWeight.w700),
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: 'Monter',
+                onPressed: canMoveUp ? onMoveUp : null,
+                icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+              IconButton(
+                tooltip: 'Descendre',
+                onPressed: canMoveDown ? onMoveDown : null,
+                icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+              IconButton(
+                tooltip: 'Supprimer cet article',
+                onPressed: onDelete,
+                icon: Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.error),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: item.number,
+                  decoration: const InputDecoration(labelText: 'Numéro', isDense: true),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextField(
+                  controller: item.heading,
+                  decoration: const InputDecoration(labelText: 'Intitulé (facultatif)', isDense: true),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: item.path,
+            decoration: const InputDecoration(
+              labelText: 'Fil hiérarchique — ex. Livre I › Titre II (séparé par ›)',
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: item.body,
+            maxLines: 4,
+            decoration: const InputDecoration(labelText: 'Corps de l\'article', alignLabelWithHint: true),
+          ),
+        ],
       ),
     );
   }

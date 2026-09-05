@@ -46,8 +46,8 @@ extension DocumentDraftStatusLabel on DocumentDraftStatus {
 /// (titre, articles…) reste dans [payload] — même forme JSON que
 /// `tools/legal_import` (`ImportedDocument.toJson()`), volontairement pas
 /// reportée en un modèle Dart typé côté console pour ne pas dupliquer ce
-/// schéma à deux endroits tant que l'éditeur riche (phase 3 du cadrage)
-/// n'existe pas.
+/// schéma à deux endroits (l'éditeur d'articles structuré, dans
+/// `admin_library_cms_screen.dart`, lit/écrit directement ces mêmes clés).
 class AdminDocumentDraft {
   const AdminDocumentDraft({
     required this.id,
