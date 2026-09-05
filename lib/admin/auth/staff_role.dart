@@ -88,6 +88,27 @@ class StaffIdentity {
   /// personnel peut consulter la liste, jamais la modifier.
   bool get canManageStaff => roles.contains(StaffRole.superAdmin);
 
+  /// Rédiger un brouillon (texte de la bibliothèque ou prompt IA) — voir
+  /// migration_012/013, fonction `jurisia_can_edit_content()` côté serveur
+  /// (même liste de rôles, gardée manuellement synchronisée ici pour l'UI).
+  bool get canEditContent =>
+      roles.contains(StaffRole.contentEditor) ||
+      roles.contains(StaffRole.legalReviewer) ||
+      roles.contains(StaffRole.admin) ||
+      roles.contains(StaffRole.superAdmin);
+
+  /// Approuver/rejeter un brouillon de texte, ou l'archiver — CMS
+  /// Bibliothèque uniquement (voir migration_012).
+  bool get canReviewDocuments =>
+      roles.contains(StaffRole.legalReviewer) ||
+      roles.contains(StaffRole.admin) ||
+      roles.contains(StaffRole.superAdmin);
+
+  /// Publier un prompt — réservé aux super administrateurs (voir
+  /// migration_013 : le risque touche tous les utilisateurs d'un coup,
+  /// contrairement à un texte de bibliothèque qui reste contenu à lui-même).
+  bool get canPublishPrompts => roles.contains(StaffRole.superAdmin);
+
   /// Le plus haut rôle, pour l'affichage.
   StaffRole? get primary {
     for (final role in StaffRole.values) {

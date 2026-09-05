@@ -6,6 +6,8 @@ import '../auth/staff_role.dart';
 import '../features/audit/admin_audit_screen.dart';
 import '../features/contact_requests/admin_contact_requests_screen.dart';
 import '../features/dashboard/admin_dashboard_screen.dart';
+import '../features/library_cms/admin_library_cms_screen.dart';
+import '../features/prompt_studio/admin_prompt_studio_screen.dart';
 import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
@@ -54,6 +56,18 @@ class _AdminShellState extends State<AdminShell> {
           label: 'Abonnements',
           icon: Icons.credit_card_rounded,
           screen: AdminSubscriptionsScreen(),
+        ),
+      if (identity.canEditContent)
+        _AdminDestination(
+          label: 'CMS Bibliothèque',
+          icon: Icons.menu_book_rounded,
+          screen: AdminLibraryCmsScreen(identity: identity),
+        ),
+      if (identity.canEditContent)
+        _AdminDestination(
+          label: 'Studio de prompts',
+          icon: Icons.auto_awesome_rounded,
+          screen: AdminPromptStudioScreen(identity: identity),
         ),
       const _AdminDestination(
         label: 'Journal d\'audit',
