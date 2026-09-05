@@ -510,6 +510,12 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
     try {
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
       setState(() {
+        if (widget.draft == null) {
+          // L'identifiant ne se modifie plus une fois le brouillon créé
+          // (champ désactivé, voir plus bas) — ne le réécrire qu'à la
+          // création.
+          _documentId.text = decoded['id'] as String? ?? _documentId.text;
+        }
         _title.text = decoded['title'] as String? ?? _title.text;
         _reference.text = decoded['reference'] as String? ?? _reference.text;
         _summary.text = decoded['summary'] as String? ?? _summary.text;
@@ -543,7 +549,12 @@ class _DraftEditorDialogState extends State<_DraftEditorDialog> {
   }
 
   Future<void> _save({required bool andSubmit}) async {
-    if (_documentId.text.trim().isEmpty || _title.text.trim().isEmpty) return;
+    if (_documentId.text.trim().isEmpty || _title.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Identifiant et titre sont obligatoires.')),
+      );
+      return;
+    }
     final articles = [
       for (final a in _articles)
         if (!a.isBlank) a.toJson(),
