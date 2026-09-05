@@ -8,6 +8,7 @@ import '../features/contact_requests/admin_contact_requests_screen.dart';
 import '../features/dashboard/admin_dashboard_screen.dart';
 import '../features/library_cms/admin_library_cms_screen.dart';
 import '../features/prompt_studio/admin_prompt_studio_screen.dart';
+import '../features/review_room/admin_review_room_screen.dart';
 import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
@@ -45,6 +46,12 @@ class _AdminShellState extends State<AdminShell> {
         icon: Icons.dashboard_rounded,
         screen: AdminDashboardScreen(identity: identity),
       ),
+      if (identity.canReviewDocuments || identity.canPublishPrompts)
+        _AdminDestination(
+          label: 'Salle de revue',
+          icon: Icons.fact_check_rounded,
+          screen: AdminReviewRoomScreen(identity: identity),
+        ),
       if (identity.canOperate)
         const _AdminDestination(
           label: 'Demandes de mise en relation',
