@@ -5,6 +5,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/ai/hidden_block_stream_splitter.dart';
+import '../../../../core/ai/prompt_keys.dart';
+import '../../../../core/ai/prompt_overrides.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../library/domain/entities/library_search_query.dart';
@@ -88,10 +90,13 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
       }
 
       final context = _libraryContext(domain: template.domain);
-      final system = ProfessionalSystemPrompt.drafting(
-        actTitle: template.title,
-        actDescription: template.description,
-        libraryContext: context,
+      final system = await PromptOverrides.compose(
+        PromptKeys.redaction,
+        ProfessionalSystemPrompt.drafting(
+          actTitle: template.title,
+          actDescription: template.description,
+          libraryContext: context,
+        ),
       );
       final userMessage = ProfessionalSystemPrompt.draftingUserMessage(
         fieldValues: request.fieldValues,
@@ -115,7 +120,10 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     }
 
     final context = _libraryContext(domain: request.domainHint);
-    final system = ProfessionalSystemPrompt.consultation(libraryContext: context);
+    final system = await PromptOverrides.compose(
+      PromptKeys.consultation,
+      ProfessionalSystemPrompt.consultation(libraryContext: context),
+    );
 
     yield* _generate(
       mode: DraftingMode.consultation,
@@ -134,7 +142,10 @@ class ProfessionalRepositoryImpl implements ProfessionalRepository {
     }
 
     final context = _libraryContext(domain: request.domainHint);
-    final system = ProfessionalSystemPrompt.audit(libraryContext: context);
+    final system = await PromptOverrides.compose(
+      PromptKeys.audit,
+      ProfessionalSystemPrompt.audit(libraryContext: context),
+    );
     final userMessage = ProfessionalSystemPrompt.auditUserMessage(
       contractText: contractText,
       instructions: request.instructions,

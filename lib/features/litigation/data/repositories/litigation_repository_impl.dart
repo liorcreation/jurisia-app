@@ -4,6 +4,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../core/ai/hidden_block_stream_splitter.dart';
+import '../../../../core/ai/prompt_keys.dart';
+import '../../../../core/ai/prompt_overrides.dart';
 import '../../../../models/chat/conversation_model.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
@@ -36,7 +38,10 @@ class LitigationRepositoryImpl implements LitigationRepository {
     }
 
     final conversationId = messages.last.conversationId;
-    final system = LitigationSystemPrompt.withContext(currentGrid);
+    final system = await PromptOverrides.compose(
+      PromptKeys.litige,
+      LitigationSystemPrompt.withContext(currentGrid),
+    );
 
     final splitter = HiddenBlockStreamSplitter(markerStart: _markerStart);
 

@@ -1,13 +1,16 @@
-/// Clés de prompt reconnues — tenir aligné avec les instructions système
-/// codées en dur ailleurs dans l'app (litige, tuteur de module, atelier
-/// professionnel) le jour où elles seront branchées sur cette table.
+import '../../../core/ai/prompt_keys.dart' as core;
+
+/// Clés de prompt reconnues — voir `PromptKeys` (core/ai/prompt_keys.dart),
+/// la même liste que celle branchée sur les prompts système réels
+/// (litige, tuteur de module, atelier professionnel). Réexposées ici sous
+/// un nom historique de cet écran ; la source de vérité reste `PromptKeys`.
 class PromptKey {
   const PromptKey._();
-  static const litige = 'litige.system';
-  static const tuteur = 'tuteur.system';
-  static const redaction = 'redaction.system';
-  static const audit = 'audit.system';
-  static const consultation = 'consultation.system';
+  static const litige = core.PromptKeys.litige;
+  static const tuteur = core.PromptKeys.tuteur;
+  static const redaction = core.PromptKeys.redaction;
+  static const audit = core.PromptKeys.audit;
+  static const consultation = core.PromptKeys.consultation;
 
   static const all = [litige, tuteur, redaction, audit, consultation];
 

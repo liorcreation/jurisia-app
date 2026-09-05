@@ -310,6 +310,13 @@ class _PromptEditorDialogState extends State<_PromptEditorDialog> {
                 isNew ? 'Nouveau brouillon de prompt' : 'Modifier le prompt',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Ce texte s\'AJOUTE à la fin du prompt système fixe du module — il ne le '
+                'remplace jamais. Le protocole de sortie (mise en forme, blocs de données '
+                'internes) reste toujours celui codé en dur ; n\'essaie pas de le redéfinir ici.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+              ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _key,
@@ -328,7 +335,7 @@ class _PromptEditorDialogState extends State<_PromptEditorDialog> {
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
                   decoration: const InputDecoration(
-                    labelText: 'Instruction système',
+                    labelText: 'Consignes éditoriales complémentaires',
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -412,7 +419,10 @@ class _PromptTestDialogState extends State<_PromptTestDialog> {
               Text('Tester — ${PromptKey.label(widget.prompt.key)}', style: textTheme.titleLarge),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Le brouillon actuel sert d\'instruction système ; le prompt publié n\'est jamais touché ici.',
+                'Ce test envoie UNIQUEMENT cet addendum comme instruction système, sans le '
+                'prompt de base réel du module (persona, protocole de sortie) — utile pour juger '
+                'du ton et du contenu ajoutés, pas du comportement exact une fois publié. Le '
+                'prompt actif n\'est jamais touché ici.',
                 style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),

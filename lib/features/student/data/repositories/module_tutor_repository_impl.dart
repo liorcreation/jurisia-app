@@ -1,6 +1,8 @@
 import 'package:uuid/uuid.dart';
 
 import '../../../../core/ai/groq_api_datasource.dart';
+import '../../../../core/ai/prompt_keys.dart';
+import '../../../../core/ai/prompt_overrides.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../models/student/course_module.dart';
 import '../../domain/entities/module_tutor_chunk.dart';
@@ -27,7 +29,10 @@ class ModuleTutorRepositoryImpl implements ModuleTutorRepository {
     }
 
     final conversationId = messages.last.conversationId;
-    final system = StudentAiPrompts.moduleTutorSystemPrompt(module);
+    final system = await PromptOverrides.compose(
+      PromptKeys.tuteur,
+      StudentAiPrompts.moduleTutorSystemPrompt(module),
+    );
 
     final buffer = StringBuffer();
     await for (final delta in dataSource.streamCompletion(system: system, messages: apiMessages)) {

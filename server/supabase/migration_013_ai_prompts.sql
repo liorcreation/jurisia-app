@@ -1,14 +1,20 @@
 -- À exécuter une fois dans le SQL Editor de votre projet Supabase — pose le
--- Studio de prompts : les instructions système de l'IA (Litige, Tuteur,
--- Rédaction/Audit/Consultation) deviennent modifiables sans déploiement de
--- code, avec un test obligatoire avant toute publication. Sans risque à
--- réexécuter (idempotent). Nécessite migration_006 (rôles,
+-- Studio de prompts : chaque instruction système de l'IA (Litige, Tuteur,
+-- Rédaction/Audit/Consultation) peut recevoir un addendum éditorial, publié
+-- sans déploiement de code, avec un test obligatoire avant toute
+-- publication. `content` ne REMPLACE JAMAIS le prompt fixe codé en dur
+-- (voir lib/core/ai/prompt_overrides.dart) : il s'y ajoute en fin de
+-- prompt. Plusieurs prompts imposent un protocole de sortie structurée
+-- (bloc JSON caché) dont le reste de l'app dépend directement — les
+-- rendre librement remplaçables romprait ce protocole sans erreur visible.
+-- Sans risque à réexécuter (idempotent). Nécessite migration_006 (rôles,
 -- jurisia_is_staff/jurisia_has_role) et migration_008 (jurisia_admin_log).
 --
--- Tant que cette migration n'est pas appliquée (ou que la ligne `published`
--- d'une clé n'existe pas), l'application continue de fonctionner
--- normalement : elle utilise sa constante Dart codée en dur — voir
--- lib/core/ai/ (à brancher lors de l'implémentation cliente).
+-- Tant que cette migration n'est pas appliquée (ou qu'aucune ligne
+-- `published` n'existe pour une clé), l'application continue de
+-- fonctionner exactement comme avant : le prompt fixe s'utilise seul,
+-- sans addendum — voir lib/core/ai/prompt_overrides.dart (déjà branché
+-- sur litige/tuteur/rédaction/audit/consultation, commit à suivre).
 
 create table if not exists public.ai_prompts (
   id            uuid primary key default gen_random_uuid(),
