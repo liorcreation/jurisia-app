@@ -16,9 +16,11 @@ Sélectionné par la variable `BILLING_PROVIDER` :
 - **`mock`** (défaut) — succès immédiat, aucun appel externe. `billing-checkout`
   active l'abonnement sur-le-champ. Permet de tester tout le parcours
   (bouton → droits mis à jour) sans compte prestataire.
-- **`cinetpay`** — CinetPay (Orange Money, Moov Money, carte). Nécessite
-  `CINETPAY_API_KEY` et `CINETPAY_SITE_ID`. Pour les tests, créez un service
-  en mode « Test » dans le tableau de bord CinetPay.
+- **`cinetpay`** — CinetPay (Orange Money, Moov Money, carte), API v1
+  (jeton OAuth). Nécessite `CINETPAY_API_KEY` et `CINETPAY_API_PASSWORD`
+  (les deux depuis Intégrations → API). Pour les tests, créez un service
+  en mode « Test » dans le tableau de bord CinetPay et utilisez
+  `CINETPAY_BASE_URL=https://api.cinetpay.net`.
 
 Ajouter PayDunya / Fedapay / Flutterwave = une classe de plus dans
 `_shared/billing.ts` implémentant `BillingProvider`.

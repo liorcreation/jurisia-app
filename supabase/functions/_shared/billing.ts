@@ -29,6 +29,12 @@ export interface CheckoutResult {
   autoConfirm: boolean;
 }
 
+/** Jeton d'accès CinetPay mis en cache le temps de sa validité (API v1). */
+interface CachedToken {
+  value: string;
+  expiresAt: number;
+}
+
 export interface VerifyResult {
   status: "paid" | "failed" | "expired" | "pending";
   amountFcfa?: number;
@@ -56,14 +62,48 @@ class MockProvider implements BillingProvider {
   }
 }
 
+// CinetPay a retiré, courant 2026, son ancienne « Checkout API v2 »
+// (api-checkout.cinetpay.com, authentification par simple couple
+// apikey/site_id) au profit d'une API v1 authentifiée par jeton OAuth
+// (api.cinetpay.net en test, api.cinetpay.co en production ; identifiants :
+// clé API + MOT DE PASSE API, ce dernier à générer dans Intégrations → API
+// du tableau de bord). `site_id` n'existe plus côté API — on ne le lit ni ne
+// l'envoie. Contrat vérifié dans le SDK PHP officiel (cinetpay/cinetpay-php-sdk,
+// à jour août 2026) : POST /v1/oauth/login, POST /v1/payment, GET
+// /v1/payment/{transactionId}.
 class CinetPayProvider implements BillingProvider {
   readonly name = "cinetpay";
+  private cachedToken: CachedToken | null = null;
 
   constructor(
     private readonly apiKey: string,
-    private readonly siteId: string,
+    private readonly apiPassword: string,
     private readonly baseUrl: string,
   ) {}
+
+  private async getAccessToken(): Promise<string> {
+    // Marge de 5 s pour ne jamais envoyer un jeton expiré de justesse.
+    if (this.cachedToken && this.cachedToken.expiresAt > Date.now() + 5_000) {
+      return this.cachedToken.value;
+    }
+    const res = await fetch(`${this.baseUrl}/v1/oauth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: this.apiKey, api_password: this.apiPassword }),
+    });
+    const data = await res.json();
+    if (!data?.access_token) {
+      throw new Error(
+        `CinetPay (authentification) : ${data?.description ?? data?.status ?? "jeton refusé"}`,
+      );
+    }
+    const ttlSeconds = Number(data.expires_in);
+    this.cachedToken = {
+      value: String(data.access_token),
+      expiresAt: Date.now() + (Number.isFinite(ttlSeconds) ? ttlSeconds : 60) * 1000,
+    };
+    return this.cachedToken.value;
+  }
 
   async createCheckout(req: CheckoutRequest): Promise<CheckoutResult> {
     // CinetPay refuse les montants non multiples de 5 en XOF/XAF.
@@ -72,56 +112,58 @@ class CinetPayProvider implements BillingProvider {
         throw new Error(`CinetPay: montant ${req.amountFcfa} non multiple de 5 (${req.currency}).`);
       }
     }
-    // Les identités client sont exigées par l'API v2 même en Mobile Money ;
-    // on n'a que l'e-mail, on en dérive un nom lisible à défaut.
+    const token = await this.getAccessToken();
+    // Le prénom/nom client sont exigés par l'API ; on n'a que l'e-mail, on en
+    // dérive un nom lisible à défaut.
     const fallbackName = (req.customerEmail.split("@")[0] || "Client").slice(0, 60);
-    const res = await fetch(`${this.baseUrl}/v2/payment`, {
+    const res = await fetch(`${this.baseUrl}/v1/payment`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        apikey: this.apiKey,
-        site_id: this.siteId,
-        transaction_id: req.transactionId,
-        amount: req.amountFcfa,
         currency: req.currency,
-        description: `JurisIA — ${req.planName}`,
+        merchant_transaction_id: req.transactionId,
+        amount: req.amountFcfa,
+        success_url: req.returnUrl,
+        failed_url: req.returnUrl,
         notify_url: req.notifyUrl,
-        return_url: req.returnUrl,
-        channels: "ALL",
         lang: "fr",
-        metadata: req.customerId,
-        customer_id: req.customerId,
-        customer_email: req.customerEmail,
-        customer_name: fallbackName,
-        customer_surname: "JurisIA",
+        designation: `JurisIA — ${req.planName}`,
+        client_first_name: fallbackName,
+        client_last_name: "JurisIA",
+        client_email: req.customerEmail,
       }),
     });
     const data = await res.json();
-    if (String(data?.code) !== "201" || !data?.data?.payment_url) {
-      throw new Error(`CinetPay: ${data?.message ?? "réponse inattendue"} (code ${data?.code})`);
+    if (!data?.payment_url) {
+      throw new Error(
+        `CinetPay: ${data?.description ?? data?.status ?? "réponse inattendue"} (code ${data?.code})`,
+      );
     }
-    return { checkoutUrl: String(data.data.payment_url), autoConfirm: false };
+    return { checkoutUrl: String(data.payment_url), autoConfirm: false };
   }
 
   async verify(transactionId: string): Promise<VerifyResult> {
-    const res = await fetch(`${this.baseUrl}/v2/payment/check`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        apikey: this.apiKey,
-        site_id: this.siteId,
-        transaction_id: transactionId,
-      }),
+    const token = await this.getAccessToken();
+    const res = await fetch(`${this.baseUrl}/v1/payment/${encodeURIComponent(transactionId)}`, {
+      method: "GET",
+      headers: { "Authorization": `Bearer ${token}` },
     });
     const data = await res.json();
-    const status = data?.data?.status;
-    const amount = Number(data?.data?.amount);
+    const status = data?.status;
 
-    if (String(data?.code) === "00" && status === "ACCEPTED") {
-      return { status: "paid", amountFcfa: Number.isFinite(amount) ? amount : undefined };
-    }
-    if (status === "REFUSED") return { status: "failed" };
-    if (String(data?.code) === "662" || status === "EXPIRED") return { status: "expired" };
+    // Contrairement à l'ancienne API, la vérification /v1/payment/{id} ne
+    // renvoie plus le montant réglé : `amountFcfa` reste undefined pour ce
+    // prestataire. Ce n'est pas une régression de sécurité — `billing-webhook`
+    // ne fait de toute façon jamais confiance au contenu du webhook lui-même ;
+    // c'est CETTE requête authentifiée (Bearer) qui fait foi, sur un
+    // transaction_id que nous seuls avons généré et lié à un montant fixé
+    // côté serveur au moment de la création de l'intention.
+    if (status === "SUCCESS") return { status: "paid" };
+    if (status === "FAILED") return { status: "failed" };
+    if (status === "EXPIRED") return { status: "expired" };
     return { status: "pending" };
   }
 }
@@ -131,14 +173,20 @@ export function billingProviderFromEnv(): BillingProvider {
 
   if (name === "cinetpay") {
     const apiKey = Deno.env.get("CINETPAY_API_KEY") ?? "";
-    const siteId = Deno.env.get("CINETPAY_SITE_ID") ?? "";
-    const baseUrl = Deno.env.get("CINETPAY_BASE_URL") ?? "https://api-checkout.cinetpay.com";
-    if (!apiKey || !siteId || apiKey.startsWith("SANDBOX_A_REMPLACER")) {
+    const apiPassword = Deno.env.get("CINETPAY_API_PASSWORD") ?? "";
+    // Par défaut le domaine de TEST (api.cinetpay.net) — la production vit
+    // sur api.cinetpay.co, à renseigner explicitement dans CINETPAY_BASE_URL
+    // au passage en prod (voir CHECKLIST_SANDBOX.md).
+    const baseUrl = Deno.env.get("CINETPAY_BASE_URL") ?? "https://api.cinetpay.net";
+    if (
+      !apiKey || !apiPassword ||
+      apiKey.startsWith("SANDBOX_A_REMPLACER") || apiPassword.startsWith("SANDBOX_A_REMPLACER")
+    ) {
       throw new Error(
-        "CinetPay non configuré : renseignez CINETPAY_API_KEY et CINETPAY_SITE_ID.",
+        "CinetPay non configuré : renseignez CINETPAY_API_KEY et CINETPAY_API_PASSWORD.",
       );
     }
-    return new CinetPayProvider(apiKey, siteId, baseUrl);
+    return new CinetPayProvider(apiKey, apiPassword, baseUrl);
   }
 
   return new MockProvider();

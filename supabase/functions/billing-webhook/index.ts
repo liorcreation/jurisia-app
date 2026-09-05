@@ -9,15 +9,27 @@
 import { billingProviderFromEnv } from "../_shared/billing.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 
+// L'API v1 de CinetPay notifie avec `merchant_transaction_id` (notre propre
+// identifiant, celui qu'on a fixé à la création) — on garde les anciens noms
+// (`cpm_trans_id`, `transaction_id`, `tx`) en repli par robustesse, mais ils
+// ne sont plus attendus depuis la migration vers l'API v1 (voir billing.ts).
+// Le corps du webhook n'est de toute façon jamais source de vérité : on ne
+// s'en sert que pour savoir QUELLE transaction re-vérifier auprès de
+// CinetPay via un appel authentifié (Bearer) — pas de vérification de
+// `notify_token` nécessaire ici pour cette raison.
 async function extractTransactionId(req: Request): Promise<string> {
   const contentType = req.headers.get("content-type") ?? "";
   try {
     if (contentType.includes("application/json")) {
       const body = await req.json();
-      return String(body?.cpm_trans_id ?? body?.transaction_id ?? body?.tx ?? "");
+      return String(
+        body?.merchant_transaction_id ?? body?.cpm_trans_id ?? body?.transaction_id ?? body?.tx ?? "",
+      );
     }
     const form = await req.formData();
-    return String(form.get("cpm_trans_id") ?? form.get("transaction_id") ?? "");
+    return String(
+      form.get("merchant_transaction_id") ?? form.get("cpm_trans_id") ?? form.get("transaction_id") ?? "",
+    );
   } catch {
     return new URL(req.url).searchParams.get("tx") ?? "";
   }

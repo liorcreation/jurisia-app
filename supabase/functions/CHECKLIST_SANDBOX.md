@@ -10,8 +10,10 @@ est déjà en place (branche fusionnée dans `main`, commit `4ef6545`).
 - [ ] CLI Supabase installée et connectée : `supabase login`,
       `supabase link --project-ref gfpguuuzzyqoxjkhlhli`.
 - [ ] Compte CinetPay créé, un **service en mode « Test »** ajouté
-      (Tableau de bord → Services). Récupérer `API_KEY` et `SITE_ID` du
-      service Test dans Intégrations → API.
+      (Tableau de bord → Services). Récupérer `API_KEY` dans
+      Intégrations → API, et **générer un Mot de passe API** sur cette même
+      page (champ « API password », vide par défaut — l'API v1 de CinetPay
+      exige les deux, `site_id` n'est plus utilisé).
 
 ## 1. Renseigner les clés
 
@@ -20,11 +22,12 @@ Remplacer :
 
 ```
 CINETPAY_API_KEY=<clé API du service Test>
-CINETPAY_SITE_ID=<site_id du service Test>
+CINETPAY_API_PASSWORD=<mot de passe API du service Test>
 ```
 
-Laisser `BILLING_PROVIDER=cinetpay`, `CINETPAY_BASE_URL`,
-`APP_PUBLIC_URL` et `BILLING_NOTIFY_URL` tels quels.
+Laisser `BILLING_PROVIDER=cinetpay`, `CINETPAY_BASE_URL`
+(`https://api.cinetpay.net` en test), `APP_PUBLIC_URL` et
+`BILLING_NOTIFY_URL` tels quels.
 
 > Tant que les clés commencent par `SANDBOX_A_REMPLACER`, `billing-checkout`
 > renvoie une erreur 500 exprès (garde-fou dans `_shared/billing.ts`).
@@ -41,13 +44,12 @@ supabase functions deploy billing-webhook  --project-ref gfpguuuzzyqoxjkhlhli
 `verify_jwt = false`) — c'est voulu : la sécurité vient de la re-vérification
 du paiement auprès de CinetPay.
 
-## 3. Déclarer l'URL de notification chez CinetPay
+## 3. URL de notification
 
-Service Test → configuration → **URL de notification** :
-
-```
-https://gfpguuuzzyqoxjkhlhli.supabase.co/functions/v1/billing-webhook
-```
+Envoyée automatiquement par `billing-checkout` à chaque paiement créé
+(`notify_url` dans le corps de la requête `POST /v1/payment` — l'API v1 ne
+demande plus de la déclarer dans le tableau de bord). Rien à faire ici sauf
+si un test réel montre que le webhook n'est jamais appelé.
 
 ## 4. Tester le parcours
 
@@ -80,7 +82,8 @@ Mettre `BILLING_PROVIDER=mock` dans `.env`, re-pousser les secrets : le bouton
 ## Passage en production (plus tard)
 
 - Service CinetPay en mode **Production** (KYC validé).
-- Nouvelles `CINETPAY_API_KEY` / `CINETPAY_SITE_ID` de prod → `secrets set`.
+- Nouvelles `CINETPAY_API_KEY` / `CINETPAY_API_PASSWORD` de prod → `secrets set`.
+- `CINETPAY_BASE_URL=https://api.cinetpay.co` (le `.net` est réservé au test).
 - `APP_PUBLIC_URL` = domaine public réel.
 - Prix `plans.price_fcfa` confirmés par l'étude de marché
   (actuels : plus 2 500 · étudiant 1 000 · pro 15 000 · cabinet sur devis).
