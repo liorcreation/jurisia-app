@@ -3,12 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlements/entitlement_feature.dart';
 import '../../../core/entitlements/plan.dart';
 import '../../../core/supabase/supabase_config.dart';
-import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../features/contact_professional/domain/entities/contact_request.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_bar_row.dart';
+import '../../widgets/admin_donut_chart.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_section_card.dart';
+import '../../widgets/admin_stat_card.dart';
+import '../../widgets/admin_status_chip.dart';
 
 /// Un instantané du cockpit : tout ce que le tableau de bord affiche,
 /// rassemblé en un seul aller-retour réseau pour n'avoir qu'un état de
@@ -30,6 +36,13 @@ class _DashboardSnapshot {
   /// Somme de la consommation du mois en cours, par fonctionnalité, tous
   /// comptes confondus.
   final Map<String, int> usageThisMonth;
+
+  int get pending => contactStatusCounts[ContactRequestStatus.pending] ?? 0;
+  int get handled =>
+      (contactStatusCounts[ContactRequestStatus.contacted] ?? 0) +
+      (contactStatusCounts[ContactRequestStatus.closed] ?? 0);
+  int get activeSubscriptions => subscriptionCounts.values.fold(0, (a, b) => a + b);
+  int get totalUsage => usageThisMonth.values.fold(0, (a, b) => a + b);
 }
 
 /// Console — Tableau de bord. Un aperçu réel de l'activité — demandes de
@@ -86,281 +99,250 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Tableau de bord')),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
             children: [
-              GlassContainer(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Console d\'administration JurisIA',
-                      style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Connecté en tant que ${identity.primary?.label ?? 'membre du personnel'}.',
-                      style: textTheme.bodySmall,
-                    ),
-                  ],
+              AdminPageHeader(
+                icon: Icons.dashboard_rounded,
+                title: 'Tableau de bord',
+                subtitle: 'Connecté en tant que ${identity.primary?.label ?? 'membre du personnel'}.',
+              ),
+              Expanded(
+                child: FutureBuilder<_DashboardSnapshot>(
+                  future: _load(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return const AdminEmptyState(
+                        icon: Icons.cloud_off_rounded,
+                        message: 'Chargement impossible.',
+                        detail: 'Vérifiez les droits ou l\'état des migrations 007/008.',
+                      );
+                    }
+                    final data = snapshot.data!;
+                    return _DashboardBody(data: data);
+                  },
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              FutureBuilder<_DashboardSnapshot>(
-                future: _load(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    return GlassContainer(
-                      padding: const EdgeInsets.all(AppSpacing.lg),
-                      child: Text(
-                        'Chargement impossible (droits ou migration 007/008).',
-                        style: textTheme.bodyMedium,
-                      ),
-                    );
-                  }
-                  final data = snapshot.data!;
-                  final pending = data.contactStatusCounts[ContactRequestStatus.pending] ?? 0;
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+class _DashboardBody extends StatelessWidget {
+  const _DashboardBody({required this.data});
+
+  final _DashboardSnapshot data;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 980;
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _KpiRow(data: data, wide: wide),
+              const SizedBox(height: AppSpacing.lg),
+              if (wide)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _StatTile(
-                        label: 'Demandes de mise en relation en attente',
-                        value: '$pending',
-                        icon: Icons.support_agent_rounded,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SectionCard(
-                        title: 'Demandes de mise en relation',
-                        icon: Icons.forum_rounded,
-                        child: Row(
-                          children: [
-                            for (final status in ContactRequestStatus.values) ...[
-                              if (status != ContactRequestStatus.values.first)
-                                const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: _MiniStat(
-                                  label: status.label,
-                                  value: data.contactStatusCounts[status] ?? 0,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SectionCard(
-                        title: 'Abonnements payants actifs',
-                        icon: Icons.credit_card_rounded,
-                        child: data.subscriptionCounts.isEmpty
-                            ? Text(
-                                'Aucun abonnement payant pour l\'instant.',
-                                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (final code in PlanCode.values)
-                                    if (data.subscriptionCounts.containsKey(code))
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                                        child: _BreakdownRow(
-                                          label: PlanCatalog.of(code).name,
-                                          value: data.subscriptionCounts[code]!,
-                                        ),
-                                      ),
-                                ],
-                              ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SectionCard(
-                        title: 'Consommation IA — ce mois-ci',
-                        icon: Icons.bolt_rounded,
-                        child: data.usageThisMonth.isEmpty
-                            ? Text(
-                                'Aucune consommation mesurée pour l\'instant.',
-                                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  for (final entry in data.usageThisMonth.entries)
-                                    Padding(
-                                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                                      child: _BreakdownRow(
-                                        label: EntitlementFeature.label(entry.key),
-                                        value: entry.value,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                      ),
+                      Expanded(flex: 5, child: _ContactStatusSection(data: data)),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(flex: 4, child: _SubscriptionsSection(data: data)),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(flex: 4, child: _UsageSection(data: data)),
                     ],
-                  );
-                },
-              ),
+                  ),
+                )
+              else ...[
+                _ContactStatusSection(data: data),
+                const SizedBox(height: AppSpacing.lg),
+                _SubscriptionsSection(data: data),
+                const SizedBox(height: AppSpacing.lg),
+                _UsageSection(data: data),
+              ],
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
+class _KpiRow extends StatelessWidget {
+  const _KpiRow({required this.data, required this.wide});
 
-  final String label;
-  final String value;
-  final IconData icon;
+  final _DashboardSnapshot data;
+  final bool wide;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return GlassContainer(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+    final cards = [
+      AdminStatCard(
+        icon: Icons.hourglass_top_rounded,
+        label: 'Demandes en attente',
+        value: '${data.pending}',
+        accentColor: AppColors.warning,
+      ),
+      AdminStatCard(
+        icon: Icons.task_alt_rounded,
+        label: 'Demandes traitées',
+        value: '${data.handled}',
+        accentColor: AppColors.success,
+      ),
+      AdminStatCard(
+        icon: Icons.credit_card_rounded,
+        label: 'Abonnements payants actifs',
+        value: '${data.activeSubscriptions}',
+        accentColor: AdminTheme.accent,
+      ),
+      AdminStatCard(
+        icon: Icons.bolt_rounded,
+        label: 'Consommation IA — ce mois',
+        value: '${data.totalUsage}',
+        accentColor: AppColors.metalRoseGold,
+      ),
+    ];
+
+    if (!wide) {
+      return Column(
+        children: [
+          for (final card in cards) Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: card),
+        ],
+      );
+    }
+
+    return IntrinsicHeight(
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(icon, color: AdminTheme.accentLight),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(child: Text(label, style: textTheme.bodyMedium)),
-          Text(
-            value,
-            style: textTheme.headlineSmall?.copyWith(
-              fontFamily: 'Libre Caslon Display',
-              color: AppColors.textPrimary,
+          for (var i = 0; i < cards.length; i++) ...[
+            if (i > 0) const SizedBox(width: AppSpacing.md),
+            Expanded(child: cards[i]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactStatusSection extends StatelessWidget {
+  const _ContactStatusSection({required this.data});
+
+  final _DashboardSnapshot data;
+
+  static const _statusColors = {
+    ContactRequestStatus.pending: AppColors.warning,
+    ContactRequestStatus.contacted: AdminTheme.accentLight,
+    ContactRequestStatus.closed: AppColors.success,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final segments = [
+      for (final status in ContactRequestStatus.values)
+        AdminDonutSegment(
+          label: status.label,
+          value: (data.contactStatusCounts[status] ?? 0).toDouble(),
+          color: _statusColors[status]!,
+        ),
+    ];
+
+    return AdminSectionCard(
+      title: 'Demandes de mise en relation',
+      icon: Icons.forum_rounded,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          AdminDonutChart(segments: segments),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(child: AdminDonutLegend(segments: segments)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubscriptionsSection extends StatelessWidget {
+  const _SubscriptionsSection({required this.data});
+
+  final _DashboardSnapshot data;
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = data.subscriptionCounts;
+    final maxValue = counts.values.isEmpty ? 0 : counts.values.reduce((a, b) => a > b ? a : b);
+
+    return AdminSectionCard(
+      title: 'Abonnements payants actifs',
+      icon: Icons.credit_card_rounded,
+      trailing: AdminStatusChip(label: '${data.activeSubscriptions}', color: AdminTheme.accent),
+      child: counts.isEmpty
+          ? Text(
+              'Aucun abonnement payant pour l\'instant.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final code in PlanCode.values)
+                  if (counts.containsKey(code))
+                    AdminBarRow(
+                      label: PlanCatalog.of(code).name,
+                      value: counts[code]!,
+                      maxValue: maxValue,
+                      color: AdminTheme.accent,
+                    ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
 
-/// Carte de section du cockpit : eyebrow + icône, puis le contenu (une
-/// rangée de mini-stats ou une liste de répartition).
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.icon, required this.child});
+class _UsageSection extends StatelessWidget {
+  const _UsageSection({required this.data});
 
-  final String title;
-  final IconData icon;
-  final Widget child;
+  final _DashboardSnapshot data;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return GlassContainer(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: AdminTheme.accentLight),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                title.toUpperCase(),
-                style: textTheme.labelSmall?.copyWith(
-                  color: AdminTheme.accentLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          child,
-        ],
-      ),
-    );
-  }
-}
+    final usage = data.usageThisMonth;
+    final maxValue = usage.values.isEmpty ? 0 : usage.values.reduce((a, b) => a > b ? a : b);
 
-/// Petit total centré (statut de demande de contact), côte à côte avec ses
-/// pairs dans une rangée qui se partage la largeur de la carte.
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({required this.label, required this.value});
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.glassBorder, width: 0.6),
-      ),
-      child: Column(
-        children: [
-          Text(
-            '$value',
-            style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Ligne label / valeur d'une répartition (offres, fonctionnalités…).
-class _BreakdownRow extends StatelessWidget {
-  const _BreakdownRow({required this.label, required this.value});
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Text(
-          '$value',
-          style: textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
+    return AdminSectionCard(
+      title: 'Consommation IA — ce mois-ci',
+      icon: Icons.bolt_rounded,
+      trailing: AdminStatusChip(label: '${data.totalUsage}', color: AppColors.metalRoseGold),
+      child: usage.isEmpty
+          ? Text(
+              'Aucune consommation mesurée pour l\'instant.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final entry in usage.entries)
+                  AdminBarRow(
+                    label: EntitlementFeature.label(entry.key),
+                    value: entry.value,
+                    maxValue: maxValue,
+                    color: AppColors.metalRoseGold,
+                  ),
+              ],
+            ),
     );
   }
 }

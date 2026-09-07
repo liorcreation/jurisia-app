@@ -8,6 +8,9 @@ import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_status_chip.dart';
 import '../library_cms/admin_document_draft.dart';
 import '../library_cms/admin_document_draft_controller.dart';
 import '../library_cms/admin_document_draft_repository.dart';
@@ -66,7 +69,6 @@ class _View extends StatelessWidget {
   Widget build(BuildContext context) {
     final docController = context.watch<AdminDocumentDraftController>();
     final promptController = context.watch<AdminPromptController>();
-    final textTheme = Theme.of(context).textTheme;
     final busy = docController.isMutating || promptController.isMutating;
 
     final entries = <_QueueEntry>[
@@ -106,26 +108,28 @@ class _View extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Salle de revue'),
-          actions: [
-            IconButton(
-              tooltip: 'Rafraîchir',
-              onPressed: (docController.isLoading || promptController.isLoading)
-                  ? null
-                  : () {
-                      docController.load();
-                      promptController.load();
-                    },
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
-        ),
         body: SafeArea(
           child: Column(
             children: [
+              AdminPageHeader(
+                icon: Icons.fact_check_rounded,
+                title: 'Salle de revue',
+                subtitle: 'Tout ce qui attend une décision d\'un relecteur, triés par ancienneté.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: (docController.isLoading || promptController.isLoading)
+                        ? null
+                        : () {
+                            docController.load();
+                            promptController.load();
+                          },
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                ],
+              ),
               if (error != null)
-                _ErrorBanner(
+                AdminErrorBanner(
                   message: error,
                   onDismiss: () {
                     docController.dismissError();
@@ -136,11 +140,9 @@ class _View extends StatelessWidget {
                 child: loading && entries.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : entries.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Rien à relire pour le moment.',
-                              style: textTheme.bodyMedium,
-                            ),
+                        ? const AdminEmptyState(
+                            icon: Icons.spa_rounded,
+                            message: 'Rien à relire pour le moment.',
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.all(AppSpacing.md),
@@ -207,7 +209,11 @@ class _DocQueueCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const _KindTag(label: 'CMS Bibliothèque', icon: Icons.menu_book_rounded),
+              const AdminStatusChip(
+                label: 'CMS Bibliothèque',
+                color: AdminTheme.accentLight,
+                icon: Icons.menu_book_rounded,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
@@ -275,7 +281,11 @@ class _PromptQueueCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _KindTag(label: 'Studio de prompts', icon: Icons.auto_awesome_rounded),
+          const AdminStatusChip(
+            label: 'Studio de prompts',
+            color: AdminTheme.accentLight,
+            icon: Icons.auto_awesome_rounded,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(PromptKey.label(prompt.key), style: textTheme.titleSmall),
           if (prompt.testMessage != null) ...[
@@ -300,75 +310,6 @@ class _PromptQueueCard extends StatelessWidget {
             style: FilledButton.styleFrom(backgroundColor: AppColors.success),
             icon: const Icon(Icons.publish_rounded, size: 15),
             label: const Text('Publier'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _KindTag extends StatelessWidget {
-  const _KindTag({required this.label, required this.icon});
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
-      decoration: BoxDecoration(
-        color: AdminTheme.accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.4), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: AdminTheme.accentLight),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: AdminTheme.accentLight, fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
           ),
         ],
       ),

@@ -7,6 +7,8 @@ import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
 import 'admin_staff_controller.dart';
 import 'admin_staff_member.dart';
 import 'admin_staff_repository.dart';
@@ -54,64 +56,72 @@ class _View extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Personnel'),
-          actions: [
-            IconButton(
-              tooltip: 'Rafraîchir',
-              onPressed: controller.isLoading ? null : controller.load,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
-        ),
         body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
             children: [
-              if (controller.error != null)
-                _ErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
-              if (controller.error != null) const SizedBox(height: AppSpacing.md),
-              if (canManage) ...[
-                _GrantCard(controller: controller),
-                const SizedBox(height: AppSpacing.md),
-              ] else
-                GlassContainer(
+              AdminPageHeader(
+                icon: Icons.badge_rounded,
+                title: 'Personnel',
+                subtitle: 'Qui a accès à la console, avec quel rôle.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: controller.isLoading ? null : controller.load,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          'Seul un super administrateur peut accorder ou retirer un rôle.',
-                          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  children: [
+                    if (controller.error != null)
+                      AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                    if (controller.error != null) const SizedBox(height: AppSpacing.md),
+                    if (canManage) ...[
+                      _GrantCard(controller: controller),
+                      const SizedBox(height: AppSpacing.md),
+                    ] else
+                      GlassContainer(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'Seul un super administrateur peut accorder ou retirer un rôle.',
+                                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    if (controller.isLoading && controller.members.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (controller.members.isEmpty)
+                      const AdminEmptyState(
+                        icon: Icons.group_off_rounded,
+                        message: 'Aucun membre du personnel pour l\'instant.',
+                      )
+                    else
+                      for (final email in emails)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _StaffCard(
+                            email: email,
+                            members: byEmail[email]!,
+                            canManage: canManage,
+                            busy: controller.isMutating,
+                            onRevoke: (member) => _confirmRevoke(context, controller, member),
+                          ),
+                        ),
+                  ],
                 ),
-              if (controller.isLoading && controller.members.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (controller.members.isEmpty)
-                GlassContainer(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: const Text('Aucun membre du personnel pour l\'instant.'),
-                )
-              else
-                for (final email in emails)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: _StaffCard(
-                      email: email,
-                      members: byEmail[email]!,
-                      canManage: canManage,
-                      busy: controller.isMutating,
-                      onRevoke: (member) => _confirmRevoke(context, controller, member),
-                    ),
-                  ),
+              ),
             ],
           ),
         ),
@@ -285,42 +295,6 @@ class _StaffCard extends StatelessWidget {
               style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
         ],
       ),
     );

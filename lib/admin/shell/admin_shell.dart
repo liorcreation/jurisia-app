@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../core/supabase/supabase_config.dart';
+import '../../core/widgets/glass_container.dart';
+import '../../core/widgets/jurisia_mark.dart';
 import '../../core/widgets/luxury_scaffold_background.dart';
+import '../../core/widgets/shimmer_sweep.dart';
+import '../../core/widgets/smoked_glass_surface.dart';
+import '../../core/widgets/tap_scale.dart';
 import '../../theme/app_theme.dart';
 import '../auth/staff_role.dart';
 import '../features/audit/admin_audit_screen.dart';
@@ -12,17 +18,27 @@ import '../features/review_room/admin_review_room_screen.dart';
 import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
+import '../widgets/admin_ambience.dart';
+
+const double _kSidebarWidth = 292;
 
 class _AdminDestination {
-  const _AdminDestination({required this.label, required this.icon, required this.screen});
+  const _AdminDestination({
+    required this.group,
+    required this.label,
+    required this.icon,
+    required this.screen,
+  });
+
+  final String group;
   final String label;
   final IconData icon;
   final Widget screen;
 }
 
-/// Coquille de la console : barre latérale permanente (accent cobalt, badge
-/// « ADMIN » visible en permanence) + `IndexedStack` des sections
-/// autorisées par le rôle de l'opérateur.
+/// Coquille de la console : sidebar permanente à largeur fixe (registre
+/// « cabinet numérique » cobalt, ambiance vivante, navigation groupée) +
+/// `IndexedStack` des sections autorisées par le rôle de l'opérateur.
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.identity, required this.onSignOut});
 
@@ -42,46 +58,54 @@ class _AdminShellState extends State<AdminShell> {
     final identity = widget.identity;
     return [
       _AdminDestination(
+        group: 'Vue d\'ensemble',
         label: 'Tableau de bord',
         icon: Icons.dashboard_rounded,
         screen: AdminDashboardScreen(identity: identity),
       ),
       if (identity.canReviewDocuments || identity.canPublishPrompts)
         _AdminDestination(
+          group: 'Opérations',
           label: 'Salle de revue',
           icon: Icons.fact_check_rounded,
           screen: AdminReviewRoomScreen(identity: identity),
         ),
       if (identity.canOperate)
         const _AdminDestination(
-          label: 'Demandes de mise en relation',
+          group: 'Opérations',
+          label: 'Mise en relation',
           icon: Icons.support_agent_rounded,
           screen: AdminContactRequestsScreen(),
         ),
       if (identity.canSeeBilling)
         const _AdminDestination(
+          group: 'Opérations',
           label: 'Abonnements',
           icon: Icons.credit_card_rounded,
           screen: AdminSubscriptionsScreen(),
         ),
       if (identity.canEditContent)
         _AdminDestination(
+          group: 'Contenu',
           label: 'CMS Bibliothèque',
           icon: Icons.menu_book_rounded,
           screen: AdminLibraryCmsScreen(identity: identity),
         ),
       if (identity.canEditContent)
         _AdminDestination(
+          group: 'Contenu',
           label: 'Studio de prompts',
           icon: Icons.auto_awesome_rounded,
           screen: AdminPromptStudioScreen(identity: identity),
         ),
       const _AdminDestination(
+        group: 'Système',
         label: 'Journal d\'audit',
         icon: Icons.receipt_long_rounded,
         screen: AdminAuditScreen(),
       ),
       _AdminDestination(
+        group: 'Système',
         label: 'Personnel',
         icon: Icons.badge_rounded,
         screen: AdminStaffScreen(identity: identity),
@@ -95,13 +119,17 @@ class _AdminShellState extends State<AdminShell> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Sidebar(
-              destinations: _destinations,
-              selectedIndex: _index,
-              onSelect: (i) => setState(() => _index = i),
-              identity: widget.identity,
-              onSignOut: widget.onSignOut,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
+              child: _Sidebar(
+                destinations: _destinations,
+                selectedIndex: _index,
+                onSelect: (i) => setState(() => _index = i),
+                identity: widget.identity,
+                onSignOut: widget.onSignOut,
+              ),
             ),
             Expanded(
               child: IndexedStack(
@@ -133,88 +161,157 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final radius = BorderRadius.circular(AppRadius.large);
 
-    return Container(
-      width: 236,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.legalBlueDark, AppColors.nightBlueDeep],
-        ),
-        border: Border(right: BorderSide(color: AppColors.divider, width: 0.5)),
-      ),
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  Text(
-                    'JurisIA',
-                    style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AdminTheme.accent,
-                      borderRadius: BorderRadius.circular(AppRadius.small),
-                    ),
-                    child: Text(
-                      'ADMIN',
-                      style: textTheme.labelSmall?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
+    return SizedBox(
+      width: _kSidebarWidth,
+      child: DecoratedBox(
+        decoration: BoxDecoration(borderRadius: radius, boxShadow: AppShadows.floating),
+        child: SmokedGlassSurface(
+          borderRadius: radius,
+          border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.26), width: 0.8),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+              SafeArea(
+                right: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _BrandHeader(),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                        children: _buildNavChildren(),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                children: [
-                  for (var i = 0; i < destinations.length; i++)
-                    _NavItem(
-                      destination: destinations[i],
-                      selected: i == selectedIndex,
-                      onTap: () => onSelect(i),
+                    const _FadingRule(),
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      child: _ProfileCard(identity: identity, onSignOut: onSignOut),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(identity.primary?.label ?? 'Personnel', style: textTheme.labelMedium),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextButton.icon(
-                    onPressed: onSignOut,
-                    icon: const Icon(Icons.logout_rounded, size: 16, color: AppColors.error),
-                    label: const Text('Se déconnecter', style: TextStyle(color: AppColors.error)),
-                    style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  List<Widget> _buildNavChildren() {
+    final children = <Widget>[];
+    String? currentGroup;
+    for (var i = 0; i < destinations.length; i++) {
+      final destination = destinations[i];
+      if (destination.group != currentGroup) {
+        currentGroup = destination.group;
+        if (children.isNotEmpty) children.add(const SizedBox(height: AppSpacing.sm));
+        children.add(_GroupLabel(currentGroup));
+      }
+      children.add(
+        _NavItem(
+          destination: destination,
+          selected: i == selectedIndex,
+          onTap: () => onSelect(i),
+        ),
+      );
+    }
+    return children;
+  }
+}
+
+/// En-tête de marque de la sidebar : plaque cobalt + monogramme, mot
+/// « JurisIA » en serif, pastille « ADMIN » — le repère immédiat qui évite
+/// toute confusion avec l'application grand public.
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.55), width: 0.9),
+              gradient: RadialGradient(
+                center: const Alignment(-0.3, -0.4),
+                radius: 1.1,
+                colors: [AppColors.nightBlue, AppColors.nightBlueDeep],
+              ),
+              boxShadow: AdminGradients.cobaltGlowSoft,
+            ),
+            child: JurisIAMark(size: 24, gradient: AdminGradients.cobaltMetallic),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('JurisIA', style: textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display')),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.goldSheen,
+                        borderRadius: BorderRadius.circular(AppRadius.small),
+                      ),
+                      child: Text(
+                        'ADMIN',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: AppColors.nightBlueDeep,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.4,
+                          fontSize: 9,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('Console', style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.sm, AppSpacing.sm, 6),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textDisabled,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+            ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
   const _NavItem({required this.destination, required this.selected, required this.onTap});
 
   final _AdminDestination destination;
@@ -222,38 +319,216 @@ class _NavItem extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-      child: Material(
-        color: selected ? AdminTheme.accent.withValues(alpha: 0.16) : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.small),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 10),
-            child: Row(
-              children: [
-                Icon(
-                  destination.icon,
-                  size: 18,
-                  color: selected ? AdminTheme.accentLight : AppColors.textSecondary,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    destination.label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
+    final textTheme = Theme.of(context).textTheme;
+    final selected = widget.selected;
+
+    Widget pill = AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        gradient: selected
+            ? LinearGradient(
+                colors: [AdminTheme.accent.withValues(alpha: 0.28), AdminTheme.accent.withValues(alpha: 0.10)],
+              )
+            : null,
+        color: selected ? null : (_hovered ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
+        border: Border.all(
+          color: selected ? AdminTheme.accent.withValues(alpha: 0.5) : Colors.transparent,
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 16,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(2),
+              color: selected ? AdminTheme.accentLight : Colors.transparent,
             ),
           ),
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            widget.destination.icon,
+            size: 18,
+            color: selected ? AdminTheme.accentLight : AppColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              widget.destination.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelMedium?.copyWith(
+                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (selected) pill = ShimmerSweep(duration: const Duration(milliseconds: 2600), child: pill);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            onTap: widget.onTap,
+            child: pill,
+          ),
         ),
+      ),
+    );
+  }
+}
+
+class _FadingRule extends StatelessWidget {
+  const _FadingRule();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.transparent,
+            AdminTheme.accent.withValues(alpha: 0.35),
+            Colors.transparent,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Carte profil en pied de sidebar : monogramme cobalt, e-mail du compte
+/// connecté, rôle principal, déconnexion.
+class _ProfileCard extends StatelessWidget {
+  const _ProfileCard({required this.identity, required this.onSignOut});
+
+  final StaffIdentity identity;
+  final Future<void> Function() onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final email = SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.email : null;
+    final initial = (email?.isNotEmpty ?? false) ? email!.substring(0, 1).toUpperCase() : '?';
+    final roleLabel = identity.primary?.label ?? 'Personnel';
+
+    return GlassContainer(
+      borderRadius: AppRadius.medium,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: AdminGradients.cobaltMetallic,
+                  boxShadow: AdminGradients.cobaltGlowSoft,
+                ),
+                child: Text(
+                  initial,
+                  style: textTheme.titleSmall?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      email ?? 'Compte du personnel',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(shape: BoxShape.circle, gradient: AdminGradients.cobaltSheen),
+                        ),
+                        const SizedBox(width: 5),
+                        Flexible(
+                          child: Text(
+                            roleLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(color: AdminTheme.accentLight),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TapScale(
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                onTap: onSignOut,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    color: AppColors.error.withValues(alpha: 0.10),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.35), width: 0.8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.logout_rounded, size: 14, color: AppColors.error),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Se déconnecter',
+                        style: textTheme.labelSmall?.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

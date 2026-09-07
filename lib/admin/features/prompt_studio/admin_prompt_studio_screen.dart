@@ -8,6 +8,9 @@ import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_status_chip.dart';
 import 'admin_ai_prompt.dart';
 import 'admin_prompt_controller.dart';
 import 'admin_prompt_repository.dart';
@@ -55,32 +58,37 @@ class _View extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Studio de prompts'),
-          actions: [
-            IconButton(
-              tooltip: 'Rafraîchir',
-              onPressed: controller.isLoading ? null : controller.load,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-            if (identity.canEditContent)
-              IconButton(
-                tooltip: 'Nouveau brouillon',
-                onPressed: () => _openEditor(context, controller),
-                icon: const Icon(Icons.add_rounded),
-              ),
-          ],
-        ),
         body: SafeArea(
-          child: controller.isLoading && controller.prompts.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : ListView(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  children: [
-                    if (controller.error != null) ...[
-                      _ErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
-                      const SizedBox(height: AppSpacing.md),
-                    ],
+          child: Column(
+            children: [
+              AdminPageHeader(
+                icon: Icons.auto_awesome_rounded,
+                title: 'Studio de prompts',
+                subtitle: 'Rédiger, tester et publier les instructions système de l\'IA sans déploiement.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: controller.isLoading ? null : controller.load,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                  if (identity.canEditContent)
+                    IconButton(
+                      tooltip: 'Nouveau brouillon',
+                      onPressed: () => _openEditor(context, controller),
+                      icon: const Icon(Icons.add_rounded),
+                    ),
+                ],
+              ),
+              Expanded(
+                child: controller.isLoading && controller.prompts.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        children: [
+                          if (controller.error != null) ...[
+                            AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                            const SizedBox(height: AppSpacing.md),
+                          ],
                     for (final key in keys) ...[
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -115,8 +123,11 @@ class _View extends StatelessWidget {
                           ),
                         ),
                     ],
-                  ],
-                ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -168,23 +179,9 @@ class _PromptCard extends StatelessWidget {
   final VoidCallback onTest;
   final VoidCallback onPublish;
 
-  Color _statusColor() {
-    switch (prompt.status) {
-      case AiPromptStatus.published:
-        return AppColors.success;
-      case AiPromptStatus.tested:
-        return AdminTheme.accentLight;
-      case AiPromptStatus.archived:
-        return AppColors.textDisabled;
-      case AiPromptStatus.draft:
-        return AppColors.textSecondary;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final color = _statusColor();
 
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -196,18 +193,7 @@ class _PromptCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
-                ),
-                child: Text(
-                  prompt.status.label,
-                  style: textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700),
-                ),
-              ),
+              AdminStatusChip(label: prompt.status.label, color: promptStatusColor(prompt.status)),
               const Spacer(),
               Text(
                 'Maj ${prompt.updatedAt.day}/${prompt.updatedAt.month}/${prompt.updatedAt.year}',
@@ -472,42 +458,6 @@ class _PromptTestDialogState extends State<_PromptTestDialog> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
       ),
     );
   }

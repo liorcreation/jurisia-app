@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../core/supabase/supabase_config.dart';
+import '../../core/widgets/glass_container.dart';
+import '../../core/widgets/gradient_icon_badge.dart';
 import '../../core/widgets/luxury_scaffold_background.dart';
 import '../../features/auth/data/repositories/supabase_auth_repository.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../theme/app_theme.dart';
 import '../shell/admin_shell.dart';
+import '../theme/admin_theme.dart';
+import '../widgets/admin_ambience.dart';
 import 'admin_sign_in_screen.dart';
 import 'staff_repository.dart';
 import 'staff_role.dart';
@@ -95,15 +99,55 @@ class _StaffGateState extends State<_StaffGate> {
   }
 }
 
-class _AdminLoading extends StatelessWidget {
+/// Attente de session — jamais une barre de progression : la marque respire
+/// doucement le temps de l'aller-retour réseau, dans le même esprit que
+/// l'écran de démarrage de l'application grand public (aucun indicateur de
+/// chargement littéral).
+class _AdminLoading extends StatefulWidget {
   const _AdminLoading();
 
   @override
+  State<_AdminLoading> createState() => _AdminLoadingState();
+}
+
+class _AdminLoadingState extends State<_AdminLoading> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const LuxuryScaffoldBackground(
+    return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(child: CircularProgressIndicator()),
+        body: Stack(
+          children: [
+            const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+            Center(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final t = Curves.easeInOut.transform(_controller.value);
+                  return Opacity(
+                    opacity: 0.55 + 0.45 * t,
+                    child: Transform.scale(scale: 0.94 + 0.06 * t, child: child),
+                  );
+                },
+                child: const GradientIconBadge(
+                  icon: Icons.shield_moon_rounded,
+                  size: 56,
+                  gradient: AdminGradients.cobaltMetallic,
+                  iconColor: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -128,30 +172,55 @@ class _AdminMessage extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 40, color: AppColors.textSecondary),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(title, style: textTheme.titleLarge, textAlign: TextAlign.center),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(detail, style: textTheme.bodySmall, textAlign: TextAlign.center),
-                  if (onSignOut != null) ...[
-                    const SizedBox(height: AppSpacing.lg),
-                    TextButton(
-                      onPressed: onSignOut,
-                      child: const Text('Se déconnecter'),
+        body: Stack(
+          children: [
+            const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: GlassContainer(
+                    padding: const EdgeInsets.all(AppSpacing.xl),
+                    borderColor: AppColors.error.withValues(alpha: 0.35),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GradientIconBadge(
+                          icon: icon,
+                          size: 52,
+                          gradient: LinearGradient(
+                            colors: [AppColors.error.withValues(alpha: 0.9), AppColors.error.withValues(alpha: 0.5)],
+                          ),
+                          iconColor: AppColors.textPrimary,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          title,
+                          style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          detail,
+                          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (onSignOut != null) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          TextButton.icon(
+                            onPressed: onSignOut,
+                            icon: const Icon(Icons.logout_rounded, size: 16, color: AppColors.error),
+                            label: const Text('Se déconnecter', style: TextStyle(color: AppColors.error)),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

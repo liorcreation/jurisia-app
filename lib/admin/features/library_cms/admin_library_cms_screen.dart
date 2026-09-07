@@ -11,6 +11,9 @@ import '../../../models/legal_document/legal_domain.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_status_chip.dart';
 import 'admin_document_draft.dart';
 import 'admin_document_draft_controller.dart';
 import 'admin_document_draft_repository.dart';
@@ -45,40 +48,39 @@ class _View extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<AdminDocumentDraftController>();
-    final textTheme = Theme.of(context).textTheme;
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('CMS Bibliothèque'),
-          actions: [
-            IconButton(
-              tooltip: 'Rafraîchir',
-              onPressed: controller.isLoading ? null : controller.load,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-            if (identity.canEditContent)
-              IconButton(
-                tooltip: 'Nouveau brouillon',
-                onPressed: () => _openEditor(context, controller),
-                icon: const Icon(Icons.add_rounded),
-              ),
-          ],
-        ),
         body: SafeArea(
           child: Column(
             children: [
+              AdminPageHeader(
+                icon: Icons.menu_book_rounded,
+                title: 'CMS Bibliothèque',
+                subtitle: 'La file des brouillons de textes et leur circuit de relecture.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: controller.isLoading ? null : controller.load,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                  if (identity.canEditContent)
+                    IconButton(
+                      tooltip: 'Nouveau brouillon',
+                      onPressed: () => _openEditor(context, controller),
+                      icon: const Icon(Icons.add_rounded),
+                    ),
+                ],
+              ),
               _FilterBar(controller: controller),
               if (controller.error != null)
-                _ErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
               Expanded(
                 child: controller.isLoading && controller.drafts.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : controller.drafts.isEmpty
-                        ? Center(
-                            child: Text('Aucun brouillon.', style: textTheme.bodyMedium),
-                          )
+                        ? const AdminEmptyState(icon: Icons.description_outlined, message: 'Aucun brouillon.')
                         : ListView.separated(
                             padding: const EdgeInsets.all(AppSpacing.md),
                             itemCount: controller.drafts.length,
@@ -216,25 +218,9 @@ class _DraftCard extends StatelessWidget {
   final VoidCallback onRequestChanges;
   final VoidCallback onArchive;
 
-  Color _statusColor(BuildContext context) {
-    switch (draft.status) {
-      case DocumentDraftStatus.published:
-        return AppColors.success;
-      case DocumentDraftStatus.changesRequested:
-        return AppColors.warning;
-      case DocumentDraftStatus.archived:
-        return AppColors.textDisabled;
-      case DocumentDraftStatus.inReview:
-        return AdminTheme.accentLight;
-      case DocumentDraftStatus.draft:
-        return AppColors.textSecondary;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final color = _statusColor(context);
 
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -243,18 +229,7 @@ class _DraftCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 3),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: color.withValues(alpha: 0.4), width: 0.8),
-                ),
-                child: Text(
-                  draft.status.label,
-                  style: textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700),
-                ),
-              ),
+              AdminStatusChip(label: draft.status.label, color: draftStatusColor(draft.status)),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
@@ -898,43 +873,6 @@ class _ArticleEditorCard extends StatelessWidget {
             controller: item.body,
             maxLines: 4,
             decoration: const InputDecoration(labelText: 'Corps de l\'article', alignLabelWithHint: true),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
           ),
         ],
       ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 
+export 'admin_gradients.dart';
+
 /// Thème de la console d'administration : identique au registre « verre fumé
 /// & or brossé » de l'application, mais l'**accent passe du doré au cobalt**.
 /// Un opérateur ne doit jamais confondre la console et la production d'un

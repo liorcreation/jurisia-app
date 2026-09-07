@@ -8,6 +8,9 @@ import '../../../features/contact_professional/domain/entities/contact_request.d
 import '../../../features/contact_professional/domain/entities/professional_category.dart';
 import '../../../theme/app_theme.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_status_chip.dart';
 import 'admin_contact_request.dart';
 import 'admin_contact_request_repository.dart';
 import 'admin_contact_requests_controller.dart';
@@ -39,27 +42,29 @@ class _View extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('Demandes de mise en relation'),
-          actions: [
-            IconButton(
-              tooltip: 'Rafraîchir',
-              onPressed: controller.isLoading ? null : controller.load,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
-        ),
         body: SafeArea(
           child: Column(
             children: [
+              AdminPageHeader(
+                icon: Icons.support_agent_rounded,
+                title: 'Demandes de mise en relation',
+                subtitle: 'La file de traitement — chaque changement de statut est tracé au journal d\'audit.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: controller.isLoading ? null : controller.load,
+                    icon: const Icon(Icons.refresh_rounded),
+                  ),
+                ],
+              ),
               _FilterBar(controller: controller),
               if (controller.error != null)
-                _ErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
               Expanded(
                 child: controller.isLoading && controller.items.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : controller.items.isEmpty
-                        ? const Center(child: Text('Aucune demande.'))
+                        ? const AdminEmptyState(icon: Icons.inbox_rounded, message: 'Aucune demande pour l\'instant.')
                         : ListView.separated(
                             padding: const EdgeInsets.all(AppSpacing.md),
                             itemCount: controller.items.length,
@@ -143,6 +148,8 @@ class _RequestCard extends StatelessWidget {
                 child: Text(request.category.label, style: textTheme.labelSmall),
               ),
               const Spacer(),
+              AdminStatusChip(label: request.status.label, color: contactStatusColor(request.status)),
+              const SizedBox(width: AppSpacing.sm),
               Text(_formatDate(request.createdAt), style: textTheme.labelSmall),
             ],
           ),
@@ -187,40 +194,5 @@ class _RequestCard extends StatelessWidget {
     final local = date.toLocal();
     String two(int n) => n.toString().padLeft(2, '0');
     return '${two(local.day)}/${two(local.month)}/${local.year}';
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16),
-            onPressed: onDismiss,
-          ),
-        ],
-      ),
-    );
   }
 }
