@@ -7,6 +7,7 @@ import '../supabase/supabase_config.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_icon_badge.dart';
 import '../widgets/luxury_elevated_button.dart';
+import 'admin_handoff.dart';
 import 'staff_status.dart';
 
 /// URL publique de la console d'administration — un déploiement Cloudflare
@@ -50,11 +51,24 @@ class _StaffRedirectPromptState extends State<StaffRedirectPrompt> {
   Widget build(BuildContext context) => widget.child;
 }
 
-class _StaffRedirectDialog extends StatelessWidget {
+class _StaffRedirectDialog extends StatefulWidget {
   const _StaffRedirectDialog();
 
+  @override
+  State<_StaffRedirectDialog> createState() => _StaffRedirectDialogState();
+}
+
+class _StaffRedirectDialogState extends State<_StaffRedirectDialog> {
+  bool _opening = false;
+
+  /// Rejoint la console déjà connecté, sans ressaisir ses identifiants —
+  /// voir `admin_handoff.dart`. Se rabat sur le simple lien public si la
+  /// demande échoue, jamais un blocage silencieux.
   Future<void> _openAdmin(BuildContext context) async {
-    await launchUrl(Uri.parse(kAdminConsoleUrl), webOnlyWindowName: '_blank');
+    if (_opening) return;
+    setState(() => _opening = true);
+    final link = await requestAdminHandoffLink();
+    await launchUrl(Uri.parse(link ?? kAdminConsoleUrl), webOnlyWindowName: '_blank');
     if (context.mounted) Navigator.of(context).maybePop();
   }
 
@@ -97,8 +111,14 @@ class _StaffRedirectDialog extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 OutlinedButton.icon(
-                  onPressed: () => _openAdmin(context),
-                  icon: const Icon(Icons.admin_panel_settings_rounded, size: 16, color: AppColors.cobalt),
+                  onPressed: _opening ? null : () => _openAdmin(context),
+                  icon: _opening
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cobalt),
+                        )
+                      : const Icon(Icons.admin_panel_settings_rounded, size: 16, color: AppColors.cobalt),
                   label: const Text('Ouvrir la console d\'administration'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.cobalt,

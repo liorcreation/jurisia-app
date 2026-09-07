@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/litigation/presentation/controllers/litigation_chat_controller.dart';
 import '../../theme/app_theme.dart';
+import '../auth/admin_handoff.dart';
 import '../auth/staff_redirect_prompt.dart' show kAdminConsoleUrl;
 import '../auth/staff_status.dart';
 import '../navigation/nav_destinations.dart';
@@ -276,6 +277,7 @@ class _AdminPortalEntry extends StatefulWidget {
 
 class _AdminPortalEntryState extends State<_AdminPortalEntry> {
   bool _visible = false;
+  bool _opening = false;
 
   @override
   void initState() {
@@ -287,7 +289,21 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
     }
   }
 
-  Future<void> _open() => launchUrl(Uri.parse(kAdminConsoleUrl), webOnlyWindowName: '_blank');
+  /// Rejoint la console déjà connecté, sans ressaisir ses identifiants — un
+  /// lien d'authentification à usage unique (voir `admin_handoff.dart`) fait
+  /// le pont entre les deux origines web. Se rabat sur le simple lien
+  /// public si la demande échoue (fonction pas encore déployée, etc.),
+  /// jamais un blocage silencieux.
+  Future<void> _open() async {
+    if (_opening) return;
+    setState(() => _opening = true);
+    try {
+      final link = await requestAdminHandoffLink();
+      await launchUrl(Uri.parse(link ?? kAdminConsoleUrl), webOnlyWindowName: '_blank');
+    } finally {
+      if (mounted) setState(() => _opening = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -302,11 +318,15 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                onTap: _open,
+                onTap: _opening ? null : _open,
                 borderRadius: BorderRadius.circular(AppRadius.medium),
-                child: const Padding(
-                  padding: EdgeInsets.all(2),
-                  child: PortalOrb(size: 36),
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: AnimatedOpacity(
+                    opacity: _opening ? 0.5 : 1,
+                    duration: const Duration(milliseconds: 160),
+                    child: const PortalOrb(size: 36),
+                  ),
                 ),
               ),
             ),
@@ -321,29 +341,40 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
         child: Material(
           type: MaterialType.transparency,
           child: InkWell(
-            onTap: _open,
+            onTap: _opening ? null : _open,
             borderRadius: BorderRadius.circular(AppRadius.medium),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                border: Border.all(color: AppColors.cobalt.withValues(alpha: 0.35), width: 0.8),
-                color: AppColors.cobalt.withValues(alpha: 0.06),
-              ),
-              child: Row(
-                children: [
-                  const PortalOrb(size: 30, iconSize: 13),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Console d\'administration',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+            child: AnimatedOpacity(
+              opacity: _opening ? 0.6 : 1,
+              duration: const Duration(milliseconds: 160),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.medium),
+                  border: Border.all(color: AppColors.cobalt.withValues(alpha: 0.35), width: 0.8),
+                  color: AppColors.cobalt.withValues(alpha: 0.06),
+                ),
+                child: Row(
+                  children: [
+                    const PortalOrb(size: 30, iconSize: 13),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Console d\'administration',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textDisabled),
-                ],
+                    if (_opening)
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cobalt),
+                      )
+                    else
+                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textDisabled),
+                  ],
+                ),
               ),
             ),
           ),
