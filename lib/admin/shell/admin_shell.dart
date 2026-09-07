@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/supabase/supabase_config.dart';
@@ -19,8 +21,16 @@ import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
 import '../widgets/admin_ambience.dart';
+import 'admin_shell_scope.dart';
 
 const double _kSidebarWidth = 292;
+
+/// En dessous de cette largeur, la sidebar permanente devient un tiroir —
+/// même convention que le registre mobile/tablette de l'app grand public
+/// (`AppPlatformStyle.wideBreakpoint`) : téléphones et tablettes en
+/// portrait passent en tiroir, desktop et tablettes en paysage gardent le
+/// panneau permanent.
+const double _kWideBreakpoint = 1000;
 
 class _AdminDestination {
   const _AdminDestination({
@@ -51,6 +61,7 @@ class AdminShell extends StatefulWidget {
 
 class _AdminShellState extends State<AdminShell> {
   int _index = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   late final List<_AdminDestination> _destinations = _buildDestinations();
 
@@ -116,29 +127,70 @@ class _AdminShellState extends State<AdminShell> {
   @override
   Widget build(BuildContext context) {
     return LuxuryScaffoldBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
-              child: _Sidebar(
-                destinations: _destinations,
-                selectedIndex: _index,
-                onSelect: (i) => setState(() => _index = i),
-                identity: widget.identity,
-                onSignOut: widget.onSignOut,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final wide = constraints.maxWidth >= _kWideBreakpoint;
+          final content = IndexedStack(
+            index: _index,
+            children: [for (final destination in _destinations) destination.screen],
+          );
+
+          if (wide) {
+            return AdminShellScope(
+              openDrawer: null,
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
+                      child: SizedBox(
+                        width: _kSidebarWidth,
+                        child: _Sidebar(
+                          destinations: _destinations,
+                          selectedIndex: _index,
+                          onSelect: (i) => setState(() => _index = i),
+                          identity: widget.identity,
+                          onSignOut: widget.onSignOut,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: content),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: IndexedStack(
-                index: _index,
-                children: [for (final destination in _destinations) destination.screen],
+            );
+          }
+
+          return AdminShellScope(
+            openDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+            child: Scaffold(
+              key: _scaffoldKey,
+              backgroundColor: Colors.transparent,
+              drawerScrimColor: Colors.black.withValues(alpha: 0.55),
+              drawer: Drawer(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                width: math.min(320, constraints.maxWidth * 0.86),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: _Sidebar(
+                    destinations: _destinations,
+                    selectedIndex: _index,
+                    onSelect: (i) {
+                      setState(() => _index = i);
+                      Navigator.of(context).maybePop();
+                    },
+                    identity: widget.identity,
+                    onSignOut: widget.onSignOut,
+                  ),
+                ),
               ),
+              body: content,
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -163,38 +215,39 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.large);
 
-    return SizedBox(
-      width: _kSidebarWidth,
-      child: DecoratedBox(
-        decoration: BoxDecoration(borderRadius: radius, boxShadow: AppShadows.floating),
-        child: SmokedGlassSurface(
-          borderRadius: radius,
-          border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.26), width: 0.8),
-          child: Stack(
-            children: [
-              const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
-              SafeArea(
-                right: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _BrandHeader(),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-                        children: _buildNavChildren(),
-                      ),
+    // Pas de largeur imposée ici : le panneau permanent (desktop) et le
+    // tiroir (mobile/tablette) contraignent chacun leur propre largeur côté
+    // appelant — un `SizedBox` fixe ici déborderait du tiroir sur un petit
+    // téléphone.
+    return DecoratedBox(
+      decoration: BoxDecoration(borderRadius: radius, boxShadow: AppShadows.floating),
+      child: SmokedGlassSurface(
+        borderRadius: radius,
+        border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.26), width: 0.8),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+            SafeArea(
+              right: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _BrandHeader(),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                      children: _buildNavChildren(),
                     ),
-                    const _FadingRule(),
-                    Padding(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      child: _ProfileCard(identity: identity, onSignOut: onSignOut),
-                    ),
-                  ],
-                ),
+                  ),
+                  const _FadingRule(),
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    child: _ProfileCard(identity: identity, onSignOut: onSignOut),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

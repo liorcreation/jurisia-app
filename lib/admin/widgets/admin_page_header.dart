@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/widgets/gradient_icon_badge.dart';
 import '../../core/widgets/smoked_glass_surface.dart';
 import '../../theme/app_theme.dart';
+import '../shell/admin_shell_scope.dart';
 import '../theme/admin_theme.dart';
 
 /// En-tête premium partagé par tous les écrans de la console — remplace
@@ -31,6 +32,8 @@ class AdminPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final openDrawer = AdminShellScope.maybeOpenDrawer(context);
+    final compact = openDrawer != null;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -39,7 +42,12 @@ class AdminPageHeader extends StatelessWidget {
       ),
       child: SmokedGlassSurface(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+          padding: EdgeInsets.fromLTRB(
+            compact ? AppSpacing.sm : AppSpacing.lg,
+            AppSpacing.sm,
+            compact ? AppSpacing.sm : AppSpacing.lg,
+            AppSpacing.sm,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -47,13 +55,22 @@ class AdminPageHeader extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  if (openDrawer != null) ...[
+                    IconButton(
+                      onPressed: openDrawer,
+                      icon: const Icon(Icons.menu_rounded),
+                      color: AdminTheme.accentLight,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const SizedBox(width: 2),
+                  ],
                   GradientIconBadge(
                     icon: icon,
-                    size: 46,
+                    size: compact ? 36 : 46,
                     gradient: AdminGradients.cobaltMetallic,
                     iconColor: AppColors.textPrimary,
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +89,8 @@ class AdminPageHeader extends StatelessWidget {
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                          style: (compact ? textTheme.titleLarge : textTheme.headlineSmall)
+                              ?.copyWith(fontFamily: 'Libre Caslon Display'),
                         ),
                         if (subtitle != null) ...[
                           const SizedBox(height: 2),
