@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show GoTrueClientSignInProvider, OAuthProvider;
 
 import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
@@ -91,6 +94,49 @@ class _AuthViewState extends State<_AuthView> {
   late final TapGestureRecognizer _termsRecognizer;
   late final TapGestureRecognizer _privacyRecognizer;
 
+  /// « Le seuil » précède le formulaire, sur mobile comme sur desktop :
+  /// Google, ou e-mail — le formulaire (déjà existant, inchangé) n'apparaît
+  /// qu'après un choix explicite. `AuthController` ne gère que l'e-mail/mot
+  /// de passe ; OAuth passe directement par Supabase. Pas de bouton Apple :
+  /// « Sign in with Apple » exige un compte Apple Developer Program payant
+  /// (99 $/an) — `_signInWithProvider` reste générique (n'importe quel
+  /// `OAuthProvider`) si le porteur active Apple plus tard.
+  bool _showForm = false;
+  bool _oauthInFlight = false;
+
+  void _openForm() => setState(() => _showForm = true);
+
+  /// Redirection après authentification chez le fournisseur — un schéma
+  /// personnalisé sur mobile/desktop natif (voir `android/`, `ios/`,
+  /// `macos/`, retenus par le système pour relancer l'app), l'origine de la
+  /// page elle-même sur web. **Toujours explicite, jamais `null`** : un
+  /// `redirectTo` omis se rabat côté serveur sur le « Site URL » configuré
+  /// dans le tableau de bord Supabase (Authentication > URL Configuration),
+  /// qui vaut `http://localhost:3000` par défaut — romprait le flux en
+  /// production si ce réglage n'est pas mis à jour. Suppose que le
+  /// fournisseur est activé côté Supabase (Authentication > Providers) et
+  /// que cette URL figure dans sa liste d'URL de redirection autorisées —
+  /// sinon Supabase répond une erreur explicite, jamais un blocage
+  /// silencieux.
+  Future<void> _signInWithProvider(OAuthProvider provider) async {
+    if (!SupabaseConfig.isReady || _oauthInFlight) return;
+    setState(() => _oauthInFlight = true);
+    try {
+      await SupabaseConfig.client.auth.signInWithOAuth(
+        provider,
+        redirectTo: kIsWeb ? Uri.base.origin : 'com.jurisia.app://login-callback/',
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Connexion impossible pour le moment : $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _oauthInFlight = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -122,6 +168,11 @@ class _AuthViewState extends State<_AuthView> {
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
       return _DesktopAuthView(
         controller: controller,
+        showForm: _showForm,
+        oauthInFlight: _oauthInFlight,
+        onOpenForm: _openForm,
+        onBack: () => setState(() => _showForm = false),
+        onSignInWithProvider: _signInWithProvider,
         form: _AuthForm(
           controller: controller,
           nameController: _nameController,
@@ -136,77 +187,95 @@ class _AuthViewState extends State<_AuthView> {
       );
     }
 
+    if (!_showForm) {
+      return _MobileThreshold(
+        oauthInFlight: _oauthInFlight,
+        onOpenForm: _openForm,
+        onSignInWithProvider: _signInWithProvider,
+        onOpenDocument: _openDocument,
+      );
+    }
+
     final isCompact = MediaQuery.sizeOf(context).height < 680;
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.xl,
-                AppSpacing.lg,
-                AppSpacing.xl,
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _AuthSeal(size: isCompact ? 52 : 66),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'JurisIA',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontFamily: 'Libre Caslon Display',
-                          ),
-                    ),
-                    if (!isCompact) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'L\'assistant juridique du Burkina & de l\'OHADA',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                    SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
-                    _AuthForm(
-                      controller: controller,
-                      nameController: _nameController,
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                      termsRecognizer: _termsRecognizer,
-                      privacyRecognizer: _privacyRecognizer,
-                      onSubmit: () => _submit(controller),
-                      onOpenDocument: _openDocument,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: AppSpacing.sm,
+          child: Stack(
+            children: [
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.xl,
+                    AppSpacing.lg,
+                    AppSpacing.xl,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 440),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        TextButton(
-                          onPressed: () => _openDocument('CGU', LegalDocuments.termsOfService),
-                          child: const Text('CGU'),
+                        _AuthSeal(size: isCompact ? 52 : 66),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'JurisIA',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontFamily: 'Libre Caslon Display',
+                              ),
                         ),
-                        TextButton(
-                          onPressed: () =>
-                              _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
-                          child: const Text('Politique de confidentialité'),
+                        if (!isCompact) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'L\'assistant juridique du Burkina & de l\'OHADA',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                        SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
+                        _AuthForm(
+                          controller: controller,
+                          nameController: _nameController,
+                          emailController: _emailController,
+                          passwordController: _passwordController,
+                          termsRecognizer: _termsRecognizer,
+                          privacyRecognizer: _privacyRecognizer,
+                          onSubmit: () => _submit(controller),
+                          onOpenDocument: _openDocument,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: AppSpacing.sm,
+                          children: [
+                            TextButton(
+                              onPressed: () => _openDocument('CGU', LegalDocuments.termsOfService),
+                              child: const Text('CGU'),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
+                              child: const Text('Politique de confidentialité'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                top: AppSpacing.sm,
+                left: AppSpacing.sm,
+                child: _GlassBackButton(onTap: () => setState(() => _showForm = false)),
+              ),
+            ],
           ),
         ),
       ),
@@ -245,6 +314,387 @@ class _ConfigWarning extends StatelessWidget {
 }
 
 // ===========================================================================
+//  MOBILE — « Le seuil » (plein écran, avant le formulaire)
+// ===========================================================================
+
+/// Premier écran vu sur mobile, avant tout formulaire : fond quasi noir,
+/// la marque qui respire au centre, un mot qui s'écrit et s'efface en
+/// boucle (« Comprendre », « Rédiger »… jusqu'à « JurisIA »), une ardoise
+/// de deux pilules en pied — Google (vrai flux OAuth Supabase, voir
+/// `_AuthViewState._signInWithProvider`) et l'e-mail qui bascule vers le
+/// formulaire existant (`_AuthForm`, inchangé).
+class _MobileThreshold extends StatelessWidget {
+  const _MobileThreshold({
+    required this.oauthInFlight,
+    required this.onOpenForm,
+    required this.onSignInWithProvider,
+    required this.onOpenDocument,
+  });
+
+  final bool oauthInFlight;
+  final VoidCallback onOpenForm;
+  final void Function(OAuthProvider provider) onSignInWithProvider;
+  final void Function(String title, String content) onOpenDocument;
+
+  static const _words = ['Comprendre', 'Rédiger', 'Consulter', 'Réviser', 'JurisIA'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.nightBlueDeep,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: IgnorePointer(child: _BrandAmbience())),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const _AuthSeal(size: 52),
+                          const SizedBox(height: AppSpacing.xl),
+                          const _CyclingHeadline(words: _words),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                _ThresholdActions(
+                  oauthInFlight: oauthInFlight,
+                  onOpenForm: onOpenForm,
+                  onSignInWithProvider: onSignInWithProvider,
+                  onOpenDocument: onOpenDocument,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un mot qui s'écrit lettre à lettre, marque une pause, s'efface, puis
+/// laisse place au suivant — en boucle continue. Le curseur n'est pas un
+/// trait générique mais la marque JurisIA elle-même, qui pulse doucement.
+class _CyclingHeadline extends StatefulWidget {
+  const _CyclingHeadline({required this.words});
+
+  final List<String> words;
+
+  @override
+  State<_CyclingHeadline> createState() => _CyclingHeadlineState();
+}
+
+class _CyclingHeadlineState extends State<_CyclingHeadline> {
+  Timer? _timer;
+  int _wordIndex = 0;
+  int _charCount = 0;
+  bool _erasing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleNext();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleNext() {
+    final word = widget.words[_wordIndex];
+    final atFullWord = !_erasing && _charCount == word.length;
+    final delay = atFullWord
+        ? const Duration(milliseconds: 1100)
+        : Duration(milliseconds: _erasing ? 28 : 55);
+    _timer = Timer(delay, _tick);
+  }
+
+  void _tick() {
+    if (!mounted) return;
+    final word = widget.words[_wordIndex];
+    setState(() {
+      if (!_erasing) {
+        if (_charCount < word.length) {
+          _charCount++;
+        } else {
+          _erasing = true;
+        }
+      } else {
+        if (_charCount > 0) {
+          _charCount--;
+        } else {
+          _erasing = false;
+          _wordIndex = (_wordIndex + 1) % widget.words.length;
+        }
+      }
+    });
+    _scheduleNext();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = widget.words[_wordIndex].substring(0, _charCount);
+    final textTheme = Theme.of(context).textTheme;
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: textTheme.headlineMedium?.copyWith(
+          fontFamily: 'Libre Caslon Display',
+          fontWeight: FontWeight.w700,
+        ),
+        children: [
+          TextSpan(text: visible),
+          const WidgetSpan(alignment: PlaceholderAlignment.middle, child: SizedBox(width: 8)),
+          const WidgetSpan(alignment: PlaceholderAlignment.middle, child: _PulsingCursorMark()),
+        ],
+      ),
+    );
+  }
+}
+
+class _PulsingCursorMark extends StatefulWidget {
+  const _PulsingCursorMark();
+
+  @override
+  State<_PulsingCursorMark> createState() => _PulsingCursorMarkState();
+}
+
+class _PulsingCursorMarkState extends State<_PulsingCursorMark> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, child) => Opacity(opacity: 0.55 + 0.45 * _c.value, child: child),
+      child: const JurisIAMark(size: 22),
+    );
+  }
+}
+
+/// L'ardoise d'actions — verre fumé, coins hauts arrondis (mobile) ou carte
+/// autonome (desktop, voir `_DesktopAuthView`) : Google en vrai OAuth
+/// Supabase, puis l'e-mail qui ouvre le formulaire existant. Pas de bouton
+/// Apple (voir `_AuthViewState._showForm`). Jamais de bouton qui ne mène
+/// nulle part : si le fournisseur n'est pas encore activé côté Supabase,
+/// Supabase répond une erreur explicite (affichée en `SnackBar`, voir
+/// `_AuthViewState`), jamais un blocage silencieux.
+class _ThresholdActions extends StatelessWidget {
+  const _ThresholdActions({
+    required this.oauthInFlight,
+    required this.onOpenForm,
+    required this.onSignInWithProvider,
+    required this.onOpenDocument,
+    this.rounded = true,
+  });
+
+  final bool oauthInFlight;
+  final VoidCallback onOpenForm;
+  final void Function(OAuthProvider provider) onSignInWithProvider;
+  final void Function(String title, String content) onOpenDocument;
+  final bool rounded;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: rounded ? const BorderRadius.vertical(top: Radius.circular(28)) : BorderRadius.circular(AppRadius.large),
+        gradient: AppGradients.smokedGlass,
+        border: rounded
+            ? Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.8))
+            : Border.all(color: AppColors.gold.withValues(alpha: 0.18), width: 0.8),
+        boxShadow: AppShadows.floating,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _OAuthPillButton(
+              label: 'Continuer avec Google',
+              tone: _PillTone.light,
+              leading: const _GoogleMark(size: 19),
+              onTap: oauthInFlight ? null : () => onSignInWithProvider(OAuthProvider.google),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _OAuthPillButton(
+              label: 'Se connecter ou s\'inscrire',
+              tone: _PillTone.dark,
+              onTap: oauthInFlight ? null : onOpenForm,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.sm,
+              children: [
+                TextButton(
+                  onPressed: () => onOpenDocument('CGU', LegalDocuments.termsOfService),
+                  child: const Text('CGU'),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      onOpenDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
+                  child: const Text('Politique de confidentialité'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _PillTone { light, dark }
+
+/// Une pilule de 52px — claire (fond blanc, texte sombre, registre Google)
+/// ou sombre (verre fumé + liseré d'or, registre e-mail). Icône ou glyphe
+/// optionnel à gauche, jamais imposé (la pilule « Se connecter ou
+/// s'inscrire » n'en a pas).
+class _OAuthPillButton extends StatelessWidget {
+  const _OAuthPillButton({required this.label, required this.tone, required this.onTap, this.leading});
+
+  final String label;
+  final _PillTone tone;
+  final Widget? leading;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final light = tone == _PillTone.light;
+    final enabled = onTap != null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: AnimatedOpacity(
+          opacity: enabled ? 1 : 0.5,
+          duration: const Duration(milliseconds: 160),
+          child: Container(
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              color: light ? AppColors.textPrimary : AppColors.legalBlueDark.withValues(alpha: 0.55),
+              border: light ? null : Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 0.8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.sm)],
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: light ? AppColors.nightBlueDeep : AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Évocation du sigle Google — un anneau aux quatre teintes de sa charte
+/// (bleu, vert, jaune, rouge) plutôt qu'une reproduction exacte du tracé
+/// déposé, pour rester immédiatement reconnaissable sans revendiquer la
+/// marque elle-même.
+class _GoogleMark extends StatelessWidget {
+  const _GoogleMark({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(width: size, height: size, child: CustomPaint(painter: _GoogleMarkPainter()));
+  }
+}
+
+class _GoogleMarkPainter extends CustomPainter {
+  const _GoogleMarkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide / 2;
+    final strokeWidth = radius * 0.62;
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+
+    void arc(double startDeg, double sweepDeg, Color color) {
+      canvas.drawArc(
+        rect,
+        startDeg * math.pi / 180,
+        sweepDeg * math.pi / 180,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..color = color,
+      );
+    }
+
+    arc(-90, 80, const Color(0xFF4285F4));
+    arc(-6, 96, const Color(0xFF34A853));
+    arc(94, 80, const Color(0xFFFBBC05));
+    arc(178, 88, const Color(0xFFEA4335));
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoogleMarkPainter oldDelegate) => false;
+}
+
+class _GlassBackButton extends StatelessWidget {
+  const _GlassBackButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.legalBlueDark.withValues(alpha: 0.55),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 0.8),
+          ),
+          child: const Icon(Icons.arrow_back_rounded, size: 18, color: AppColors.goldLight),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
 //  DESKTOP — « Le seuil du cabinet »
 // ===========================================================================
 
@@ -253,11 +703,24 @@ class _DesktopAuthView extends StatelessWidget {
     required this.controller,
     required this.form,
     required this.onOpenDocument,
+    required this.showForm,
+    required this.oauthInFlight,
+    required this.onOpenForm,
+    required this.onBack,
+    required this.onSignInWithProvider,
   });
 
   final AuthController controller;
   final Widget form;
   final void Function(String title, String content) onOpenDocument;
+
+  /// Même « seuil » que mobile, appliqué au panneau droit : Google (OAuth
+  /// réel) ou e-mail, avant le formulaire existant.
+  final bool showForm;
+  final bool oauthInFlight;
+  final VoidCallback onOpenForm;
+  final VoidCallback onBack;
+  final void Function(OAuthProvider provider) onSignInWithProvider;
 
   @override
   Widget build(BuildContext context) {
@@ -273,63 +736,93 @@ class _DesktopAuthView extends StatelessWidget {
                   if (showBrand) const Expanded(flex: 6, child: _BrandPanel()),
                   Expanded(
                     flex: 5,
-                    child: Container(
-                      decoration: showBrand
-                          ? BoxDecoration(
-                              border: Border(
-                                left: BorderSide(
-                                  color: AppColors.gold.withValues(alpha: 0.16),
-                                  width: 1,
-                                ),
-                              ),
-                            )
-                          : null,
-                      child: Center(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 420),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                if (!showBrand) ...[
-                                  const Center(child: JurisIAMark(size: 44)),
-                                  const SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    'JurisIA',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                          fontFamily: 'Libre Caslon Display',
-                                        ),
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: showBrand
+                              ? BoxDecoration(
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: AppColors.gold.withValues(alpha: 0.16),
+                                      width: 1,
+                                    ),
                                   ),
-                                  const SizedBox(height: AppSpacing.xl),
-                                ],
-                                form,
-                                const SizedBox(height: AppSpacing.lg),
-                                Wrap(
-                                  alignment: WrapAlignment.center,
-                                  spacing: AppSpacing.sm,
+                                )
+                              : null,
+                          child: Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(AppSpacing.xxl),
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 420),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          onOpenDocument('CGU', LegalDocuments.termsOfService),
-                                      child: const Text('CGU'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => onOpenDocument(
-                                        'Politique de confidentialité',
-                                        LegalDocuments.privacyPolicy,
+                                    if (!showBrand) ...[
+                                      const Center(child: JurisIAMark(size: 44)),
+                                      const SizedBox(height: AppSpacing.md),
+                                      Text(
+                                        'JurisIA',
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                              fontFamily: 'Libre Caslon Display',
+                                            ),
                                       ),
-                                      child: const Text('Politique de confidentialité'),
-                                    ),
+                                      const SizedBox(height: AppSpacing.xl),
+                                    ],
+                                    if (showForm) ...[
+                                      form,
+                                      const SizedBox(height: AppSpacing.lg),
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        spacing: AppSpacing.sm,
+                                        children: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                onOpenDocument('CGU', LegalDocuments.termsOfService),
+                                            child: const Text('CGU'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => onOpenDocument(
+                                              'Politique de confidentialité',
+                                              LegalDocuments.privacyPolicy,
+                                            ),
+                                            child: const Text('Politique de confidentialité'),
+                                          ),
+                                        ],
+                                      ),
+                                    ] else ...[
+                                      if (showBrand) ...[
+                                        Text(
+                                          'Bienvenue',
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                                fontFamily: 'Libre Caslon Display',
+                                              ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.lg),
+                                      ],
+                                      _ThresholdActions(
+                                        rounded: false,
+                                        oauthInFlight: oauthInFlight,
+                                        onOpenForm: onOpenForm,
+                                        onSignInWithProvider: onSignInWithProvider,
+                                        onOpenDocument: onOpenDocument,
+                                      ),
+                                    ],
                                   ],
                                 ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        if (showForm)
+                          Positioned(
+                            top: AppSpacing.md,
+                            left: AppSpacing.md,
+                            child: _GlassBackButton(onTap: onBack),
+                          ),
+                      ],
                     ),
                   ),
                 ],
