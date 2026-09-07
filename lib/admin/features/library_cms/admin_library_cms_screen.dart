@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../models/legal_document/legal_document_model.dart';
@@ -11,7 +12,9 @@ import '../../../models/legal_document/legal_domain.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_filter_chip.dart';
 import '../../widgets/admin_page_header.dart';
 import '../../widgets/admin_status_chip.dart';
 import 'admin_document_draft.dart';
@@ -77,40 +80,70 @@ class _View extends StatelessWidget {
               if (controller.error != null)
                 AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
               Expanded(
-                child: controller.isLoading && controller.drafts.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : controller.drafts.isEmpty
-                        ? const AdminEmptyState(icon: Icons.description_outlined, message: 'Aucun brouillon.')
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            itemCount: controller.drafts.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                            itemBuilder: (context, index) => _DraftCard(
-                              draft: controller.drafts[index],
-                              identity: identity,
-                              busy: controller.isMutating,
-                              onEdit: () => _openEditor(context, controller, draft: controller.drafts[index]),
-                              onSubmit: () => controller.submit(controller.drafts[index].id),
-                              onApprove: () => controller.approve(controller.drafts[index].id),
-                              onRequestChanges: () => _promptReason(
-                                context,
-                                title: 'Renvoyer en correction',
-                                label: 'Motif (obligatoire)',
-                                onConfirm: (reason) =>
-                                    controller.requestChanges(controller.drafts[index].id, reason),
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    controller.isLoading && controller.drafts.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : controller.drafts.isEmpty
+                            ? const AdminEmptyState(icon: Icons.description_outlined, message: 'Aucun brouillon.')
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final columns = constraints.maxWidth >= 1100 ? 2 : 1;
+                                  final children = [
+                                    for (var i = 0; i < controller.drafts.length; i++)
+                                      EntranceFadeSlide(
+                                        index: i,
+                                        child: _DraftCard(
+                                          draft: controller.drafts[i],
+                                          identity: identity,
+                                          busy: controller.isMutating,
+                                          onEdit: () => _openEditor(context, controller, draft: controller.drafts[i]),
+                                          onSubmit: () => controller.submit(controller.drafts[i].id),
+                                          onApprove: () => controller.approve(controller.drafts[i].id),
+                                          onRequestChanges: () => _promptReason(
+                                            context,
+                                            title: 'Renvoyer en correction',
+                                            label: 'Motif (obligatoire)',
+                                            onConfirm: (reason) =>
+                                                controller.requestChanges(controller.drafts[i].id, reason),
+                                          ),
+                                          onArchive: () => _promptReason(
+                                            context,
+                                            title: 'Archiver ce texte',
+                                            label: 'Motif (facultatif)',
+                                            requireReason: false,
+                                            onConfirm: (reason) => controller.archiveDocument(
+                                              controller.drafts[i].documentId,
+                                              reason.isEmpty ? null : reason,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ];
+                                  if (columns == 1) {
+                                    return ListView.separated(
+                                      padding: const EdgeInsets.all(AppSpacing.md),
+                                      itemCount: children.length,
+                                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                                      itemBuilder: (context, index) => children[index],
+                                    );
+                                  }
+                                  return SingleChildScrollView(
+                                    padding: const EdgeInsets.all(AppSpacing.md),
+                                    child: Wrap(
+                                      spacing: AppSpacing.sm,
+                                      runSpacing: AppSpacing.sm,
+                                      children: [
+                                        for (final child in children)
+                                          SizedBox(width: (constraints.maxWidth - AppSpacing.md * 2 - AppSpacing.sm) / 2, child: child),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                              onArchive: () => _promptReason(
-                                context,
-                                title: 'Archiver ce texte',
-                                label: 'Motif (facultatif)',
-                                requireReason: false,
-                                onConfirm: (reason) => controller.archiveDocument(
-                                  controller.drafts[index].documentId,
-                                  reason.isEmpty ? null : reason,
-                                ),
-                              ),
-                            ),
-                          ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -174,10 +207,11 @@ class _FilterBar extends StatelessWidget {
       final count = status == null ? controller.totalCount : controller.countFor(status);
       return Padding(
         padding: const EdgeInsets.only(right: AppSpacing.sm),
-        child: ChoiceChip(
-          label: Text(status == null ? label : '$label · $count'),
+        child: AdminFilterChip(
+          label: label,
+          count: count,
           selected: controller.filter == status,
-          onSelected: (_) => controller.setFilter(status),
+          onTap: () => controller.setFilter(status),
         ),
       );
     }

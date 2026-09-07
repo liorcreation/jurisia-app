@@ -3,14 +3,17 @@ import 'package:provider/provider.dart';
 
 import '../../../core/ai/groq_providers.dart';
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/gradient_icon_badge.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_empty_state.dart';
 import '../../widgets/admin_page_header.dart';
-import '../../widgets/admin_status_chip.dart';
+import '../../widgets/admin_stat_card.dart';
 import '../library_cms/admin_document_draft.dart';
 import '../library_cms/admin_document_draft_controller.dart';
 import '../library_cms/admin_document_draft_repository.dart';
@@ -70,6 +73,13 @@ class _View extends StatelessWidget {
     final docController = context.watch<AdminDocumentDraftController>();
     final promptController = context.watch<AdminPromptController>();
     final busy = docController.isMutating || promptController.isMutating;
+
+    final pendingDocs = identity.canReviewDocuments
+        ? docController.drafts.where((d) => d.status == DocumentDraftStatus.inReview).length
+        : 0;
+    final pendingPrompts = identity.canPublishPrompts
+        ? promptController.prompts.where((p) => p.status == AiPromptStatus.tested).length
+        : 0;
 
     final entries = <_QueueEntry>[
       if (identity.canReviewDocuments)
@@ -137,19 +147,59 @@ class _View extends StatelessWidget {
                   },
                 ),
               Expanded(
-                child: loading && entries.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : entries.isEmpty
-                        ? const AdminEmptyState(
-                            icon: Icons.spa_rounded,
-                            message: 'Rien à relire pour le moment.',
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            itemCount: entries.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                            itemBuilder: (context, index) => entries[index].card,
-                          ),
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    loading && entries.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : entries.isEmpty
+                            ? const AdminEmptyState(
+                                icon: Icons.spa_rounded,
+                                message: 'Rien à relire pour le moment.',
+                                detail: 'La file se vide au fil des décisions — reviens plus tard.',
+                              )
+                            : Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 760),
+                                  child: ListView(
+                                    padding: const EdgeInsets.all(AppSpacing.md),
+                                    children: [
+                                      IntrinsicHeight(
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: [
+                                            Expanded(
+                                              child: AdminStatCard(
+                                                icon: Icons.menu_book_rounded,
+                                                label: 'Textes en relecture',
+                                                value: '$pendingDocs',
+                                                accentColor: AdminTheme.accentLight,
+                                              ),
+                                            ),
+                                            const SizedBox(width: AppSpacing.md),
+                                            Expanded(
+                                              child: AdminStatCard(
+                                                icon: Icons.auto_awesome_rounded,
+                                                label: 'Prompts testés',
+                                                value: '$pendingPrompts',
+                                                accentColor: AppColors.gold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.md),
+                                      for (var i = 0; i < entries.length; i++)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                          child: EntranceFadeSlide(index: i, child: entries[i].card),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -204,23 +254,40 @@ class _DocQueueCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
+      borderColor: AdminTheme.accentLight.withValues(alpha: 0.35),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AdminStatusChip(
-                label: 'CMS Bibliothèque',
-                color: AdminTheme.accentLight,
+              const GradientIconBadge(
                 icon: Icons.menu_book_rounded,
+                size: 38,
+                gradient: AdminGradients.cobaltMetallic,
+                iconColor: AppColors.textPrimary,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(
-                  draft.documentId,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'CMS Bibliothèque',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AdminTheme.accentLight,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: AppLetterSpacing.caps,
+                      ),
+                    ),
+                    Text(
+                      draft.documentId,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -278,16 +345,39 @@ class _PromptQueueCard extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
+      borderColor: AppColors.gold.withValues(alpha: 0.35),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AdminStatusChip(
-            label: 'Studio de prompts',
-            color: AdminTheme.accentLight,
-            icon: Icons.auto_awesome_rounded,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const GradientIconBadge(
+                icon: Icons.auto_awesome_rounded,
+                size: 38,
+                gradient: AppGradients.goldMetallic,
+                iconColor: AppColors.nightBlueDeep,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Studio de prompts',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.goldLight,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: AppLetterSpacing.caps,
+                      ),
+                    ),
+                    Text(PromptKey.label(prompt.key), style: textTheme.titleSmall),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(PromptKey.label(prompt.key), style: textTheme.titleSmall),
           if (prompt.testMessage != null) ...[
             const SizedBox(height: 4),
             Text(

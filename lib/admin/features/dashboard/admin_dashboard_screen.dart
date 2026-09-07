@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../core/entitlements/entitlement_feature.dart';
 import '../../../core/entitlements/plan.dart';
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../features/contact_professional/domain/entities/contact_request.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_bar_row.dart';
 import '../../widgets/admin_donut_chart.dart';
 import '../../widgets/admin_empty_state.dart';
@@ -111,22 +113,27 @@ class AdminDashboardScreen extends StatelessWidget {
                 subtitle: 'Connecté en tant que ${identity.primary?.label ?? 'membre du personnel'}.',
               ),
               Expanded(
-                child: FutureBuilder<_DashboardSnapshot>(
-                  future: _load(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (snapshot.hasError) {
-                      return const AdminEmptyState(
-                        icon: Icons.cloud_off_rounded,
-                        message: 'Chargement impossible.',
-                        detail: 'Vérifiez les droits ou l\'état des migrations 007/008.',
-                      );
-                    }
-                    final data = snapshot.data!;
-                    return _DashboardBody(data: data);
-                  },
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    FutureBuilder<_DashboardSnapshot>(
+                      future: _load(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return const AdminEmptyState(
+                            icon: Icons.cloud_off_rounded,
+                            message: 'Chargement impossible.',
+                            detail: 'Vérifiez les droits ou l\'état des migrations 007/008.',
+                          );
+                        }
+                        final data = snapshot.data!;
+                        return _DashboardBody(data: data);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -159,20 +166,29 @@ class _DashboardBody extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(flex: 5, child: _ContactStatusSection(data: data)),
+                      Expanded(
+                        flex: 5,
+                        child: EntranceFadeSlide(index: 1, child: _ContactStatusSection(data: data)),
+                      ),
                       const SizedBox(width: AppSpacing.lg),
-                      Expanded(flex: 4, child: _SubscriptionsSection(data: data)),
+                      Expanded(
+                        flex: 4,
+                        child: EntranceFadeSlide(index: 2, child: _SubscriptionsSection(data: data)),
+                      ),
                       const SizedBox(width: AppSpacing.lg),
-                      Expanded(flex: 4, child: _UsageSection(data: data)),
+                      Expanded(
+                        flex: 4,
+                        child: EntranceFadeSlide(index: 3, child: _UsageSection(data: data)),
+                      ),
                     ],
                   ),
                 )
               else ...[
-                _ContactStatusSection(data: data),
+                EntranceFadeSlide(index: 1, child: _ContactStatusSection(data: data)),
                 const SizedBox(height: AppSpacing.lg),
-                _SubscriptionsSection(data: data),
+                EntranceFadeSlide(index: 2, child: _SubscriptionsSection(data: data)),
                 const SizedBox(height: AppSpacing.lg),
-                _UsageSection(data: data),
+                EntranceFadeSlide(index: 3, child: _UsageSection(data: data)),
               ],
             ],
           ),
@@ -220,7 +236,11 @@ class _KpiRow extends StatelessWidget {
     if (!wide) {
       return Column(
         children: [
-          for (final card in cards) Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: card),
+          for (var i = 0; i < cards.length; i++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: EntranceFadeSlide(index: i, child: cards[i]),
+            ),
         ],
       );
     }
@@ -231,7 +251,7 @@ class _KpiRow extends StatelessWidget {
         children: [
           for (var i = 0; i < cards.length; i++) ...[
             if (i > 0) const SizedBox(width: AppSpacing.md),
-            Expanded(child: cards[i]),
+            Expanded(child: EntranceFadeSlide(index: i, child: cards[i])),
           ],
         ],
       ),

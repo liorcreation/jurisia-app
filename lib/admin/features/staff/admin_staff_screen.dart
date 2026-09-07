@@ -2,16 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/gradient_icon_badge.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
+import '../../widgets/admin_avatar.dart';
 import '../../widgets/admin_empty_state.dart';
 import '../../widgets/admin_page_header.dart';
 import 'admin_staff_controller.dart';
 import 'admin_staff_member.dart';
 import 'admin_staff_repository.dart';
+
+Color _roleTint(StaffRole role) => switch (role) {
+      StaffRole.superAdmin => AppColors.gold,
+      StaffRole.admin => AdminTheme.accent,
+      StaffRole.contentEditor => AppColors.metalEmerald,
+      StaffRole.legalReviewer => AppColors.metalEmerald,
+      StaffRole.partnerManager => AppColors.metalRoseGold,
+      StaffRole.supportAgent => AdminTheme.accentLight,
+      StaffRole.analyst => AppColors.metalSilver,
+    };
 
 /// Console — Personnel : qui a accès à cette console, avec quel rôle.
 /// L'octroi/retrait d'un rôle est réservé aux super administrateurs (le
@@ -62,7 +76,7 @@ class _View extends StatelessWidget {
               AdminPageHeader(
                 icon: Icons.badge_rounded,
                 title: 'Personnel',
-                subtitle: 'Qui a accès à la console, avec quel rôle.',
+                subtitle: 'Qui a accès à la console, avec quel rôle — ${controller.members.length} rôle(s) actif(s).',
                 actions: [
                   IconButton(
                     tooltip: 'Rafraîchir',
@@ -72,53 +86,94 @@ class _View extends StatelessWidget {
                 ],
               ),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                child: Stack(
                   children: [
-                    if (controller.error != null)
-                      AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
-                    if (controller.error != null) const SizedBox(height: AppSpacing.md),
-                    if (canManage) ...[
-                      _GrantCard(controller: controller),
-                      const SizedBox(height: AppSpacing.md),
-                    ] else
-                      GlassContainer(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Text(
-                                'Seul un super administrateur peut accorder ou retirer un rôle.',
-                                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                              ),
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    ListView(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      children: [
+                        if (controller.error != null)
+                          AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                        if (controller.error != null) const SizedBox(height: AppSpacing.md),
+                        if (canManage) ...[
+                          _GrantCard(controller: controller),
+                          const SizedBox(height: AppSpacing.md),
+                        ] else
+                          GlassContainer(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.textSecondary),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    'Seul un super administrateur peut accorder ou retirer un rôle.',
+                                    style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    if (controller.isLoading && controller.members.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    else if (controller.members.isEmpty)
-                      const AdminEmptyState(
-                        icon: Icons.group_off_rounded,
-                        message: 'Aucun membre du personnel pour l\'instant.',
-                      )
-                    else
-                      for (final email in emails)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: _StaffCard(
-                            email: email,
-                            members: byEmail[email]!,
-                            canManage: canManage,
-                            busy: controller.isMutating,
-                            onRevoke: (member) => _confirmRevoke(context, controller, member),
                           ),
-                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        if (controller.isLoading && controller.members.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else if (controller.members.isEmpty)
+                          const AdminEmptyState(
+                            icon: Icons.group_off_rounded,
+                            message: 'Aucun membre du personnel pour l\'instant.',
+                          )
+                        else
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final wide = constraints.maxWidth >= 760;
+                              if (!wide) {
+                                return Column(
+                                  children: [
+                                    for (var i = 0; i < emails.length; i++)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                        child: EntranceFadeSlide(
+                                          index: i,
+                                          child: _StaffCard(
+                                            email: emails[i],
+                                            members: byEmail[emails[i]]!,
+                                            canManage: canManage,
+                                            busy: controller.isMutating,
+                                            onRevoke: (member) => _confirmRevoke(context, controller, member),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              }
+                              return GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: emails.length,
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  mainAxisSpacing: AppSpacing.sm,
+                                  crossAxisSpacing: AppSpacing.sm,
+                                  mainAxisExtent: 140,
+                                ),
+                                itemBuilder: (context, index) => EntranceFadeSlide(
+                                  index: index,
+                                  child: _StaffCard(
+                                    email: emails[index],
+                                    members: byEmail[emails[index]]!,
+                                    canManage: canManage,
+                                    busy: controller.isMutating,
+                                    onRevoke: (member) => _confirmRevoke(context, controller, member),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -187,17 +242,27 @@ class _GrantCardState extends State<_GrantCard> {
     final busy = widget.controller.isMutating;
 
     return GlassContainer(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: AdminTheme.accent.withValues(alpha: 0.3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'ACCORDER UN RÔLE',
-            style: textTheme.labelSmall?.copyWith(
-              color: AdminTheme.accentLight,
-              letterSpacing: AppLetterSpacing.caps,
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: [
+              const GradientIconBadge(
+                icon: Icons.person_add_alt_1_rounded,
+                size: 34,
+                gradient: AdminGradients.cobaltMetallic,
+                iconColor: AppColors.textPrimary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Accorder un rôle',
+                  style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -206,25 +271,38 @@ class _GrantCardState extends State<_GrantCard> {
             style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _emailController,
-            enabled: !busy,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(
-              labelText: 'E-mail du compte',
-              isDense: true,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          DropdownButtonFormField<StaffRole>(
-            initialValue: _role,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Rôle', isDense: true),
-            items: [
-              for (final role in StaffRole.values)
-                DropdownMenuItem(value: role, child: Text(role.label)),
-            ],
-            onChanged: busy ? null : (value) => setState(() => _role = value ?? _role),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth >= 560;
+              final email = TextField(
+                controller: _emailController,
+                enabled: !busy,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'E-mail du compte', isDense: true),
+              );
+              final role = DropdownButtonFormField<StaffRole>(
+                initialValue: _role,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Rôle', isDense: true),
+                items: [
+                  for (final role in StaffRole.values) DropdownMenuItem(value: role, child: Text(role.label)),
+                ],
+                onChanged: busy ? null : (value) => setState(() => _role = value ?? _role),
+              );
+              if (!wide) {
+                return Column(
+                  children: [email, const SizedBox(height: AppSpacing.sm), role],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 3, child: email),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(flex: 2, child: role),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.md),
           Align(
@@ -272,19 +350,24 @@ class _StaffCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SelectableText(email, style: textTheme.titleSmall),
+          Row(
+            children: [
+              AdminAvatar(seed: email, size: 32),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: SelectableText(email, maxLines: 1, style: textTheme.titleSmall),
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: AppSpacing.sm,
+            spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
               for (final member in members)
-                Chip(
-                  label: Text(member.role.label),
-                  backgroundColor: AdminTheme.accent.withValues(alpha: 0.16),
-                  side: const BorderSide(color: AppColors.glassBorder),
-                  onDeleted: canManage ? (busy ? null : () => onRevoke(member)) : null,
-                  deleteIcon: const Icon(Icons.close_rounded, size: 14),
+                _RoleChip(
+                  member: member,
+                  onRevoke: canManage ? (busy ? null : () => onRevoke(member)) : null,
                 ),
             ],
           ),
@@ -292,7 +375,49 @@ class _StaffCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Accordé par ${members.first.grantedByEmail}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleChip extends StatelessWidget {
+  const _RoleChip({required this.member, required this.onRevoke});
+
+  final AdminStaffMember member;
+  final VoidCallback? onRevoke;
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = _roleTint(member.role);
+    return Container(
+      padding: EdgeInsets.only(left: AppSpacing.sm, right: onRevoke != null ? 4 : AppSpacing.sm, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: tint.withValues(alpha: 0.5), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            member.role.label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tint, fontWeight: FontWeight.w700),
+          ),
+          if (onRevoke != null) ...[
+            const SizedBox(width: 2),
+            InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onRevoke,
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Icon(Icons.close_rounded, size: 13, color: tint),
+              ),
             ),
           ],
         ],

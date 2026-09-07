@@ -3,17 +3,29 @@ import 'package:provider/provider.dart';
 
 import '../../../core/ai/groq_providers.dart';
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../theme/app_theme.dart';
 import '../../auth/staff_role.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_empty_state.dart';
 import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_section_card.dart';
 import '../../widgets/admin_status_chip.dart';
 import 'admin_ai_prompt.dart';
 import 'admin_prompt_controller.dart';
 import 'admin_prompt_repository.dart';
+
+IconData _promptKeyIcon(String key) => switch (key) {
+      PromptKey.litige => Icons.gavel_rounded,
+      PromptKey.tuteur => Icons.school_rounded,
+      PromptKey.redaction => Icons.edit_note_rounded,
+      PromptKey.audit => Icons.fact_check_rounded,
+      PromptKey.consultation => Icons.forum_rounded,
+      _ => Icons.auto_awesome_rounded,
+    };
 
 /// Console — Studio de prompts : rédiger, tester et publier les
 /// instructions système de l'IA sans déploiement de code (voir
@@ -80,51 +92,63 @@ class _View extends StatelessWidget {
                 ],
               ),
               Expanded(
-                child: controller.isLoading && controller.prompts.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        children: [
-                          if (controller.error != null) ...[
-                            AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
-                            const SizedBox(height: AppSpacing.md),
-                          ],
-                    for (final key in keys) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: Text(PromptKey.label(key), style: textTheme.titleSmall),
-                      ),
-                      if ((byKey[key] ?? const []).isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                          child: Text(
-                            'Aucun prompt enregistré — utilise la constante codée en dur.',
-                            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    controller.isLoading && controller.prompts.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 860),
+                              child: ListView(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                children: [
+                                  if (controller.error != null) ...[
+                                    AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                                    const SizedBox(height: AppSpacing.md),
+                                  ],
+                                  for (var i = 0; i < keys.length; i++)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                                      child: EntranceFadeSlide(
+                                        index: i,
+                                        child: AdminSectionCard(
+                                          title: PromptKey.label(keys[i]),
+                                          icon: _promptKeyIcon(keys[i]),
+                                          trailing: (byKey[keys[i]] ?? const [])
+                                                  .any((p) => p.status == AiPromptStatus.published)
+                                              ? const AdminStatusChip(label: 'Publié', color: AppColors.success)
+                                              : null,
+                                          child: (byKey[keys[i]] ?? const []).isEmpty
+                                              ? Text(
+                                                  'Aucun prompt enregistré — utilise la constante codée en dur.',
+                                                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                                                )
+                                              : Column(
+                                                  children: [
+                                                    for (final prompt in byKey[keys[i]]!)
+                                                      Padding(
+                                                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                                                        child: _PromptCard(
+                                                          prompt: prompt,
+                                                          identity: identity,
+                                                          busy: controller.isMutating,
+                                                          onEdit: () => _openEditor(context, controller, prompt: prompt),
+                                                          onTest: () => _openTestDialog(context, controller, prompt),
+                                                          onPublish: () => controller.publish(prompt.id),
+                                                        ),
+                                                      ),
+                                                  ],
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        )
-                      else
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                          child: Column(
-                            children: [
-                              for (final prompt in byKey[key]!)
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                                  child: _PromptCard(
-                                    prompt: prompt,
-                                    identity: identity,
-                                    busy: controller.isMutating,
-                                    onEdit: () => _openEditor(context, controller, prompt: prompt),
-                                    onTest: () => _openTestDialog(context, controller, prompt),
-                                    onPublish: () => controller.publish(prompt.id),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                        ],
-                      ),
+                  ],
+                ),
               ),
             ],
           ),

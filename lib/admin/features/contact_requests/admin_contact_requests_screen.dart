@@ -2,18 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/supabase/supabase_config.dart';
+import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
+import '../../../core/widgets/gradient_icon_badge.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../features/contact_professional/domain/entities/contact_request.dart';
 import '../../../features/contact_professional/domain/entities/professional_category.dart';
 import '../../../theme/app_theme.dart';
 import '../../theme/admin_theme.dart';
+import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_empty_state.dart';
+import '../../widgets/admin_filter_chip.dart';
 import '../../widgets/admin_page_header.dart';
 import '../../widgets/admin_status_chip.dart';
 import 'admin_contact_request.dart';
 import 'admin_contact_request_repository.dart';
 import 'admin_contact_requests_controller.dart';
+
+IconData _categoryIcon(ProfessionalCategory category) => switch (category) {
+      ProfessionalCategory.notaire => Icons.description_rounded,
+      ProfessionalCategory.avocat => Icons.gavel_rounded,
+      ProfessionalCategory.juriste => Icons.balance_rounded,
+      ProfessionalCategory.huissier => Icons.assignment_turned_in_rounded,
+      ProfessionalCategory.greffier => Icons.folder_rounded,
+      ProfessionalCategory.juge => Icons.account_balance_rounded,
+    };
 
 /// Console — Demandes de mise en relation : la file de traitement. Trier par
 /// statut, lire la demande, faire avancer le statut (chaque changement est
@@ -61,21 +74,58 @@ class _View extends StatelessWidget {
               if (controller.error != null)
                 AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
               Expanded(
-                child: controller.isLoading && controller.items.isEmpty
-                    ? const Center(child: CircularProgressIndicator())
-                    : controller.items.isEmpty
-                        ? const AdminEmptyState(icon: Icons.inbox_rounded, message: 'Aucune demande pour l\'instant.')
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(AppSpacing.md),
-                            itemCount: controller.items.length,
-                            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                            itemBuilder: (context, index) => _RequestCard(
-                              request: controller.items[index],
-                              busy: controller.isUpdating(controller.items[index].id),
-                              onStatus: (status) =>
-                                  controller.updateStatus(controller.items[index].id, status),
-                            ),
-                          ),
+                child: Stack(
+                  children: [
+                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    controller.isLoading && controller.items.isEmpty
+                        ? const Center(child: CircularProgressIndicator())
+                        : controller.items.isEmpty
+                            ? const AdminEmptyState(
+                                icon: Icons.inbox_rounded,
+                                message: 'Aucune demande pour l\'instant.',
+                              )
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final columns = constraints.maxWidth >= 1100 ? 2 : 1;
+                                  if (columns == 1) {
+                                    return ListView.separated(
+                                      padding: const EdgeInsets.all(AppSpacing.md),
+                                      itemCount: controller.items.length,
+                                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+                                      itemBuilder: (context, index) => EntranceFadeSlide(
+                                        index: index,
+                                        child: _RequestCard(
+                                          request: controller.items[index],
+                                          busy: controller.isUpdating(controller.items[index].id),
+                                          onStatus: (status) =>
+                                              controller.updateStatus(controller.items[index].id, status),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return GridView.builder(
+                                    padding: const EdgeInsets.all(AppSpacing.md),
+                                    itemCount: controller.items.length,
+                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      mainAxisSpacing: AppSpacing.sm,
+                                      crossAxisSpacing: AppSpacing.sm,
+                                      mainAxisExtent: 268,
+                                    ),
+                                    itemBuilder: (context, index) => EntranceFadeSlide(
+                                      index: index,
+                                      child: _RequestCard(
+                                        request: controller.items[index],
+                                        busy: controller.isUpdating(controller.items[index].id),
+                                        onStatus: (status) =>
+                                            controller.updateStatus(controller.items[index].id, status),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -92,27 +142,31 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(String label, ContactRequestStatus? status, int? count) {
-      final selected = controller.filter == status;
-      return Padding(
-        padding: const EdgeInsets.only(right: AppSpacing.sm),
-        child: ChoiceChip(
-          label: Text(count == null ? label : '$label · $count'),
-          selected: selected,
-          onSelected: (_) => controller.setFilter(status),
-        ),
-      );
-    }
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            chip('Toutes', null, controller.items.length),
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: AdminFilterChip(
+                label: 'Toutes',
+                count: controller.items.length,
+                selected: controller.filter == null,
+                onTap: () => controller.setFilter(null),
+              ),
+            ),
             for (final status in ContactRequestStatus.values)
-              chip(status.label, status, controller.countFor(status)),
+              Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: AdminFilterChip(
+                  label: status.label,
+                  count: controller.countFor(status),
+                  selected: controller.filter == status,
+                  onTap: () => controller.setFilter(status),
+                ),
+              ),
           ],
         ),
       ),
@@ -137,48 +191,60 @@ class _RequestCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AdminTheme.accent.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: AppColors.glassBorder),
-                ),
-                child: Text(request.category.label, style: textTheme.labelSmall),
+              GradientIconBadge(
+                icon: _categoryIcon(request.category),
+                size: 38,
+                gradient: AdminGradients.cobaltMetallic,
+                iconColor: AppColors.textPrimary,
               ),
-              const Spacer(),
-              AdminStatusChip(label: request.status.label, color: contactStatusColor(request.status)),
               const SizedBox(width: AppSpacing.sm),
-              Text(_formatDate(request.createdAt), style: textTheme.labelSmall),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(request.fullName, maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.titleSmall),
+                    Text(
+                      request.category.label,
+                      style: textTheme.labelSmall?.copyWith(color: AdminTheme.accentLight),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AdminStatusChip(label: request.status.label, color: contactStatusColor(request.status)),
+                  const SizedBox(height: 4),
+                  Text(_formatDate(request.createdAt), style: textTheme.labelSmall),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(request.fullName, style: textTheme.titleSmall),
-          SelectableText(request.contactInfo, style: textTheme.bodySmall),
+          SelectableText(request.contactInfo, style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.xs),
-          Text(request.message, style: textTheme.bodyMedium),
+          Text(request.message, maxLines: 3, overflow: TextOverflow.ellipsis, style: textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              if (busy)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Text('Statut', style: textTheme.labelSmall),
-              const SizedBox(width: AppSpacing.sm),
+              if (busy) ...[
+                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                const SizedBox(width: AppSpacing.sm),
+              ],
               Expanded(
                 child: Wrap(
                   spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
                   children: [
                     for (final status in ContactRequestStatus.values)
-                      ChoiceChip(
-                        label: Text(status.label),
+                      AdminFilterChip(
+                        label: status.label,
                         selected: request.status == status,
-                        onSelected: busy ? null : (_) => onStatus(status),
+                        onTap: busy ? () {} : () => onStatus(status),
                       ),
                   ],
                 ),
