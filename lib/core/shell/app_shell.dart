@@ -193,7 +193,7 @@ class _AppShellState extends State<AppShell> implements AppShellController {
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop;
-    final body = IndexedStack(index: _selectedIndex, children: _screens);
+    final content = IndexedStack(index: _selectedIndex, children: _screens);
 
     final scaffold = LuxuryScaffoldBackground(
       child: Scaffold(
@@ -212,10 +212,10 @@ class _AppShellState extends State<AppShell> implements AppShellController {
             ? Row(
                 children: [
                   _DesktopSidebar(collapsed: _railCollapsed),
-                  Expanded(child: body),
+                  Expanded(child: content),
                 ],
               )
-            : body,
+            : content,
       ),
     );
 

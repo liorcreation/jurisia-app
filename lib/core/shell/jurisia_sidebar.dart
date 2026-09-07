@@ -1,17 +1,23 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/litigation/presentation/controllers/litigation_chat_controller.dart';
+import '../../theme/app_theme.dart';
+import '../auth/staff_redirect_prompt.dart' show kAdminConsoleUrl;
+import '../auth/staff_status.dart';
 import '../navigation/nav_destinations.dart';
+import '../supabase/supabase_config.dart';
+import '../widgets/admin_portal_badge.dart';
 import '../widgets/glow_focus_field.dart';
 import '../widgets/jurisia_mark.dart';
 import '../widgets/luxury_elevated_button.dart';
 import '../widgets/shimmer_sweep.dart';
 import '../widgets/smoked_glass_surface.dart';
 import '../widgets/tap_scale.dart';
-import '../../theme/app_theme.dart';
 import 'app_shell.dart';
 import 'sidebar_context_section.dart';
 import 'sidebar_profile_card.dart';
@@ -125,6 +131,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
           ),
           const SizedBox(height: AppSpacing.xs),
           _RailNewConsultationButton(onTap: () => _startNewConsultation(context)),
+          const _AdminPortalEntry(compact: true),
           const SizedBox(height: AppSpacing.md),
           for (var i = 0; i < kNavDestinations.length; i++)
             _RailModuleButton(
@@ -168,6 +175,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
             child: const Text('Nouvelle consultation'),
           ),
         ),
+        const _AdminPortalEntry(compact: false),
         AnimatedSize(
           duration: const Duration(milliseconds: 220),
           curve: Curves.fastOutSlowIn,
@@ -247,6 +255,101 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
   void _startNewConsultation(BuildContext context) {
     context.read<LitigationChatController>().startNewConsultation();
     AppShellScope.of(context).selectModule(0);
+  }
+}
+
+/// Accès à la console d'administration — réservé au personnel, jamais
+/// visible pour un autre compte. Vit dans la sidebar plutôt qu'en survol du
+/// contenu d'un écran : la zone de contenu est déjà dense sur ses quatre
+/// bords (barre d'app, composeur, bulles alignées à droite/gauche) et tout
+/// badge flottant par-dessus finit tôt ou tard par recouvrir quelque chose
+/// (vécu : il masquait le bouton « Nouvelle consultation »). La sidebar est
+/// la seule surface de l'app garantie libre de tout contenu d'écran.
+class _AdminPortalEntry extends StatefulWidget {
+  const _AdminPortalEntry({required this.compact});
+
+  final bool compact;
+
+  @override
+  State<_AdminPortalEntry> createState() => _AdminPortalEntryState();
+}
+
+class _AdminPortalEntryState extends State<_AdminPortalEntry> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb && SupabaseConfig.isReady) {
+      isStaffAccount().then((staff) {
+        if (mounted && staff) setState(() => _visible = true);
+      });
+    }
+  }
+
+  Future<void> _open() => launchUrl(Uri.parse(kAdminConsoleUrl), webOnlyWindowName: '_blank');
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_visible) return const SizedBox.shrink();
+
+    if (widget.compact) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: TapScale(
+          child: Tooltip(
+            message: 'Console d\'administration',
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: _open,
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: PortalOrb(size: 36),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+      child: TapScale(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: _open,
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                border: Border.all(color: AppColors.cobalt.withValues(alpha: 0.35), width: 0.8),
+                color: AppColors.cobalt.withValues(alpha: 0.06),
+              ),
+              child: Row(
+                children: [
+                  const PortalOrb(size: 30, iconSize: 13),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Console d\'administration',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textDisabled),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

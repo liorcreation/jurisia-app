@@ -7,28 +7,12 @@ import '../supabase/supabase_config.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_icon_badge.dart';
 import '../widgets/luxury_elevated_button.dart';
+import 'staff_status.dart';
 
 /// URL publique de la console d'administration — un déploiement Cloudflare
 /// Pages séparé (voir `lib/admin_main.dart`), jamais atteignable depuis
 /// cette app grand public autrement que par ce lien externe.
-const String _kAdminConsoleUrl = 'https://jurisia-admin.pages.dev/';
-
-/// Un compte a-t-il un rôle de personnel (table `staff_roles`) ? Vérifié
-/// sans dépendre du module admin — frontière volontaire : aucun code de
-/// `lib/admin/` n'entre dans le bundle grand public. La RLS de
-/// `staff_roles` limite déjà la lecture au personnel authentifié ; un
-/// compte sans rôle reçoit une liste vide, jamais une erreur.
-Future<bool> _isStaffAccount() async {
-  final client = SupabaseConfig.client;
-  final user = client.auth.currentUser;
-  if (user == null) return false;
-  try {
-    final rows = await client.from('staff_roles').select('role').eq('user_id', user.id).limit(1);
-    return (rows as List).isNotEmpty;
-  } catch (_) {
-    return false;
-  }
-}
+const String kAdminConsoleUrl = 'https://jurisia-admin.pages.dev/';
 
 /// Enveloppe [child] (la destination une fois connecté) et propose, une
 /// seule fois par session, aux comptes du personnel de rejoindre la
@@ -54,7 +38,7 @@ class _StaffRedirectPromptState extends State<StaffRedirectPrompt> {
   }
 
   Future<void> _maybePrompt() async {
-    final isStaff = await _isStaffAccount();
+    final isStaff = await isStaffAccount();
     if (!mounted || !isStaff) return;
     await showDialog<void>(
       context: context,
@@ -70,7 +54,7 @@ class _StaffRedirectDialog extends StatelessWidget {
   const _StaffRedirectDialog();
 
   Future<void> _openAdmin(BuildContext context) async {
-    await launchUrl(Uri.parse(_kAdminConsoleUrl), webOnlyWindowName: '_blank');
+    await launchUrl(Uri.parse(kAdminConsoleUrl), webOnlyWindowName: '_blank');
     if (context.mounted) Navigator.of(context).maybePop();
   }
 
