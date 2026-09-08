@@ -212,10 +212,30 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       );
       await Future.delayed(_silenceCheckDuration);
       await _stt.stop();
-    } catch (_) {
+      // La Web Speech API arrête la reconnaissance de façon ASYNCHRONE :
+      // stop() ne fait que la demander, l'arrêt réel n'est confirmé que par
+      // l'évènement `onend` un instant plus tard. Rappeler listen() (dans
+      // _listen(), juste après ce silence check) avant cette confirmation
+      // fait lever "InvalidStateError: recognition has already started" par
+      // le navigateur — vu en vidéo : le micro passait immédiatement en
+      // repli clavier, sans jamais réellement écouter. Attend donc la
+      // confirmation (avec filet de sécurité si l'évènement n'arrive pas).
+      await _waitUntilSttNotListening();
+    } catch (e) {
       // Silence check indisponible : sans conséquence, l'épreuve continue.
+      debugPrint('[voice-exam] silence check failed: $e');
     }
     widget.controller.armNoiseGuard(false);
+  }
+
+  Future<void> _waitUntilSttNotListening() async {
+    const step = Duration(milliseconds: 80);
+    const maxWait = Duration(milliseconds: 1200);
+    var waited = Duration.zero;
+    while (_stt.isListening && waited < maxWait) {
+      await Future.delayed(step);
+      waited += step;
+    }
   }
 
   Future<void> _askCurrentQuestion() async {
@@ -259,7 +279,8 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
         },
         listenOptions: SpeechListenOptions(partialResults: true, cancelOnError: true),
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[voice-exam] stt.listen() failed: $e');
       if (mounted) setState(() => _phase = _VoicePhase.typingFallback);
     }
   }
