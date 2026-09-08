@@ -12,29 +12,25 @@ import 'package:web/web.dart' as web;
 /// déjà rencontrés cette session pour le SSO admin et le plein écran.
 ///
 /// Émet donc, de façon strictement synchrone dans la pile d'appel du tap
-/// sur "Commencer l'examen", un énoncé quasi silencieux immédiatement
-/// annulé : ça n'émet aucun son audible, mais ça inscrit fermement
-/// l'activation utilisateur avant que la vraie consigne vocale ne soit
-/// prononcée quelques instants plus tard.
+/// sur "Commencer l'examen", un énoncé quasi silencieux. Contrairement à une
+/// version précédente, on NE L'ANNULE PAS immédiatement après `speak()` :
+/// Chrome ne semble enregistrer le déblocage "cette page a déjà parlé sur
+/// geste utilisateur" que si l'énoncé démarre réellement (évènement
+/// `onstart`) — l'annuler dans la même microtâche, avant qu'il n'ait eu la
+/// moindre chance de démarrer, invalide le déblocage aussi sûrement que ne
+/// jamais l'avoir tenté. Un énoncé d'un seul espace à volume quasi nul est de
+/// toute façon si bref qu'il se termine de lui-même en une fraction de
+/// seconde, sans laisser de son audible ni bloquer l'UI.
 void primeWebSpeechSynthesis() {
   try {
     final utterance = web.SpeechSynthesisUtterance(' ')..volume = 0.01;
     web.window.speechSynthesis.speak(utterance);
-    web.window.speechSynthesis.cancel();
   } catch (_) {
     // Best effort : une API absente/bloquée ne doit jamais empêcher le
     // démarrage de l'épreuve.
   }
 }
 
-/// Chromium (Chrome, Edge...) charge la liste des voix de façon
-/// asynchrone : juste après le chargement de la page, `getVoices()` peut
-/// renvoyer un tableau VIDE, et un `speak()` appelé avant que l'événement
-/// `voiceschanged` ne se déclenche au moins une fois peut être abandonné
-/// silencieusement (aucune voix à associer à l'énoncé). Attend donc que la
-/// liste soit peuplée avant de prononcer quoi que ce soit — avec un délai
-/// de repli, certains navigateurs ne déclenchant jamais l'événement quand
-/// la liste est en réalité déjà prête dès le premier appel.
 /// Web : `getUserMedia` (utilisé en interne par `speech_to_text` pour
 /// demander l'accès au micro) exige lui aussi une activation utilisateur
 /// authentique pour faire apparaître l'invite d'autorisation — exactement
@@ -66,6 +62,14 @@ void primeWebMicrophonePermission() {
   }
 }
 
+/// Chromium (Chrome, Edge...) charge la liste des voix de façon
+/// asynchrone : juste après le chargement de la page, `getVoices()` peut
+/// renvoyer un tableau VIDE, et un `speak()` appelé avant que l'événement
+/// `voiceschanged` ne se déclenche au moins une fois peut être abandonné
+/// silencieusement (aucune voix à associer à l'énoncé). Attend donc que la
+/// liste soit peuplée avant de prononcer quoi que ce soit — avec un délai
+/// de repli, certains navigateurs ne déclenchant jamais l'événement quand
+/// la liste est en réalité déjà prête dès le premier appel.
 Future<void> waitForWebSpeechVoicesReady() async {
   try {
     if (web.window.speechSynthesis.getVoices().toDart.isNotEmpty) return;

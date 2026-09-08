@@ -83,6 +83,11 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   void initState() {
     super.initState();
     _tts.setStartHandler(() => _ttsConfirmedWorking = true);
+    // Diagnostic uniquement : le moteur web n'échoue pas silencieusement
+    // sans raison — capter le message réel (ex. "not-allowed" quand Chrome
+    // bloque la synthèse faute d'activation utilisateur) permet de le voir
+    // dans la console au lieu qu'il soit avalé par nos try/catch en aval.
+    _tts.setErrorHandler((message) => debugPrint('[voice-exam] tts onError: $message'));
     _bootstrap();
   }
 
@@ -98,13 +103,20 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       // langue par défaut du système (pas forcément le français, et pas
       // forcément une langue pour laquelle une voix est installée).
       await _tts.setLanguage('fr-FR').timeout(_speakTimeout);
-    } catch (_) {
+    } catch (e) {
       // Sans conséquence si indisponible : _speak() reste protégé par son
       // propre délai de sécurité plus bas.
+      debugPrint('[voice-exam] tts bootstrap (voices/language) failed: $e');
     }
     try {
-      _sttAvailable = await _stt.initialize(onStatus: _onSttStatus, onError: (_) {}).timeout(_speakTimeout);
-    } catch (_) {
+      _sttAvailable = await _stt
+          .initialize(
+            onStatus: _onSttStatus,
+            onError: (e) => debugPrint('[voice-exam] stt onError: $e'),
+          )
+          .timeout(_speakTimeout);
+    } catch (e) {
+      debugPrint('[voice-exam] stt initialize failed: $e');
       _sttAvailable = false;
     }
     if (!mounted) return;
@@ -138,14 +150,16 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       // échec ici ne doit JAMAIS empêcher l'appel à speak() qui suit, sans
       // quoi aucun son n'est jamais émis.
       await _tts.stop();
-    } catch (_) {
+    } catch (e) {
       // Sans conséquence : au pire la file de synthèse n'est pas purgée.
+      debugPrint('[voice-exam] tts.stop() failed: $e');
     }
     try {
       await _tts.speak(text).timeout(_speakTimeout);
-    } catch (_) {
+    } catch (e) {
       // Repli silencieux (délai dépassé, TTS indisponible) : l'étudiant lit
       // la question déjà affichée dans le transcript, l'épreuve continue.
+      debugPrint('[voice-exam] tts.speak() failed: $e');
     }
   }
 
