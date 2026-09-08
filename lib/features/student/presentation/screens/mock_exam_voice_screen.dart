@@ -43,11 +43,31 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   /// rester bloqué indéfiniment sans jamais émettre de son ni déclencher
   /// `onend` (silencieux, sans erreur) quand le navigateur choisit une voix
   /// réseau plutôt que locale — flutter_tts ne permet pas de forcer une
-  /// voix locale sur web. Un délai généreux (largement au-dessus de la plus
-  /// longue consigne réelle) garantit que l'épreuve ne reste jamais figée :
-  /// à l'expiration, l'étudiant a déjà la question sous les yeux (transcript)
-  /// et l'épreuve continue normalement sans le son.
+  /// voix locale sur web. Un délai de repli garantit que l'épreuve ne reste
+  /// jamais figée si ce bug se produit.
+  ///
+  /// Un délai FIXE s'est révélé trop court pour les consignes les plus
+  /// longues (ex. le message d'accueil) : la synthèse vocale réelle prenait
+  /// plus longtemps à se terminer que les 20 s fixées, et le délai coupait
+  /// la voix en pleine phrase avant d'enchaîner sur l'étape suivante — vu en
+  /// vidéo, ça donne l'impression que « l'IA s'arrête subitement de
+  /// parler ». Utiliser [_speakTimeoutFor] à la place, qui dimensionne le
+  /// délai sur la longueur du texte à prononcer. Ce délai fixe reste utilisé
+  /// tel quel pour les quelques appels courts sans texte à mesurer
+  /// (awaitSpeakCompletion, setLanguage, stt.initialize).
   static const _speakTimeout = Duration(seconds: 20);
+
+  /// Délai de sécurité pour la synthèse d'un texte donné : ~2 mots/seconde
+  /// (rythme de parole lent, marge incluse) plus une marge fixe pour le
+  /// démarrage du moteur — borné pour rester un vrai filet de sécurité
+  /// (jamais en dessous de [_speakTimeout], jamais au-delà d'une minute).
+  Duration _speakTimeoutFor(String text) {
+    final wordCount = text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final estimated = Duration(seconds: (wordCount / 2).ceil() + 6);
+    if (estimated < _speakTimeout) return _speakTimeout;
+    if (estimated > const Duration(seconds: 60)) return const Duration(seconds: 60);
+    return estimated;
+  }
 
   final FlutterTts _tts = FlutterTts();
   final SpeechToText _stt = SpeechToText();
@@ -155,7 +175,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       debugPrint('[voice-exam] tts.stop() failed: $e');
     }
     try {
-      await _tts.speak(text).timeout(_speakTimeout);
+      await _tts.speak(text).timeout(_speakTimeoutFor(text));
     } catch (e) {
       // Repli silencieux (délai dépassé, TTS indisponible) : l'étudiant lit
       // la question déjà affichée dans le transcript, l'épreuve continue.
