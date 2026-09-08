@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -75,16 +76,19 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  /// Quatre teintes par état, de la plus claire (point de lumière) à la plus
+  /// profonde (bord ombré) — pensées comme les arrêts d'un dégradé de
+  /// sphère éclairée, pas comme des nappes de couleur distinctes.
   static List<Color> _colorsFor(VoiceOrbState state) {
     switch (state) {
       case VoiceOrbState.idle:
-        return const [AppColors.metalSilver, AppColors.metalCobalt, Color(0xFF0B1F3A)];
+        return const [Color(0xFFEAF0FB), AppColors.metalSilver, AppColors.metalCobalt, Color(0xFF0A1930)];
       case VoiceOrbState.speaking:
-        return const [Colors.white, AppColors.goldLight, AppColors.gold];
+        return const [Colors.white, AppColors.goldLight, AppColors.gold, AppColors.goldDark];
       case VoiceOrbState.listening:
-        return const [Colors.white, AppColors.metalCobalt, AppColors.cobalt];
+        return const [Color(0xFFF3F6FF), Color(0xFFAFC6FF), AppColors.cobalt, Color(0xFF102459)];
       case VoiceOrbState.thinking:
-        return const [AppColors.metalSilver, Color(0xFF6B7A8F), Color(0xFF1B2635)];
+        return const [Color(0xFFEDEFF3), AppColors.metalSilver, Color(0xFF5C6A80), Color(0xFF141C29)];
     }
   }
 
@@ -164,60 +168,74 @@ class _VoiceOrbPainter extends CustomPainter {
     final baseRadius = size.width / 2 * 0.52;
     final radius = baseRadius * (1 + intensity * 0.4);
 
-    // Halo extérieur, d'autant plus large et diffus que le niveau sonore
-    // est élevé.
+    // Halo extérieur — un bloom doux et large, jamais un anneau net : c'est
+    // la lueur d'ambiance qui donne à la sphère l'impression de baigner
+    // dans sa propre lumière, pas un cadre qui la découpe.
     final haloPaint = Paint()
       ..shader = RadialGradient(
-        colors: [glow.withValues(alpha: 0.32 + intensity * 0.25), glow.withValues(alpha: 0)],
-      ).createShader(Rect.fromCircle(center: center, radius: radius * 2.2));
-    canvas.drawCircle(center, radius * 2.2, haloPaint);
+        colors: [glow.withValues(alpha: 0.22 + intensity * 0.18), glow.withValues(alpha: 0)],
+      ).createShader(Rect.fromCircle(center: center, radius: radius * 2.4));
+    canvas.drawCircle(center, radius * 2.4, haloPaint);
 
-    // Anneaux concentriques légers, décalés en phase, pour une texture
-    // « vivante » plutôt qu'un simple disque plat.
-    for (var i = 0; i < 3; i++) {
-      final ringPhase = (breath + i * 0.33) % 1.0;
-      final ringRadius = radius * (0.78 + ringPhase * 0.5);
-      final ringPaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2
-        ..color = glow.withValues(alpha: (1 - ringPhase) * 0.22);
-      canvas.drawCircle(center, ringRadius, ringPaint);
-    }
+    // La source de lumière dérive très légèrement en orbite (au lieu de
+    // rester rigoureusement fixe) : un soupçon de vie liquide sans jamais
+    // se lire comme des « taches » distinctes qui tournent.
+    final driftAngle = -2.35 + math.sin(swirl * 2 * math.pi) * 0.16;
+    final lightCenter = center + Offset(math.cos(driftAngle), math.sin(driftAngle)) * radius * 0.42;
 
-    // Corps de l'orbe : nappes de couleur qui tournent lentement les unes
-    // sur les autres, façon nuage/ciel — le clip circulaire les contient.
     canvas.save();
     canvas.clipPath(Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
 
-    final basePaint = Paint()..color = colors.last;
-    canvas.drawCircle(center, radius, basePaint);
+    // Corps de la sphère : UN SEUL dégradé radial décentré (lumière en
+    // haut-gauche, ombre profonde en bas-droite), façon perle de verre —
+    // plus lisible et plus premium qu'une texture de nappes en rotation.
+    final sphereRect = Rect.fromCircle(center: center, radius: radius * 1.7);
+    final spherePaint = Paint()
+      ..shader = ui.Gradient.radial(
+        lightCenter,
+        radius * 1.85,
+        [colors[0], colors[1], colors[2], colors[3]],
+        const [0.0, 0.32, 0.62, 1.0],
+      );
+    canvas.drawRect(sphereRect, spherePaint);
 
-    final layerCount = colors.length - 1;
-    for (var i = 0; i < layerCount; i++) {
-      final angle = (swirl * 2 * math.pi) + (i * (2 * math.pi / layerCount)) + intensity * 0.6;
-      final blobCenter = center + Offset(math.cos(angle), math.sin(angle)) * radius * 0.42;
-      final blobRadius = radius * (0.72 + 0.1 * math.sin(swirl * 2 * math.pi + i));
-      final blobPaint = Paint()
+    // Voile de teinte très doux, en excentricité opposée, pour une
+    // profondeur de verre supplémentaire sans jamais dominer le dégradé
+    // principal.
+    final tintPaint = Paint()
+      ..blendMode = BlendMode.softLight
+      ..shader = ui.Gradient.radial(
+        center - Offset(math.cos(driftAngle), math.sin(driftAngle)) * radius * 0.5,
+        radius * 1.4,
+        [colors[3].withValues(alpha: 0.5), colors[3].withValues(alpha: 0)],
+      );
+    canvas.drawCircle(center, radius, tintPaint);
+
+    // Lumière spéculaire : un point net et brillant, légèrement plus haut
+    // que le centre de lumière du dégradé — le détail qui vend le « verre
+    // poli » plutôt qu'un disque mat.
+    final specularCenter = lightCenter - Offset(radius * 0.08, radius * 0.1);
+    canvas.drawCircle(
+      specularCenter,
+      radius * (0.16 + intensity * 0.03),
+      Paint()
         ..shader = RadialGradient(
-          colors: [colors[i].withValues(alpha: 0.9), colors[i].withValues(alpha: 0)],
-        ).createShader(Rect.fromCircle(center: blobCenter, radius: blobRadius));
-      canvas.drawCircle(blobCenter, blobRadius, blobPaint);
-    }
-
-    // Lumière spéculaire fixe en haut-gauche, pour la brillance "sphère".
-    final specularPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [Colors.white.withValues(alpha: 0.55), Colors.white.withValues(alpha: 0)],
-      ).createShader(Rect.fromCircle(center: center + Offset(-radius * 0.32, -radius * 0.38), radius: radius * 0.55));
-    canvas.drawCircle(center + Offset(-radius * 0.32, -radius * 0.38), radius * 0.55, specularPaint);
+          colors: [Colors.white.withValues(alpha: 0.85), Colors.white.withValues(alpha: 0)],
+        ).createShader(Rect.fromCircle(center: specularCenter, radius: radius * 0.32)),
+    );
 
     canvas.restore();
 
-    final rimPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
-      ..color = Colors.white.withValues(alpha: 0.35);
-    canvas.drawCircle(center, radius, rimPaint);
+    // Filet de bord à peine perceptible — sépare la sphère du fond sans
+    // jamais se lire comme un contour dessiné.
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = Colors.white.withValues(alpha: 0.16),
+    );
   }
 
   @override

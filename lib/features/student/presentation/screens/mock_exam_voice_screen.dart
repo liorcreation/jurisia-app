@@ -941,17 +941,22 @@ class _OrbArea extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               Positioned(
-                bottom: 14,
+                bottom: -18,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 500),
-                  width: 190,
-                  height: 46,
-                  child: ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 12),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _stageGlow.withValues(alpha: 0.30),
-                        borderRadius: BorderRadius.circular(999),
+                  child: Transform.scale(
+                    scaleY: 0.3,
+                    child: ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 34, sigmaY: 34),
+                      child: Container(
+                        width: 170,
+                        height: 170,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [_stageGlow.withValues(alpha: 0.34), _stageGlow.withValues(alpha: 0)],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1005,40 +1010,27 @@ class _OrbArea extends StatelessWidget {
   }
 }
 
+/// Anneau de minuterie réduit à l'essentiel — un simple filet d'ombre en
+/// fond et un arc en dégradé qui se consume, sans graduation ni ornement :
+/// discret au point de presque disparaître derrière la sphère, jamais en
+/// compétition avec elle.
 class _AnswerRingPainter extends CustomPainter {
   const _AnswerRingPainter(this.remaining);
 
   final double remaining;
-
-  static const _tickCount = 32;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.width / 2 - 2;
 
-    // Graduations discrètes façon chronographe — un détail qui « vend » le
-    // compte à rebours plutôt qu'un simple anneau nu.
-    for (var i = 0; i < _tickCount; i++) {
-      final angle = 2 * math.pi * i / _tickCount;
-      final outer = center + Offset(math.cos(angle), math.sin(angle)) * (radius + 4);
-      final inner = center + Offset(math.cos(angle), math.sin(angle)) * (radius - 1);
-      canvas.drawLine(
-        inner,
-        outer,
-        Paint()
-          ..strokeWidth = 1
-          ..color = Colors.white.withValues(alpha: 0.08),
-      );
-    }
-
     canvas.drawCircle(
       center,
       radius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..color = Colors.white.withValues(alpha: 0.08),
+        ..strokeWidth = 2
+        ..color = Colors.white.withValues(alpha: 0.06),
     );
 
     if (remaining <= 0) return;
@@ -1051,7 +1043,7 @@ class _AnswerRingPainter extends CustomPainter {
       false,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
+        ..strokeWidth = 2
         ..strokeCap = StrokeCap.round
         ..shader = (urgent
                 ? const LinearGradient(colors: [AppColors.error, Color(0xFFE0847F)])
