@@ -278,6 +278,7 @@ class _ErrorView extends StatelessWidget {
               FilledButton.icon(
                 onPressed: () {
                   primeWebSpeechSynthesis();
+                  primeWebMicrophonePermission();
                   controller.retry();
                 },
                 style: FilledButton.styleFrom(
@@ -438,6 +439,7 @@ class _BriefingView extends StatelessWidget {
                   // inscrit l'activation utilisateur nécessaire à la
                   // synthèse vocale (voir exam_voice_unlock_web.dart).
                   primeWebSpeechSynthesis();
+                  primeWebMicrophonePermission();
                   controller.start();
                 },
                 style: FilledButton.styleFrom(

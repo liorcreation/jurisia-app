@@ -132,8 +132,16 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     try {
       // Réinitialise un éventuel état bloqué du moteur vocal (utile sur
       // web, où le bug ci-dessus peut laisser la file de synthèse "coincée"
-      // après une tentative précédente) avant de parler.
+      // après une tentative précédente) avant de parler. Isolé dans son
+      // propre try/catch : certaines implémentations web de flutter_tts ne
+      // fournissent pas la méthode "stop" (MissingPluginException) — un
+      // échec ici ne doit JAMAIS empêcher l'appel à speak() qui suit, sans
+      // quoi aucun son n'est jamais émis.
       await _tts.stop();
+    } catch (_) {
+      // Sans conséquence : au pire la file de synthèse n'est pas purgée.
+    }
+    try {
       await _tts.speak(text).timeout(_speakTimeout);
     } catch (_) {
       // Repli silencieux (délai dépassé, TTS indisponible) : l'étudiant lit
@@ -246,7 +254,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     final question = widget.controller.exam!.questions[_questionIndex];
     final trimmed = text.trim();
     widget.controller.answerCasPratique(question.id, trimmed);
-    _stt.stop();
+    unawaited(_stt.stop().catchError((_) {}));
     _appendTranscript(isUser: true, text: trimmed.isEmpty ? '(pas de réponse)' : trimmed);
     setState(() => _phase = _VoicePhase.reviewing);
 
@@ -301,7 +309,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   @override
   void dispose() {
     _stt.cancel();
-    _tts.stop();
+    unawaited(_tts.stop().catchError((_) {}));
     _answerTimer.dispose();
     _typedController.dispose();
     _scrollController.dispose();
