@@ -14,6 +14,7 @@ import '../../../../models/student/student_level.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/evaluation_controller.dart';
 import '../controllers/student_controller.dart';
+import 'mock_exam_mode_select_screen.dart';
 
 /// Écran d'évaluation de fin de module : quiz interactif (QCM et cas
 /// pratiques), calcul de la note sur 20, déblocage du module suivant en cas
@@ -1022,6 +1023,11 @@ class _DesktopResult extends StatelessWidget {
                     ],
                   ),
                 ),
+              ] else if (result.levelCompleted &&
+                  module != null &&
+                  AcademicLevel.values.indexOf(module!.level) < AcademicLevel.values.length - 1) ...[
+                const SizedBox(height: AppSpacing.lg),
+                _MockExamPendingBanner(level: module!.level),
               ],
               const SizedBox(height: AppSpacing.xl),
               Wrap(
@@ -1078,6 +1084,74 @@ class _DesktopResult extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Bannière affichée quand tous les modules d'un niveau sont validés mais
+/// que le niveau supérieur reste verrouillé : il ne manque plus que la
+/// réussite de l'examen blanc de ce niveau (condition, en plus des modules,
+/// désormais requise pour débloquer le niveau suivant).
+class _MockExamPendingBanner extends StatelessWidget {
+  const _MockExamPendingBanner({required this.level});
+
+  final AcademicLevel level;
+
+  Future<void> _openMockExam(BuildContext context) async {
+    final studentController = context.read<StudentController>();
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider<StudentController>.value(
+          value: studentController,
+          child: MockExamScreen(level: level),
+        ),
+      ),
+    );
+    studentController.refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0x24C9A227), Color(0x0FC9A227)]),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.9),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.fact_check_rounded, color: AppColors.goldLight, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  'Modules terminés ! Réussissez l\'examen blanc de ${level.shortLabel} pour '
+                  'débloquer le niveau supérieur.',
+                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: () => _openMockExam(context),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.gold,
+              foregroundColor: AppColors.nightBlueDeep,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 11),
+              textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            icon: const Icon(Icons.workspace_premium_rounded, size: 17),
+            label: const Text('Passer l\'examen blanc'),
+          ),
+        ],
       ),
     );
   }

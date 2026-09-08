@@ -38,6 +38,7 @@ class MockExamScreen extends StatelessWidget {
         levelModules: levelModules,
         repository: buildMockExamRepository(),
         answerGrader: AiAnswerGrader(dataSource: buildGroqDataSource()),
+        onPassed: () => studentController.recordMockExamPassed(level),
       ),
       child: const _MockExamFlow(),
     );

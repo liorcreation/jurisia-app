@@ -58,6 +58,11 @@ class StudentRepositoryImpl implements StudentRepository {
   /// la session courante (dont le détail n'est pas rechargé).
   final Map<String, double> _persistedBestScore = {};
 
+  /// Niveaux dont l'examen blanc a déjà été réussi (≥ 10/20, un des trois
+  /// modes) — condition, en plus de la validation de tous les modules,
+  /// requise par [isLevelUnlocked] pour débloquer le niveau suivant.
+  final Set<AcademicLevel> _passedMockExamLevels = {};
+
   bool get _persistenceEnabled => supabaseClient != null && userId != null;
 
   @override
@@ -88,6 +93,21 @@ class StudentRepositoryImpl implements StudentRepository {
       // ignore: avoid_print
       print('Échec du chargement de la progression étudiante Supabase : $error');
     }
+
+    try {
+      final rows = await supabaseClient!
+          .from('student_mock_exam_attempts')
+          .select('level_id')
+          .eq('user_id', userId!)
+          .eq('passed', true);
+
+      for (final row in rows as List) {
+        _passedMockExamLevels.add(AcademicLevelLabel.fromName(row['level_id'] as String));
+      }
+    } catch (error) {
+      // ignore: avoid_print
+      print("Échec du chargement des examens blancs réussis : $error");
+    }
   }
 
   @override
@@ -106,9 +126,18 @@ class StudentRepositoryImpl implements StudentRepository {
     final index = levels.indexOf(level);
     if (index == 0) return true;
 
-    final previousModules = modulesForLevel(levels[index - 1]);
-    return previousModules.isNotEmpty && previousModules.every((module) => module.isCompleted);
+    final previousLevel = levels[index - 1];
+    final previousModules = modulesForLevel(previousLevel);
+    return previousModules.isNotEmpty &&
+        previousModules.every((module) => module.isCompleted) &&
+        hasPassedMockExamForLevel(previousLevel);
   }
+
+  @override
+  bool hasPassedMockExamForLevel(AcademicLevel level) => _passedMockExamLevels.contains(level);
+
+  @override
+  void recordMockExamPassed(AcademicLevel level) => _passedMockExamLevels.add(level);
 
   @override
   StudentProgress progressForLevel(AcademicLevel level) {
@@ -266,7 +295,13 @@ class StudentRepositoryImpl implements StudentRepository {
 
       final refreshed = modulesForLevel(module.level);
       levelCompleted = refreshed.every((candidate) => candidate.isCompleted);
-      if (levelCompleted) {
+      // Ne signale le déblocage du niveau supérieur que si l'examen blanc
+      // de CE niveau est déjà réussi — sinon les modules seuls ne
+      // suffisent plus (voir isLevelUnlocked). "levelCompleted" reste vrai
+      // dès que les modules sont finis, indépendamment de l'examen blanc :
+      // c'est ce qui permet à l'écran d'évaluation d'inviter l'étudiant à
+      // le passer plutôt que d'afficher à tort "niveau débloqué".
+      if (levelCompleted && hasPassedMockExamForLevel(module.level)) {
         final levels = AcademicLevel.values;
         final currentIndex = levels.indexOf(module.level);
         if (currentIndex < levels.length - 1) {

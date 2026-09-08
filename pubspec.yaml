@@ -73,6 +73,10 @@ dependencies:
   # réserve que pour Sign in with Apple, éviter un nouveau mur payant).
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
+  # Anti-triche de l'examen blanc sur desktop (Windows/macOS) : force le
+  # plein écran de la fenêtre pendant l'épreuve et détecte sa sortie
+  # (voir exam_session_guard_io.dart). Aucun équivalent Flutter natif.
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:

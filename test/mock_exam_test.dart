@@ -7,6 +7,8 @@ import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
 import 'package:jurisia_app/features/student/data/datasources/ai_answer_grader.dart';
 import 'package:jurisia_app/features/student/data/datasources/evaluation_question_bank.dart';
 import 'package:jurisia_app/features/student/data/datasources/mock_exam_question_source.dart';
+import 'package:jurisia_app/features/student/domain/repositories/mock_exam_repository.dart';
+import 'package:jurisia_app/features/student/presentation/controllers/mock_exam_controller.dart';
 import 'package:jurisia_app/models/legal_document/legal_domain.dart';
 import 'package:jurisia_app/models/student/course_module.dart';
 import 'package:jurisia_app/models/student/evaluation_model.dart';
@@ -147,4 +149,94 @@ void main() {
       expect(result.fraction, 0);
     });
   });
+
+  group('MockExamController — onPassed', () {
+    MockExam buildExam(int correctOptionIndex) {
+      return MockExam(
+        id: 'exam-1',
+        levelId: 'l1',
+        mode: MockExamMode.qcmTimed,
+        generatedAt: DateTime.now(),
+        questions: [
+          EvaluationQuestion(
+            id: 'q1',
+            type: QuestionType.qcm,
+            statement: 'Question unique',
+            points: 20,
+            options: const ['A', 'B'],
+            correctOptionIndex: correctOptionIndex,
+          ),
+        ],
+      );
+    }
+
+    testWidgets('appelé une fois quand la tentative est réussie (score ≥ 10)', (tester) async {
+      final fakeRepository = _FakeMockExamRepository(exam: buildExam(0));
+      var passedCalls = 0;
+      final controller = MockExamController(
+        level: AcademicLevel.l1,
+        levelModules: const [],
+        repository: fakeRepository,
+        answerGrader: AiAnswerGrader(dataSource: GroqDataSource(client: MockClient.streaming((_, _) async {
+          fail('ne devrait pas être appelé — seul un QCM est présent');
+        }))),
+        onPassed: () => passedCalls++,
+      );
+
+      await controller.start(MockExamMode.qcmTimed);
+      controller.answerQcm('q1', 0); // réponse correcte
+      await controller.submit();
+
+      expect(controller.exam?.isPassed, isTrue);
+      expect(passedCalls, 1);
+      expect(fakeRepository.recordResultCalled, isTrue);
+    });
+
+    testWidgets('jamais appelé quand la tentative échoue (score < 10)', (tester) async {
+      final fakeRepository = _FakeMockExamRepository(exam: buildExam(0));
+      var passedCalls = 0;
+      final controller = MockExamController(
+        level: AcademicLevel.l1,
+        levelModules: const [],
+        repository: fakeRepository,
+        answerGrader: AiAnswerGrader(dataSource: GroqDataSource(client: MockClient.streaming((_, _) async {
+          fail('ne devrait pas être appelé — seul un QCM est présent');
+        }))),
+        onPassed: () => passedCalls++,
+      );
+
+      await controller.start(MockExamMode.qcmTimed);
+      controller.answerQcm('q1', 1); // réponse incorrecte
+      await controller.submit();
+
+      expect(controller.exam?.isPassed, isFalse);
+      expect(passedCalls, 0);
+    });
+  });
+}
+
+class _FakeMockExamRepository implements MockExamRepository {
+  _FakeMockExamRepository({required this.exam});
+
+  final MockExam exam;
+  bool recordResultCalled = false;
+
+  @override
+  Future<MockExamLockState> lockStateFor(String levelId) async => MockExamLockState(levelId: levelId);
+
+  @override
+  Future<MockExam> generateExam({
+    required String levelId,
+    required List<CourseModule> levelModules,
+    required MockExamMode mode,
+  }) async =>
+      exam;
+
+  @override
+  Future<void> recordResult({required MockExam exam}) async {
+    recordResultCalled = true;
+  }
+
+  @override
+  Future<void> markCourseReviewed(String levelId) async {}
 }

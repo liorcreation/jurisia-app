@@ -47,6 +47,7 @@ class MockExamController extends ChangeNotifier {
     required this.levelModules,
     required this.repository,
     required this.answerGrader,
+    this.onPassed,
     GradeEvaluationUseCase? gradeUseCase,
   }) : gradeUseCase = gradeUseCase ?? const GradeEvaluationUseCase() {
     _guard = ExamSessionGuard(onInterrupted: _onInterrupted);
@@ -58,6 +59,11 @@ class MockExamController extends ChangeNotifier {
   final MockExamRepository repository;
   final AiAnswerGrader answerGrader;
   final GradeEvaluationUseCase gradeUseCase;
+
+  /// Appelé une fois, dès qu'une tentative est corrigée avec un score ≥ 10 —
+  /// permet à l'écran appelant de reporter la réussite sur le
+  /// [StudentRepository] partagé (déblocage du niveau supérieur).
+  final VoidCallback? onPassed;
 
   String get levelId => level.name;
 
@@ -113,6 +119,14 @@ class MockExamController extends ChangeNotifier {
   Future<void> refreshLockState() => _loadLockState();
 
   Future<void> start(MockExamMode mode) async {
+    // Doit rester la toute première instruction, avant tout `await` : sur
+    // web, `_guard.start()` demande le plein écran du navigateur, ce qui
+    // n'est honoré que dans la pile d'appel synchrone du geste de
+    // l'utilisateur (même contrainte que window.open(), déjà rencontrée
+    // pour le SSO admin) — un appel après l'aller-retour réseau de
+    // génération des questions serait silencieusement refusé.
+    _guard.start();
+
     _selectedMode = mode;
     _status = MockExamStatus.generating;
     _errorMessage = null;
@@ -122,8 +136,8 @@ class MockExamController extends ChangeNotifier {
     try {
       _exam = await repository.generateExam(levelId: levelId, levelModules: levelModules, mode: mode);
       _status = MockExamStatus.inProgress;
-      _guard.start();
     } catch (error) {
+      _guard.stop();
       _status = MockExamStatus.error;
       _errorMessage = error.toString();
     }
@@ -178,7 +192,9 @@ class MockExamController extends ChangeNotifier {
     _exam = currentExam.copyWith(questions: gradedQuestions, score: score, completedAt: DateTime.now());
     await repository.recordResult(exam: _exam!);
 
-    if (score < 10) {
+    if (score >= 10) {
+      onPassed?.call();
+    } else {
       final lockedUntil = DateTime.now().add(const Duration(hours: 168));
       await NotificationService.scheduleMockExamRetryReminder(
         levelId: levelId,

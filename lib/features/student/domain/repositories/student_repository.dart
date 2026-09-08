@@ -15,8 +15,22 @@ abstract class StudentRepository {
   CourseModule? findModule(String moduleId);
 
   /// Un niveau est débloqué si c'est le premier (L1), ou si tous les
-  /// modules du niveau précédent ont été validés.
+  /// modules du niveau précédent ont été validés ET que l'examen blanc de
+  /// ce niveau précédent a été réussi (voir [hasPassedMockExamForLevel]) —
+  /// les deux conditions sont indépendantes et peuvent être remplies dans
+  /// n'importe quel ordre.
   bool isLevelUnlocked(AcademicLevel level);
+
+  /// `true` si l'étudiant a déjà réussi (≥ 10/20) au moins une tentative de
+  /// l'examen blanc de ce niveau, quel qu'en soit le mode (QCM chronométré,
+  /// écrit, oral).
+  bool hasPassedMockExamForLevel(AcademicLevel level);
+
+  /// Enregistre localement la réussite de l'examen blanc d'un niveau — à
+  /// appeler dès qu'une tentative est validée (voir
+  /// `MockExamController.onPassed`), pour que [isLevelUnlocked] reflète
+  /// immédiatement le déblocage sans attendre un nouveau [hydrate].
+  void recordMockExamPassed(AcademicLevel level);
 
   /// Suivi de progression composé de l'état courant des modules et de
   /// l'historique de leurs tentatives d'évaluation.

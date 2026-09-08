@@ -62,21 +62,40 @@ void main() {
       expect(modules[1].isUnlocked, isFalse);
     });
 
-    test('la validation de tous les modules d\'un niveau débloque le niveau supérieur', () {
-      final repository = _buildRepository();
-      final validate = ValidateModuleUseCase(repository: repository);
+    test(
+      'la validation de tous les modules ne débloque le niveau supérieur '
+      'qu\'après réussite de l\'examen blanc du niveau',
+      () {
+        final repository = _buildRepository();
+        final validate = ValidateModuleUseCase(repository: repository);
 
-      expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
+        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
 
-      validate(moduleId: 'l1-module-1', score: 15);
-      validate(moduleId: 'l1-module-2', score: 15);
-      final result = validate(moduleId: 'l1-module-3', score: 15);
+        validate(moduleId: 'l1-module-1', score: 15);
+        validate(moduleId: 'l1-module-2', score: 15);
+        final result = validate(moduleId: 'l1-module-3', score: 15);
 
-      expect(result.levelCompleted, isTrue);
-      expect(result.unlockedNextLevel, AcademicLevel.l2);
-      expect(repository.isLevelUnlocked(AcademicLevel.l2), isTrue);
-      expect(repository.isLevelUnlocked(AcademicLevel.l3), isFalse);
-    });
+        // Modules tous validés, mais l'examen blanc du niveau n'a pas
+        // encore été réussi : le niveau supérieur reste verrouillé.
+        expect(result.levelCompleted, isTrue);
+        expect(result.unlockedNextLevel, isNull);
+        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
+
+        repository.recordMockExamPassed(AcademicLevel.l1);
+
+        expect(repository.isLevelUnlocked(AcademicLevel.l2), isTrue);
+        expect(repository.isLevelUnlocked(AcademicLevel.l3), isFalse);
+      },
+    );
+
+    test(
+      'réussir l\'examen blanc seul, sans avoir validé tous les modules, ne débloque rien',
+      () {
+        final repository = _buildRepository();
+        repository.recordMockExamPassed(AcademicLevel.l1);
+        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
+      },
+    );
 
     test('L1 est toujours débloqué', () {
       final repository = _buildRepository();

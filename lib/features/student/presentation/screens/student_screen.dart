@@ -308,10 +308,11 @@ class _LevelGallery extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final levels = AcademicLevel.values;
 
-    // Le niveau « courant » : le premier débloqué qui n'est pas terminé.
+    // Le niveau « courant » : le premier débloqué qui n'est pas encore
+    // vraiment terminé (modules ET examen blanc — voir isLevelFullyCleared).
     AcademicLevel? current;
     for (final level in levels) {
-      if (controller.isLevelUnlocked(level) && !controller.isLevelCompleted(level)) {
+      if (controller.isLevelUnlocked(level) && !controller.isLevelFullyCleared(level)) {
         current = level;
         break;
       }
@@ -453,7 +454,7 @@ class _CursusLadder extends StatelessWidget {
               level: levels[i],
               modules: controller.modulesForLevel(levels[i]),
               unlocked: controller.isLevelUnlocked(levels[i]),
-              completed: controller.isLevelCompleted(levels[i]),
+              completed: controller.isLevelFullyCleared(levels[i]),
               isCurrent: levels[i] == current,
               onTap: () {
                 if (controller.isLevelUnlocked(levels[i])) {
@@ -1165,9 +1166,12 @@ class _ProgressPanel extends StatelessWidget {
     if (done == modules.length) {
       final levels = AcademicLevel.values;
       final next = levels.indexOf(level) + 1;
-      return next < levels.length
-          ? 'Niveau validé — ${levels[next].shortLabel} débloqué. Félicitations !'
-          : 'Cursus complet. Vous avez tout validé, bravo !';
+      if (next >= levels.length) return 'Cursus complet. Vous avez tout validé, bravo !';
+      if (!controller.hasPassedMockExamForLevel(level)) {
+        return 'Modules terminés ! Réussissez l\'examen blanc de ${level.shortLabel} pour '
+            'débloquer ${levels[next].shortLabel}.';
+      }
+      return 'Niveau validé — ${levels[next].shortLabel} débloqué. Félicitations !';
     }
     final remaining = modules.length - done;
     final target = modules.firstWhere(
@@ -1409,7 +1413,7 @@ class _LevelStepper extends StatelessWidget {
         for (var i = 0; i < levels.length; i++)
           () {
             final level = levels[i];
-            final completed = controller.isLevelCompleted(level);
+            final completed = controller.isLevelFullyCleared(level);
             final unlocked = controller.isLevelUnlocked(level);
             final isActive = level == activeLevel;
 
