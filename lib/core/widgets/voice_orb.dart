@@ -39,17 +39,44 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
   late final AnimationController _swirlController =
       AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
 
+  /// Anime la BASCULE d'une palette d'état à l'autre (ex. idle → speaking) :
+  /// sans elle, changer d'état fait « sauter » les couleurs de l'orbe d'une
+  /// frame à l'autre, un détail qui trahit une interface pas assez soignée
+  /// pour une conversation vocale censée se sentir vivante et continue.
+  late final AnimationController _stateTransition =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 520))..value = 1;
+
+  late List<Color> _fromColors = _colorsFor(widget.state);
+  late Color _fromGlow = _glowFor(widget.state);
+
   double _smoothedLevel = 0;
+
+  @override
+  void didUpdateWidget(covariant VoiceOrb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state != widget.state) {
+      // Repart de la palette actuellement affichée (potentiellement déjà en
+      // cours d'interpolation) plutôt que de l'état précédent figé — une
+      // bascule rapide d'état ne doit jamais produire de à-coup visuel.
+      _fromColors = _currentColors;
+      _fromGlow = _currentGlow;
+      _stateTransition
+        ..stop()
+        ..value = 0
+        ..forward();
+    }
+  }
 
   @override
   void dispose() {
     _breathController.dispose();
     _swirlController.dispose();
+    _stateTransition.dispose();
     super.dispose();
   }
 
-  List<Color> get _swirlColors {
-    switch (widget.state) {
+  static List<Color> _colorsFor(VoiceOrbState state) {
+    switch (state) {
       case VoiceOrbState.idle:
         return const [AppColors.metalSilver, AppColors.metalCobalt, Color(0xFF0B1F3A)];
       case VoiceOrbState.speaking:
@@ -61,8 +88,8 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     }
   }
 
-  Color get _glow {
-    switch (widget.state) {
+  static Color _glowFor(VoiceOrbState state) {
+    switch (state) {
       case VoiceOrbState.idle:
         return AppColors.metalCobalt;
       case VoiceOrbState.speaking:
@@ -74,6 +101,15 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     }
   }
 
+  List<Color> get _currentColors {
+    final target = _colorsFor(widget.state);
+    final t = Curves.easeInOut.transform(_stateTransition.value);
+    return [for (var i = 0; i < target.length; i++) Color.lerp(_fromColors[i], target[i], t)!];
+  }
+
+  Color get _currentGlow =>
+      Color.lerp(_fromGlow, _glowFor(widget.state), Curves.easeInOut.transform(_stateTransition.value))!;
+
   @override
   Widget build(BuildContext context) {
     // Lissage exponentiel simple : un niveau sonore brut « saute » d'une
@@ -81,7 +117,7 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
     _smoothedLevel = _smoothedLevel * 0.7 + widget.level.clamp(0.0, 1.0) * 0.3;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([_breathController, _swirlController]),
+      animation: Listenable.merge([_breathController, _swirlController, _stateTransition]),
       builder: (context, _) {
         final breath = Curves.easeInOut.transform(_breathController.value);
         final reactive = widget.state == VoiceOrbState.idle ? breath * 0.5 : _smoothedLevel;
@@ -91,8 +127,8 @@ class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
           height: widget.size,
           child: CustomPaint(
             painter: _VoiceOrbPainter(
-              colors: _swirlColors,
-              glow: _glow,
+              colors: _currentColors,
+              glow: _currentGlow,
               intensity: reactive,
               breath: breath,
               swirl: _swirlController.value,

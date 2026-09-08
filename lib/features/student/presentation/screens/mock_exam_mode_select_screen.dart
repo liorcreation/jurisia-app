@@ -6,6 +6,7 @@ import '../../../../core/exam/exam_voice_unlock.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/voice_orb.dart';
 import '../../../../models/student/student_level.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/datasources/ai_answer_grader.dart';
@@ -380,13 +381,7 @@ class _BriefingView extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 640),
           child: Column(
             children: [
-              Container(
-                width: 88,
-                height: 88,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(shape: BoxShape.circle, gradient: AppGradients.goldMetallic),
-                child: const Icon(Icons.graphic_eq_rounded, color: AppColors.nightBlueDeep, size: 38),
-              ),
+    const _BriefingOrbPreview(),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Examen blanc — Voice Mode',
@@ -459,6 +454,24 @@ class _BriefingView extends StatelessWidget {
   }
 }
 
+/// Aperçu miniature de l'orbe vocal (état repos) en tête du briefing — relie
+/// visuellement l'écran de règles à la conversation vocale qui suit,
+/// plutôt qu'une icône générique sans rapport avec l'épreuve elle-même.
+class _BriefingOrbPreview extends StatelessWidget {
+  const _BriefingOrbPreview();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 96,
+      height: 96,
+      child: VoiceOrb(state: VoiceOrbState.idle, size: 92),
+    );
+  }
+}
+
+/// Puce de règle à badge circulaire — remplace la simple icône + texte par
+/// un traitement plus soigné, cohérent avec les médaillons de l'épreuve.
 class _RuleRow extends StatelessWidget {
   const _RuleRow({required this.icon, required this.text});
 
@@ -470,12 +483,25 @@ class _RuleRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: AppColors.goldLight),
-        const SizedBox(width: AppSpacing.sm),
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.gold.withValues(alpha: 0.12),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.35), width: 0.8),
+          ),
+          child: Icon(icon, size: 15, color: AppColors.goldLight),
+        ),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.45),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.45),
+            ),
           ),
         ),
       ],

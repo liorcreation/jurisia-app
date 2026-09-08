@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../../theme/app_theme.dart';
 import '../../../../core/exam/exam_voice_unlock.dart';
+import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/voice_orb.dart';
 import '../controllers/mock_exam_controller.dart';
 
@@ -433,66 +435,139 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
 
     return DecoratedBox(
       decoration: const BoxDecoration(color: Colors.black),
-      child: SafeArea(
-        child: Column(
-          children: [
-            _TopBar(
-              index: math.min(_questionIndex, total - 1),
-              total: total,
-              cameraController: cameraController,
-            ),
-            if (_showTtsWarning)
-              _WarningBanner(
-                text: "Synthèse vocale indisponible sur ce navigateur — les questions restent "
-                    'affichées ci-dessous, répondez au clavier ou à l\'oral si le micro fonctionne.',
-                onDismiss: () => setState(() => _showTtsWarning = false),
-              ),
-            if (_showMicWarning)
-              _WarningBanner(
-                text: 'Réponse orale indisponible sur ce navigateur (certains, comme Edge, ne '
-                    'la prennent pas en charge — essayez Chrome) ou micro non autorisé : '
-                    'vérifiez les réglages du navigateur, ou répondez au clavier.',
-                onDismiss: () => setState(() => _showMicWarning = false),
-              ),
-            Expanded(
-              child: _transcript.isEmpty
-                  ? const SizedBox.shrink()
-                  : _TranscriptList(entries: _transcript, scrollController: _scrollController),
-            ),
-            _OrbArea(
-              orbState: _orbState,
-              soundLevel: _phase == _VoicePhase.listening ? _soundLevel : 0,
-              showRing: _phase == _VoicePhase.listening,
-              ringRemaining: 1 - _answerTimer.value,
-              animation: _answerTimer,
-            ),
-            if (_phase == _VoicePhase.listening && _liveTranscript.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                child: Text(
-                  _liveTranscript,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: IgnorePointer(child: _AmbientBackdrop())),
+          SafeArea(
+            child: Column(
+              children: [
+                _TopBar(
+                  index: math.min(_questionIndex, total - 1),
+                  total: total,
+                  cameraController: cameraController,
                 ),
-              ),
-            const SizedBox(height: AppSpacing.sm),
-            _BottomBar(
-              isTyping: _phase == _VoicePhase.typingFallback,
-              sttAvailable: _sttAvailable,
-              typedController: _typedController,
-              onSwitchToTyping: _switchToTyping,
-              onSubmitTyped: _submitTypedAnswer,
-              onQuit: _confirmQuit,
+                if (_showTtsWarning)
+                  _WarningBanner(
+                    text: "Synthèse vocale indisponible sur ce navigateur — les questions restent "
+                        'affichées ci-dessous, répondez au clavier ou à l\'oral si le micro fonctionne.',
+                    onDismiss: () => setState(() => _showTtsWarning = false),
+                  ),
+                if (_showMicWarning)
+                  _WarningBanner(
+                    text: 'Réponse orale indisponible sur ce navigateur (certains, comme Edge, ne '
+                        'la prennent pas en charge — essayez Chrome) ou micro non autorisé : '
+                        'vérifiez les réglages du navigateur, ou répondez au clavier.',
+                    onDismiss: () => setState(() => _showMicWarning = false),
+                  ),
+                Expanded(
+                  child: _transcript.isEmpty
+                      ? const SizedBox.shrink()
+                      : _TranscriptList(entries: _transcript, scrollController: _scrollController),
+                ),
+                _OrbArea(
+                  orbState: _orbState,
+                  soundLevel: _phase == _VoicePhase.listening ? _soundLevel : 0,
+                  showRing: _phase == _VoicePhase.listening,
+                  ringRemaining: 1 - _answerTimer.value,
+                  animation: _answerTimer,
+                  liveTranscript: _phase == _VoicePhase.listening ? _liveTranscript : '',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _BottomBar(
+                  isTyping: _phase == _VoicePhase.typingFallback,
+                  sttAvailable: _sttAvailable,
+                  soundLevel: _phase == _VoicePhase.listening ? _soundLevel : 0,
+                  typedController: _typedController,
+                  onSwitchToTyping: _switchToTyping,
+                  onSubmitTyped: _submitTypedAnswer,
+                  onQuit: _confirmQuit,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
+/// Toile de fond vivante : deux halos or/cobalt très sourds qui dérivent
+/// lentement l'un vers l'autre en boucle, façon aurore discrète — donne à
+/// l'obscurité immersive de l'épreuve une profondeur cinématographique au
+/// lieu d'un simple aplat noir, sans jamais nuire à la lisibilité du
+/// transcript ni rappeler un fond « chargé ».
+class _AmbientBackdrop extends StatefulWidget {
+  const _AmbientBackdrop();
+
+  @override
+  State<_AmbientBackdrop> createState() => _AmbientBackdropState();
+}
+
+class _AmbientBackdropState extends State<_AmbientBackdrop> with SingleTickerProviderStateMixin {
+  late final AnimationController _drift =
+      AnimationController(vsync: this, duration: const Duration(seconds: 26))..repeat();
+
+  @override
+  void dispose() {
+    _drift.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _drift,
+      builder: (context, _) => CustomPaint(
+        painter: _AmbientBackdropPainter(_drift.value),
+        size: Size.infinite,
+      ),
+    );
+  }
+}
+
+class _AmbientBackdropPainter extends CustomPainter {
+  const _AmbientBackdropPainter(this.t);
+
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.black);
+
+    void glow(Offset center, double radius, Color color) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [color.withValues(alpha: 0.16), color.withValues(alpha: 0)],
+          ).createShader(Rect.fromCircle(center: center, radius: radius)),
+      );
+    }
+
+    final a = (math.sin(t * 2 * math.pi) + 1) / 2;
+    final b = (math.cos(t * 2 * math.pi * 0.7) + 1) / 2;
+
+    glow(
+      Offset(size.width * (0.18 + a * 0.12), size.height * (0.14 + b * 0.06)),
+      size.width * 0.55,
+      AppColors.gold,
+    );
+    glow(
+      Offset(size.width * (0.86 - b * 0.14), size.height * (0.78 - a * 0.08)),
+      size.width * 0.5,
+      AppColors.cobalt,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _AmbientBackdropPainter oldDelegate) => oldDelegate.t != t;
+}
+
+/// Bannière d'alerte en verre dépoli — même langage visuel que
+/// [GlassContainer], pour que même un message d'avertissement se sente
+/// « fabriqué » plutôt qu'une alerte de navigateur générique.
 class _WarningBanner extends StatelessWidget {
   const _WarningBanner({required this.text, required this.onDismiss});
 
@@ -503,25 +578,25 @@ class _WarningBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
-      child: Container(
+      child: GlassContainer(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: AppColors.warning.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(AppRadius.small),
-          border: Border.all(color: AppColors.warning.withValues(alpha: 0.4), width: 0.8),
-        ),
+        borderColor: AppColors.warning.withValues(alpha: 0.45),
+        borderRadius: AppRadius.medium,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              child: Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 12.5)),
+              child: Text(
+                text,
+                style: const TextStyle(color: AppColors.textPrimary, height: 1.4, fontSize: 12.5),
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             GestureDetector(
               onTap: onDismiss,
-              child: const Icon(Icons.close_rounded, size: 16, color: Colors.white70),
+              child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -530,6 +605,10 @@ class _WarningBanner extends StatelessWidget {
   }
 }
 
+/// Piste de progression segmentée (une barre fine par question, remplie au
+/// fil de l'épreuve) et médaillon caméra circulaire cerclé d'or avec point
+/// « REC » pulsant — remplace le texte brut et la vignette carrée
+/// d'origine par une signature visuelle propre à JurisIA.
 class _TopBar extends StatelessWidget {
   const _TopBar({required this.index, required this.total, required this.cameraController});
 
@@ -540,20 +619,179 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'Question ${index + 1} / $total',
-            style: const TextStyle(color: Colors.white54, fontWeight: FontWeight.w600, fontSize: 13),
-          ),
-          const Spacer(),
-          if (cameraController != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(width: 44, height: 58, child: CameraPreview(cameraController!)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'QUESTION ${index + 1} / $total',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11.5,
+                    letterSpacing: AppLetterSpacing.caps,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    for (var i = 0; i < total; i++)
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: i == total - 1 ? 0 : 4),
+                          child: _ProgressSegment(state: i < index ? 2 : (i == index ? 1 : 0)),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          _CameraMedallion(controller: cameraController),
         ],
+      ),
+    );
+  }
+}
+
+class _ProgressSegment extends StatelessWidget {
+  const _ProgressSegment({required this.state});
+
+  /// 0 = à venir, 1 = en cours, 2 = déjà répondue.
+  final int state;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (state) {
+      2 => AppColors.gold,
+      1 => AppColors.goldLight,
+      _ => AppColors.textSecondary.withValues(alpha: 0.22),
+    };
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOut,
+      height: 3.5,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        boxShadow: state == 1 ? AppShadows.goldGlowSoft : null,
+      ),
+    );
+  }
+}
+
+class _CameraMedallion extends StatefulWidget {
+  const _CameraMedallion({required this.controller});
+
+  final CameraController? controller;
+
+  @override
+  State<_CameraMedallion> createState() => _CameraMedallionState();
+}
+
+class _CameraMedallionState extends State<_CameraMedallion> with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const size = 46.0;
+    final active = widget.controller != null;
+
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(1.6),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: active ? AppGradients.goldMetallic : null,
+        color: active ? null : AppColors.textSecondary.withValues(alpha: 0.18),
+        boxShadow: active ? AppShadows.goldGlowSoft : null,
+      ),
+      child: ClipOval(
+        child: Container(
+          color: AppColors.nightBlueDeep,
+          child: Stack(
+            alignment: Alignment.center,
+            fit: StackFit.expand,
+            children: [
+              if (active)
+                FittedBox(fit: BoxFit.cover, child: SizedBox(width: 100, height: 100, child: CameraPreview(widget.controller!)))
+              else
+                const Icon(Icons.videocam_off_rounded, size: 16, color: AppColors.textDisabled),
+              if (active)
+                Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: AnimatedBuilder(
+                    animation: _pulse,
+                    builder: (context, _) => Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.error.withValues(alpha: 0.55 + _pulse.value * 0.45),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.error.withValues(alpha: 0.5 * _pulse.value),
+                            blurRadius: 5,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fait apparaître chaque nouveau tour de parole en fondu + léger glissement
+/// vers le haut plutôt qu'un simple `setState` sec — une conversation vocale
+/// doit se sentir vivante jusque dans son défilement.
+class _FadeInEntry extends StatefulWidget {
+  const _FadeInEntry({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_FadeInEntry> createState() => _FadeInEntryState();
+}
+
+class _FadeInEntryState extends State<_FadeInEntry> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 380))..forward();
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(curved),
+        child: widget.child,
       ),
     );
   }
@@ -567,44 +805,107 @@ class _TranscriptList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
-      itemCount: entries.length,
-      itemBuilder: (context, i) {
-        final entry = entries[i];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-          child: Align(
-            alignment: entry.isUser ? Alignment.centerRight : Alignment.centerLeft,
-            child: entry.isUser
-                ? Container(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.gold.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.4), width: 0.8),
-                    ),
-                    child: Text(
-                      entry.text,
-                      style: const TextStyle(color: Colors.white, height: 1.4),
-                    ),
-                  )
-                : ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 560),
-                    child: Text(
-                      entry.text,
-                      style: const TextStyle(color: Colors.white70, height: 1.5),
-                    ),
-                  ),
-          ),
-        );
-      },
+    return ShaderMask(
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.transparent, Colors.black, Colors.black],
+        stops: [0.0, 0.06, 1.0],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: ListView.builder(
+        controller: scrollController,
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+        itemCount: entries.length,
+        itemBuilder: (context, i) {
+          final entry = entries[i];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: _FadeInEntry(
+              child: Align(
+                alignment: entry.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                child: entry.isUser ? _UserBubble(text: entry.text) : _AiTurn(text: entry.text),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
+class _AiTurn extends StatelessWidget {
+  const _AiTurn({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 560),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ShaderMask(
+                shaderCallback: (rect) => AppGradients.goldMetallic.createShader(rect),
+                child: const Icon(Icons.auto_awesome_rounded, size: 13, color: Colors.white),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'JURISIA',
+                style: TextStyle(
+                  color: AppColors.goldLight.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10.5,
+                  letterSpacing: AppLetterSpacing.caps,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            text,
+            style: const TextStyle(color: AppColors.textPrimary, height: 1.55, fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserBubble extends StatelessWidget {
+  const _UserBubble({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 480),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 11),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.gold.withValues(alpha: 0.22), AppColors.gold.withValues(alpha: 0.10)],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.8),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: AppColors.textPrimary, height: 1.45, fontSize: 14.5),
+      ),
+    );
+  }
+}
+
+/// Scène de l'orbe : halo « sol » façon flaque de lumière pour lui donner
+/// un ancrage plutôt qu'un vide, anneau de minuterie en dégradé graduée, et
+/// transition douce du libellé d'état.
 class _OrbArea extends StatelessWidget {
   const _OrbArea({
     required this.orbState,
@@ -612,6 +913,7 @@ class _OrbArea extends StatelessWidget {
     required this.showRing,
     required this.ringRemaining,
     required this.animation,
+    required this.liveTranscript,
   });
 
   final VoiceOrbState orbState;
@@ -619,30 +921,86 @@ class _OrbArea extends StatelessWidget {
   final bool showRing;
   final double ringRemaining;
   final Animation<double> animation;
+  final String liveTranscript;
+
+  Color get _stageGlow => switch (orbState) {
+        VoiceOrbState.idle => AppColors.metalCobalt,
+        VoiceOrbState.speaking => AppColors.gold,
+        VoiceOrbState.listening => AppColors.cobalt,
+        VoiceOrbState.thinking => AppColors.metalSilver,
+      };
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 260,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          if (showRing)
-            AnimatedBuilder(
-              animation: animation,
-              builder: (context, _) => SizedBox(
-                width: 208,
-                height: 208,
-                child: CustomPaint(painter: _AnswerRingPainter(ringRemaining)),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 250,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
+                bottom: 14,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  width: 190,
+                  height: 46,
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 26, sigmaY: 12),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: _stageGlow.withValues(alpha: 0.30),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          VoiceOrb(state: orbState, level: soundLevel, size: 180),
-          Positioned(
-            bottom: 8,
-            child: VoiceOrbStatusLabel(state: orbState),
+              if (showRing)
+                AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, _) => SizedBox(
+                    width: 208,
+                    height: 208,
+                    child: CustomPaint(painter: _AnswerRingPainter(ringRemaining)),
+                  ),
+                ),
+              VoiceOrb(state: orbState, level: soundLevel, size: 176),
+              Positioned(
+                bottom: 6,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 260),
+                  child: KeyedSubtree(
+                    key: ValueKey(orbState),
+                    child: VoiceOrbStatusLabel(state: orbState),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: liveTranscript.isEmpty
+              ? const SizedBox(key: ValueKey('empty-live'), height: 0)
+              : Padding(
+                  key: const ValueKey('live'),
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0),
+                  child: Text(
+                    liveTranscript,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.textSecondary.withValues(alpha: 0.85),
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -652,10 +1010,27 @@ class _AnswerRingPainter extends CustomPainter {
 
   final double remaining;
 
+  static const _tickCount = 32;
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
     final radius = size.width / 2 - 2;
+
+    // Graduations discrètes façon chronographe — un détail qui « vend » le
+    // compte à rebours plutôt qu'un simple anneau nu.
+    for (var i = 0; i < _tickCount; i++) {
+      final angle = 2 * math.pi * i / _tickCount;
+      final outer = center + Offset(math.cos(angle), math.sin(angle)) * (radius + 4);
+      final inner = center + Offset(math.cos(angle), math.sin(angle)) * (radius - 1);
+      canvas.drawLine(
+        inner,
+        outer,
+        Paint()
+          ..strokeWidth = 1
+          ..color = Colors.white.withValues(alpha: 0.08),
+      );
+    }
 
     canvas.drawCircle(
       center,
@@ -668,6 +1043,7 @@ class _AnswerRingPainter extends CustomPainter {
 
     if (remaining <= 0) return;
 
+    final urgent = remaining < 0.2;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -math.pi / 2,
@@ -677,7 +1053,10 @@ class _AnswerRingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5
         ..strokeCap = StrokeCap.round
-        ..color = remaining < 0.2 ? AppColors.error : AppColors.goldLight.withValues(alpha: 0.75),
+        ..shader = (urgent
+                ? const LinearGradient(colors: [AppColors.error, Color(0xFFE0847F)])
+                : const LinearGradient(colors: [AppColors.gold, AppColors.goldLight]))
+            .createShader(Rect.fromCircle(center: center, radius: radius)),
     );
   }
 
@@ -685,10 +1064,14 @@ class _AnswerRingPainter extends CustomPainter {
   bool shouldRepaint(covariant _AnswerRingPainter oldDelegate) => oldDelegate.remaining != remaining;
 }
 
+/// Capsule de contrôle en verre dépoli — même signature que
+/// [GlassContainer] — avec un mini vumètre animé pendant l'écoute plutôt
+/// qu'une icône micro statique.
 class _BottomBar extends StatelessWidget {
   const _BottomBar({
     required this.isTyping,
     required this.sttAvailable,
+    required this.soundLevel,
     required this.typedController,
     required this.onSwitchToTyping,
     required this.onSubmitTyped,
@@ -697,6 +1080,7 @@ class _BottomBar extends StatelessWidget {
 
   final bool isTyping;
   final bool sttAvailable;
+  final double soundLevel;
   final TextEditingController typedController;
   final VoidCallback onSwitchToTyping;
   final VoidCallback onSubmitTyped;
@@ -705,53 +1089,99 @@ class _BottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: Colors.white12),
-        ),
-        child: Row(
-          children: [
-            if (isTyping) ...[
-              Expanded(
-                child: TextField(
-                  controller: typedController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Tapez votre réponse…',
-                    hintStyle: TextStyle(color: Colors.white38),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) => onSubmitTyped(),
-                ),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.legalBlue.withValues(alpha: 0.4), AppColors.nightBlueDeep.withValues(alpha: 0.55)],
               ),
-              IconButton(
-                icon: const Icon(Icons.send_rounded, color: AppColors.goldLight),
-                onPressed: onSubmitTyped,
-                tooltip: 'Envoyer',
-              ),
-            ] else ...[
-              if (sttAvailable)
-                IconButton(
-                  icon: const Icon(Icons.keyboard_rounded, color: Colors.white70),
-                  onPressed: onSwitchToTyping,
-                  tooltip: 'Taper ma réponse',
-                ),
-              const Expanded(
-                child: Center(child: Icon(Icons.mic_rounded, color: Colors.white38, size: 18)),
-              ),
-            ],
-            IconButton(
-              icon: const Icon(Icons.close_rounded, color: Colors.white70),
-              onPressed: onQuit,
-              tooltip: 'Quitter',
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.7), width: 0.7),
             ),
-          ],
+            child: Row(
+              children: [
+                if (isTyping) ...[
+                  Expanded(
+                    child: TextField(
+                      controller: typedController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: const InputDecoration(
+                        hintText: 'Tapez votre réponse…',
+                        hintStyle: TextStyle(color: AppColors.textDisabled),
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                      ),
+                      onSubmitted: (_) => onSubmitTyped(),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send_rounded, color: AppColors.goldLight),
+                    onPressed: onSubmitTyped,
+                    tooltip: 'Envoyer',
+                  ),
+                ] else ...[
+                  if (sttAvailable)
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_rounded, color: AppColors.textSecondary),
+                      onPressed: onSwitchToTyping,
+                      tooltip: 'Taper ma réponse',
+                    ),
+                  Expanded(child: Center(child: _MicLevelMeter(level: soundLevel))),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  onPressed: onQuit,
+                  tooltip: 'Quitter',
+                ),
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Mini vumètre à 5 barres, pic au centre, qui réagit au niveau sonore
+/// capté — remplace l'icône micro statique par un signe de vie continu
+/// pendant que l'étudiant parle.
+class _MicLevelMeter extends StatelessWidget {
+  const _MicLevelMeter({required this.level});
+
+  final double level;
+
+  static const _weights = [0.35, 0.65, 1.0, 0.65, 0.35];
+
+  @override
+  Widget build(BuildContext context) {
+    final active = level > 0.02;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < _weights.length; i++)
+          Padding(
+            padding: EdgeInsets.only(left: i == 0 ? 0 : 3),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOut,
+              width: 3,
+              height: 4 + (active ? level.clamp(0.0, 1.0) * 15 * _weights[i] : 0),
+              decoration: BoxDecoration(
+                color: active
+                    ? AppColors.cobalt.withValues(alpha: 0.9)
+                    : AppColors.textSecondary.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
