@@ -152,8 +152,6 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     );
     if (!mounted) return;
     if (!_ttsConfirmedWorking) setState(() => _showTtsWarning = true);
-    await _silenceCheck();
-    if (!mounted) return;
     await _askCurrentQuestion();
   }
 
@@ -196,48 +194,6 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     });
   }
 
-  /// Courte fenêtre de silence, micro ouvert, entre la fin d'une consigne/
-  /// question parlée et le début de l'écoute de la réponse — c'est le seul
-  /// moment où la détection de bruit est armée (jamais pendant que l'IA
-  /// parle elle-même, jamais pendant que l'étudiant répond).
-  Future<void> _silenceCheck() async {
-    if (!_sttAvailable || !mounted) return;
-    setState(() => _phase = _VoicePhase.silenceCheck);
-    widget.controller.armNoiseGuard(true);
-    try {
-      await _stt.listen(
-        onResult: (_) {},
-        onSoundLevelChange: (level) => widget.controller.feedNoiseSample(level),
-        listenOptions: SpeechListenOptions(partialResults: false, cancelOnError: true),
-      );
-      await Future.delayed(_silenceCheckDuration);
-      await _stt.stop();
-      // La Web Speech API arrête la reconnaissance de façon ASYNCHRONE :
-      // stop() ne fait que la demander, l'arrêt réel n'est confirmé que par
-      // l'évènement `onend` un instant plus tard. Rappeler listen() (dans
-      // _listen(), juste après ce silence check) avant cette confirmation
-      // fait lever "InvalidStateError: recognition has already started" par
-      // le navigateur — vu en vidéo : le micro passait immédiatement en
-      // repli clavier, sans jamais réellement écouter. Attend donc la
-      // confirmation (avec filet de sécurité si l'évènement n'arrive pas).
-      await _waitUntilSttNotListening();
-    } catch (e) {
-      // Silence check indisponible : sans conséquence, l'épreuve continue.
-      debugPrint('[voice-exam] silence check failed: $e');
-    }
-    widget.controller.armNoiseGuard(false);
-  }
-
-  Future<void> _waitUntilSttNotListening() async {
-    const step = Duration(milliseconds: 80);
-    const maxWait = Duration(milliseconds: 1200);
-    var waited = Duration.zero;
-    while (_stt.isListening && waited < maxWait) {
-      await Future.delayed(step);
-      waited += step;
-    }
-  }
-
   Future<void> _askCurrentQuestion() async {
     if (!mounted) return;
     final questions = widget.controller.exam!.questions;
@@ -248,39 +204,67 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     _answerConfirmed = false;
     await _speak(questions[_questionIndex].statement);
     if (!mounted) return;
-    await _silenceCheck();
-    if (!mounted) return;
     if (_sttAvailable) {
-      await _listen();
+      await _listenForAnswer();
     } else {
       setState(() => _phase = _VoicePhase.typingFallback);
     }
   }
 
-  Future<void> _listen() async {
-    if (!mounted) return;
+  /// Écoute de la réponse à la question courante, en UNE seule session de
+  /// reconnaissance vocale continue plutôt que deux sessions successives
+  /// (ancienne architecture : un court "silence check" dédié, arrêté, puis
+  /// une seconde session d'écoute redémarrée juste après).
+  ///
+  /// La Web Speech API arrête la reconnaissance de façon ASYNCHRONE : un
+  /// `stop()` ne fait que la demander, l'arrêt réel n'est confirmé que par
+  /// l'évènement `onend` un instant plus tard — et ce délai s'est révélé peu
+  /// fiable (vu en vidéo, avec la console ouverte : `InvalidStateError:
+  /// recognition has already started` levé par le navigateur en rappelant
+  /// `listen()` trop tôt, y compris après avoir attendu la confirmation
+  /// `isListening == false`). Une seule session par question élimine ce
+  /// redémarrage à chaud : les ~1,4 premières secondes servent de fenêtre de
+  /// silence (détection de bruit armée, résultats ignorés), puis la même
+  /// session continue pour capter la réponse — sans jamais rappeler
+  /// `listen()` entre les deux.
+  Future<void> _listenForAnswer() async {
+    if (!_sttAvailable || !mounted) return;
     setState(() {
-      _phase = _VoicePhase.listening;
+      _phase = _VoicePhase.silenceCheck;
       _liveTranscript = '';
     });
-    _answerTimer
-      ..reset()
-      ..forward();
+    widget.controller.armNoiseGuard(true);
+    var graceOver = false;
+    final graceTimer = Timer(_silenceCheckDuration, () {
+      widget.controller.armNoiseGuard(false);
+      graceOver = true;
+      if (!mounted || _answerConfirmed) return;
+      setState(() => _phase = _VoicePhase.listening);
+      _answerTimer
+        ..reset()
+        ..forward();
+    });
     try {
       await _stt.listen(
         onResult: (result) {
           if (!mounted) return;
           setState(() => _liveTranscript = result.recognizedWords);
-          if (result.finalResult) _confirmAnswer(result.recognizedWords);
+          // Ignore une réponse "finale" reçue pendant la fenêtre de
+          // silence elle-même : à ce stade, l'étudiant n'est pas censé
+          // avoir commencé à répondre.
+          if (graceOver && result.finalResult) _confirmAnswer(result.recognizedWords);
         },
         onSoundLevelChange: (level) {
-          if (!mounted) return;
+          widget.controller.feedNoiseSample(level);
+          if (!mounted || !graceOver) return;
           setState(() => _soundLevel = ((level + 2) / 12).clamp(0.0, 1.0));
         },
         listenOptions: SpeechListenOptions(partialResults: true, cancelOnError: true),
       );
     } catch (e) {
       debugPrint('[voice-exam] stt.listen() failed: $e');
+      graceTimer.cancel();
+      widget.controller.armNoiseGuard(false);
       if (mounted) setState(() => _phase = _VoicePhase.typingFallback);
     }
   }
