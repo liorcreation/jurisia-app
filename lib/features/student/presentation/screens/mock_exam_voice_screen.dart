@@ -39,6 +39,18 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   static const _answerDuration = Duration(seconds: 45);
   static const _silenceCheckDuration = Duration(milliseconds: 1400);
 
+  /// Chrome, en écoute continue (`continuous: true`, nécessaire pour capter
+  /// des réponses de plusieurs phrases), ne déclenche pas de façon fiable
+  /// de résultat "final" — vu en vidéo : un étudiant qui a fini de répondre
+  /// ("c'est la loi qui doit primer") reste bloqué sur "Je vous écoute..."
+  /// jusqu'à épuisement des 45 s, sans jamais avancer. Plutôt que d'attendre
+  /// un signal du navigateur qui n'arrive pas toujours, on détecte
+  /// nous-mêmes la fin de la réponse : si la transcription ne change plus
+  /// pendant ce délai (l'étudiant s'est tu), on considère la réponse
+  /// terminée et on valide automatiquement — le même principe que ChatGPT
+  /// Voice Mode ou n'importe quel assistant vocal.
+  static const _silenceAfterAnswerDuration = Duration(milliseconds: 2200);
+
   /// Chrome a un bug connu et documenté : `speechSynthesis.speak()` peut
   /// rester bloqué indéfiniment sans jamais émettre de son ni déclencher
   /// `onend` (silencieux, sans erreur) quand le navigateur choisit une voix
@@ -86,6 +98,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   String _liveTranscript = '';
   bool _answerConfirmed = false;
   final List<_ChatEntry> _transcript = [];
+  Timer? _autoConfirmTimer;
 
   /// `true` dès que la synthèse vocale a réellement émis un son au moins
   /// une fois (callback `onStart` du moteur natif/navigateur — un signal
@@ -229,6 +242,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   /// `listen()` entre les deux.
   Future<void> _listenForAnswer() async {
     if (!_sttAvailable || !mounted) return;
+    _autoConfirmTimer?.cancel();
     setState(() {
       _phase = _VoicePhase.silenceCheck;
       _liveTranscript = '';
@@ -249,10 +263,25 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
         onResult: (result) {
           if (!mounted) return;
           setState(() => _liveTranscript = result.recognizedWords);
+          if (!graceOver) return;
           // Ignore une réponse "finale" reçue pendant la fenêtre de
           // silence elle-même : à ce stade, l'étudiant n'est pas censé
           // avoir commencé à répondre.
-          if (graceOver && result.finalResult) _confirmAnswer(result.recognizedWords);
+          if (result.finalResult) {
+            _confirmAnswer(result.recognizedWords);
+            return;
+          }
+          // Le navigateur ne déclenche pas toujours ce résultat final en
+          // écoute continue (voir doc de _silenceAfterAnswerDuration) :
+          // (re)démarre un délai de silence à chaque changement de
+          // transcription, qui valide la réponse de lui-même si l'étudiant
+          // s'arrête de parler.
+          _autoConfirmTimer?.cancel();
+          if (result.recognizedWords.trim().isEmpty) return;
+          _autoConfirmTimer = Timer(_silenceAfterAnswerDuration, () {
+            if (!mounted || _answerConfirmed) return;
+            _confirmAnswer(_liveTranscript);
+          });
         },
         onSoundLevelChange: (level) {
           widget.controller.feedNoiseSample(level);
@@ -264,6 +293,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     } catch (e) {
       debugPrint('[voice-exam] stt.listen() failed: $e');
       graceTimer.cancel();
+      _autoConfirmTimer?.cancel();
       widget.controller.armNoiseGuard(false);
       if (mounted) setState(() => _phase = _VoicePhase.typingFallback);
     }
@@ -289,6 +319,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   void _confirmAnswer(String text) {
     if (_answerConfirmed || !mounted) return;
     _answerConfirmed = true;
+    _autoConfirmTimer?.cancel();
     _answerTimer.stop();
     final question = widget.controller.exam!.questions[_questionIndex];
     final trimmed = text.trim();
@@ -313,6 +344,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
 
   void _switchToTyping() {
     _stt.cancel();
+    _autoConfirmTimer?.cancel();
     _answerTimer.stop();
     setState(() => _phase = _VoicePhase.typingFallback);
   }
@@ -348,6 +380,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   @override
   void dispose() {
     _stt.cancel();
+    _autoConfirmTimer?.cancel();
     unawaited(_tts.stop().catchError((_) {}));
     _answerTimer.dispose();
     _typedController.dispose();
