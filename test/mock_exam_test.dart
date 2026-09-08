@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:jurisia_app/core/ai/groq_api_datasource.dart';
+import 'package:jurisia_app/core/exam/exam_camera_guard.dart';
+import 'package:jurisia_app/core/exam/exam_session_guard.dart';
 import 'package:jurisia_app/features/student/data/datasources/ai_answer_grader.dart';
 import 'package:jurisia_app/features/student/data/datasources/evaluation_question_bank.dart';
 import 'package:jurisia_app/features/student/data/datasources/mock_exam_question_source.dart';
@@ -68,34 +70,30 @@ void main() {
   });
 
   group('MockExamQuestionSource — repli local', () {
-    test('signale isReducedFallback quand la banque locale ne suffit pas pour 40 questions', () async {
+    test('signale isReducedFallback quand la banque locale ne suffit pas pour 14 questions', () async {
       final source = MockExamQuestionSource(questionBank: const LocalEvaluationQuestionBank());
       final result = await source.generate(
         levelModules: [_module('l1-module-1', 1), _module('l1-module-2', 2), _module('l1-module-3', 3)],
-        mode: MockExamMode.qcmTimed,
       );
 
-      // La banque locale ne compte que 4 QCM par module réel (l1-module-1..3).
+      // La banque locale ne compte qu'un seul cas pratique par module réel
+      // (l1-module-1..3), donc 3 candidats pour 14 questions demandées.
       expect(result.isReducedFallback, isTrue);
-      expect(result.questions.length, lessThan(MockExamQuestionSource.qcmTimedQuestionCount));
+      expect(result.questions.length, lessThan(MockExamQuestionSource.questionCount));
     });
 
     test('répartit toujours 20 points au total, quel que soit le nombre de questions', () async {
       final source = MockExamQuestionSource(questionBank: const LocalEvaluationQuestionBank());
-      final result = await source.generate(
-        levelModules: [_module('l1-module-1', 1)],
-        mode: MockExamMode.qcmTimed,
-      );
+      final result = await source.generate(levelModules: [_module('l1-module-1', 1)]);
 
       final total = result.questions.fold<double>(0, (sum, q) => sum + q.points);
       expect(total, closeTo(20, 0.01));
     });
 
-    test('le mode écrit ne tire que des questions de type casPratique', () async {
+    test('ne tire que des questions de type casPratique (conversation vocale)', () async {
       final source = MockExamQuestionSource(questionBank: const LocalEvaluationQuestionBank());
       final result = await source.generate(
         levelModules: [_module('l1-module-1', 1), _module('l1-module-2', 2)],
-        mode: MockExamMode.written,
       );
 
       expect(result.questions, isNotEmpty);
@@ -151,40 +149,46 @@ void main() {
   });
 
   group('MockExamController — onPassed', () {
-    MockExam buildExam(int correctOptionIndex) {
+    MockExam buildExam() {
       return MockExam(
         id: 'exam-1',
         levelId: 'l1',
-        mode: MockExamMode.qcmTimed,
         generatedAt: DateTime.now(),
-        questions: [
+        questions: const [
           EvaluationQuestion(
             id: 'q1',
-            type: QuestionType.qcm,
+            type: QuestionType.casPratique,
             statement: 'Question unique',
             points: 20,
-            options: const ['A', 'B'],
-            correctOptionIndex: correctOptionIndex,
+            expectedAnswerElements: ['notion attendue'],
           ),
         ],
       );
     }
 
-    testWidgets('appelé une fois quand la tentative est réussie (score ≥ 10)', (tester) async {
-      final fakeRepository = _FakeMockExamRepository(exam: buildExam(0));
+    AiAnswerGrader graderReturning(double fraction) {
+      final client = MockClient.streaming((_, _) async {
+        final payload = '{"fraction":$fraction,"justification":"test"}';
+        return _sse('data: {"choices":[{"delta":{"content":${jsonEncode(payload)}}}]}\n\ndata: [DONE]\n\n');
+      });
+      return AiAnswerGrader(dataSource: GroqDataSource(client: client));
+    }
+
+    test('appelé une fois quand la tentative est réussie (score ≥ 10)', () async {
+      final fakeRepository = _FakeMockExamRepository(exam: buildExam());
       var passedCalls = 0;
       final controller = MockExamController(
         level: AcademicLevel.l1,
         levelModules: const [],
         repository: fakeRepository,
-        answerGrader: AiAnswerGrader(dataSource: GroqDataSource(client: MockClient.streaming((_, _) async {
-          fail('ne devrait pas être appelé — seul un QCM est présent');
-        }))),
+        answerGrader: graderReturning(1.0),
         onPassed: () => passedCalls++,
+        sessionGuard: _NoopSessionGuard(),
+        cameraGuard: _NoopCameraGuard(),
       );
 
-      await controller.start(MockExamMode.qcmTimed);
-      controller.answerQcm('q1', 0); // réponse correcte
+      await controller.start();
+      controller.answerCasPratique('q1', 'réponse complète et correcte');
       await controller.submit();
 
       expect(controller.exam?.isPassed, isTrue);
@@ -192,21 +196,21 @@ void main() {
       expect(fakeRepository.recordResultCalled, isTrue);
     });
 
-    testWidgets('jamais appelé quand la tentative échoue (score < 10)', (tester) async {
-      final fakeRepository = _FakeMockExamRepository(exam: buildExam(0));
+    test('jamais appelé quand la tentative échoue (score < 10)', () async {
+      final fakeRepository = _FakeMockExamRepository(exam: buildExam());
       var passedCalls = 0;
       final controller = MockExamController(
         level: AcademicLevel.l1,
         levelModules: const [],
         repository: fakeRepository,
-        answerGrader: AiAnswerGrader(dataSource: GroqDataSource(client: MockClient.streaming((_, _) async {
-          fail('ne devrait pas être appelé — seul un QCM est présent');
-        }))),
+        answerGrader: graderReturning(0.0),
         onPassed: () => passedCalls++,
+        sessionGuard: _NoopSessionGuard(),
+        cameraGuard: _NoopCameraGuard(),
       );
 
-      await controller.start(MockExamMode.qcmTimed);
-      controller.answerQcm('q1', 1); // réponse incorrecte
+      await controller.start();
+      controller.answerCasPratique('q1', 'réponse hors sujet');
       await controller.submit();
 
       expect(controller.exam?.isPassed, isFalse);
@@ -228,7 +232,6 @@ class _FakeMockExamRepository implements MockExamRepository {
   Future<MockExam> generateExam({
     required String levelId,
     required List<CourseModule> levelModules,
-    required MockExamMode mode,
   }) async =>
       exam;
 
@@ -239,4 +242,28 @@ class _FakeMockExamRepository implements MockExamRepository {
 
   @override
   Future<void> markCourseReviewed(String levelId) async {}
+}
+
+/// Bouchon de test : évite de solliciter de vrais canaux de plateforme
+/// (plein écran natif/web, caméra), indisponibles et parfois instables sous
+/// `flutter test` — sans effet sur la logique testée (onPassed), qui ne
+/// dépend pas du comportement réel du guard.
+class _NoopSessionGuard extends ExamSessionGuard {
+  _NoopSessionGuard() : super(onInterrupted: () {});
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+}
+
+class _NoopCameraGuard extends ExamCameraGuard {
+  _NoopCameraGuard() : super(onDisqualified: () {});
+
+  @override
+  Future<bool> start() async => false;
+
+  @override
+  Future<void> stop() async {}
 }

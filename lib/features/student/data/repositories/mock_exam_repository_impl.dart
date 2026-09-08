@@ -53,13 +53,11 @@ class MockExamRepositoryImpl implements MockExamRepository {
   Future<MockExam> generateExam({
     required String levelId,
     required List<CourseModule> levelModules,
-    required MockExamMode mode,
   }) async {
-    final set = await questionSource.generate(levelModules: levelModules, mode: mode);
+    final set = await questionSource.generate(levelModules: levelModules);
     return MockExam(
       id: _uuid.v4(),
       levelId: levelId,
-      mode: mode,
       questions: set.questions,
       generatedAt: DateTime.now(),
       isReducedFallback: set.isReducedFallback,
@@ -72,7 +70,7 @@ class MockExamRepositoryImpl implements MockExamRepository {
     try {
       await supabaseClient!.rpc('jurisia_record_mock_exam_result', params: {
         'p_level_id': exam.levelId,
-        'p_mode': _modeParam(exam.mode),
+        'p_mode': 'voice',
         'p_score': exam.score ?? 0,
       });
     } catch (error) {
@@ -89,17 +87,6 @@ class MockExamRepositoryImpl implements MockExamRepository {
     } catch (error) {
       // ignore: avoid_print
       print('Échec de la levée de révision du cours ($levelId) : $error');
-    }
-  }
-
-  String _modeParam(MockExamMode mode) {
-    switch (mode) {
-      case MockExamMode.qcmTimed:
-        return 'qcm_timed';
-      case MockExamMode.written:
-        return 'written';
-      case MockExamMode.oral:
-        return 'oral';
     }
   }
 }

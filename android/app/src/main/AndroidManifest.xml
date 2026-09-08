@@ -4,6 +4,12 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- Rappels locaux avant la fin du verrou de 7 jours (Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Examen blanc — proctoring caméra (détection de mouvement/présence
+         par différence d'image, voir exam_camera_guard.dart). Non requise
+         à l'installation : un appareil sans caméra continue de fonctionner,
+         simplement sans ce signal (voir ExamCameraGuard.start()). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="jurisia_app"
         android:name="${applicationName}"

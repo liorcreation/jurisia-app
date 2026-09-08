@@ -45,11 +45,11 @@ class ExamSessionGuard with WidgetsBindingObserver, WindowListener {
       await _ensureWindowManagerReady();
       windowManager.addListener(this);
       try {
-        await windowManager.setFullScreen(true);
+        await windowManager.setFullScreen(true).timeout(_windowManagerCallTimeout);
       } catch (_) {
         // Best effort : une session native inhabituelle (fenêtre déjà
-        // détruite, plateforme non supportée par le canal natif) ne doit
-        // jamais empêcher l'examen de démarrer.
+        // détruite, plateforme non supportée par le canal natif, canal
+        // sans réponse) ne doit jamais empêcher l'examen de démarrer.
       }
     }
   }
@@ -64,19 +64,21 @@ class ExamSessionGuard with WidgetsBindingObserver, WindowListener {
     } else if (_isDesktop) {
       windowManager.removeListener(this);
       try {
-        await windowManager.setFullScreen(false);
+        await windowManager.setFullScreen(false).timeout(_windowManagerCallTimeout);
       } catch (_) {}
     }
   }
 
+  static const _windowManagerCallTimeout = Duration(seconds: 5);
+
   Future<void> _ensureWindowManagerReady() async {
     if (_windowManagerReady) return;
     try {
-      await windowManager.ensureInitialized();
+      await windowManager.ensureInitialized().timeout(_windowManagerCallTimeout);
       _windowManagerReady = true;
     } catch (_) {
       // Nouvel essai à la prochaine tentative d'examen plutôt que de
-      // bloquer celle-ci.
+      // bloquer celle-ci (canal natif indisponible/sans réponse).
     }
   }
 

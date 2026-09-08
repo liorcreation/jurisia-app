@@ -37,15 +37,14 @@ _Verdict _verdictOf(EvaluationQuestion q) {
   return _Verdict.partial;
 }
 
-String _modeLabel(MockExamMode mode) => switch (mode) {
-      MockExamMode.qcmTimed => 'QCM chronométré',
-      MockExamMode.written => 'Devoir écrit',
-      MockExamMode.oral => 'Examen oral',
+String _disqualificationLabel(MockExamDisqualificationReason reason) => switch (reason) {
+      MockExamDisqualificationReason.suspiciousNoise => 'Bruit ambiant suspect détecté',
+      MockExamDisqualificationReason.suspiciousMotion => 'Mouvement suspect détecté par la caméra',
     };
 
-/// Résultat d'une tentative d'examen blanc, quel que soit le mode choisi :
-/// anneau de score animé, verdict, note de verrou en cas d'échec, et copie
-/// corrigée question par question.
+/// Résultat d'une tentative d'examen blanc : anneau de score animé, verdict,
+/// note de verrou en cas d'échec (par la note ou par disqualification du
+/// proctoring), et copie corrigée question par question.
 class MockExamResultBody extends StatelessWidget {
   const MockExamResultBody({super.key, required this.controller});
 
@@ -56,6 +55,7 @@ class MockExamResultBody extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final exam = controller.exam!;
     final passed = exam.isPassed;
+    final disqualification = exam.disqualificationReason;
     final hPad = MediaQuery.sizeOf(context).width < 600 ? AppSpacing.lg : AppSpacing.xl;
 
     return SingleChildScrollView(
@@ -68,30 +68,40 @@ class MockExamResultBody extends StatelessWidget {
               _MockScoreRing(score: exam.score ?? 0, max: exam.maxScore, passed: passed),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                passed ? 'Examen blanc réussi' : 'Examen blanc non validé',
+                disqualification != null
+                    ? 'Épreuve interrompue'
+                    : passed
+                        ? 'Examen blanc réussi'
+                        : 'Examen blanc non validé',
                 style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display'),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 0.7),
+              if (disqualification != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.4), width: 0.7),
+                  ),
+                  child: Text(
+                    _disqualificationLabel(disqualification),
+                    style: textTheme.labelSmall?.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                child: Text(
-                  _modeLabel(exam.mode),
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700),
-                ),
-              ),
+              ],
               const SizedBox(height: AppSpacing.sm),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
                 child: Text(
-                  passed
-                      ? 'Bravo, la moyenne requise de 10/20 est atteinte.'
-                      : 'La moyenne requise est de 10/20. L\'épreuve est verrouillée pendant 7 jours ; '
-                          'reconsultez le cours de ce niveau pour pouvoir retenter dès le délai écoulé.',
+                  disqualification != null
+                      ? 'Le proctoring a détecté une anomalie pendant l\'épreuve — la tentative est '
+                          'automatiquement invalidée et l\'épreuve verrouillée pendant 7 jours ; '
+                          'reconsultez le cours de ce niveau pour pouvoir retenter dès le délai écoulé.'
+                      : passed
+                          ? 'Bravo, la moyenne requise de 10/20 est atteinte.'
+                          : 'La moyenne requise est de 10/20. L\'épreuve est verrouillée pendant 7 jours ; '
+                              'reconsultez le cours de ce niveau pour pouvoir retenter dès le délai écoulé.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
                 ),
@@ -328,11 +338,7 @@ class _ReviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            question.type == QuestionType.qcm
-                ? _qcmAnswerLabel(question)
-                : ((question.studentAnswer ?? '').trim().isEmpty
-                    ? '— (aucune réponse)'
-                    : question.studentAnswer!.trim()),
+            (question.studentAnswer ?? '').trim().isEmpty ? '— (aucune réponse)' : question.studentAnswer!.trim(),
             style: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary, height: 1.5),
           ),
           if (question.explanation.isNotEmpty) ...[
@@ -368,12 +374,6 @@ class _ReviewCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _qcmAnswerLabel(EvaluationQuestion question) {
-    final idx = int.tryParse(question.studentAnswer ?? '');
-    if (idx == null || idx < 0 || idx >= question.options.length) return '— (aucune réponse)';
-    return '${String.fromCharCode(65 + idx)}. ${question.options[idx]}';
   }
 }
 

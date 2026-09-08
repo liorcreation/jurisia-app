@@ -2,17 +2,22 @@ import 'package:equatable/equatable.dart';
 
 import 'evaluation_model.dart';
 
-/// Format choisi par l'étudiant pour tenter l'examen blanc de fin de niveau.
-enum MockExamMode { qcmTimed, written, oral }
+/// Motif d'une disqualification immédiate de la tentative, distincte d'un
+/// simple échec par score insuffisant — déclenchée par le proctoring
+/// (bruit ambiant suspect ou mouvement/présence anormale détectée par la
+/// caméra), jamais persistée telle quelle (le score forcé à 0 suffit à
+/// déclencher le même verrou de 7 jours côté serveur).
+enum MockExamDisqualificationReason { suspiciousNoise, suspiciousMotion }
 
 /// Un examen blanc de fin de niveau (L1, L2…), distinct du quiz de fin de
 /// module existant ([ModuleEvaluation]) : porte sur l'ensemble des modules
-/// du niveau, noté sur 20, avec un seuil de réussite à 10/20.
+/// du niveau, noté sur 20, avec un seuil de réussite à 10/20. Un seul
+/// format désormais : une conversation vocale continue (voir
+/// `MockExamVoiceBody`), plus de choix entre plusieurs modes.
 class MockExam extends Equatable {
   const MockExam({
     required this.id,
     required this.levelId,
-    required this.mode,
     required this.questions,
     required this.generatedAt,
     this.maxScore = 20,
@@ -20,13 +25,13 @@ class MockExam extends Equatable {
     this.score,
     this.completedAt,
     this.isReducedFallback = false,
+    this.disqualificationReason,
   });
 
   final String id;
 
   /// [AcademicLevel.name] du niveau concerné (l1, l2, l3, m1, m2).
   final String levelId;
-  final MockExamMode mode;
   final List<EvaluationQuestion> questions;
   final DateTime generatedAt;
   final double maxScore;
@@ -41,13 +46,16 @@ class MockExam extends Equatable {
   /// alors le signaler clairement plutôt que de prétendre un examen complet.
   final bool isReducedFallback;
 
+  /// Non nul si la tentative a été interrompue par le proctoring plutôt que
+  /// menée à son terme normalement.
+  final MockExamDisqualificationReason? disqualificationReason;
+
   bool get isCompleted => completedAt != null && score != null;
-  bool get isPassed => isCompleted && score! >= passingScore;
+  bool get isPassed => isCompleted && disqualificationReason == null && score! >= passingScore;
 
   MockExam copyWith({
     String? id,
     String? levelId,
-    MockExamMode? mode,
     List<EvaluationQuestion>? questions,
     DateTime? generatedAt,
     double? maxScore,
@@ -55,11 +63,11 @@ class MockExam extends Equatable {
     double? score,
     DateTime? completedAt,
     bool? isReducedFallback,
+    MockExamDisqualificationReason? disqualificationReason,
   }) {
     return MockExam(
       id: id ?? this.id,
       levelId: levelId ?? this.levelId,
-      mode: mode ?? this.mode,
       questions: questions ?? this.questions,
       generatedAt: generatedAt ?? this.generatedAt,
       maxScore: maxScore ?? this.maxScore,
@@ -67,6 +75,7 @@ class MockExam extends Equatable {
       score: score ?? this.score,
       completedAt: completedAt ?? this.completedAt,
       isReducedFallback: isReducedFallback ?? this.isReducedFallback,
+      disqualificationReason: disqualificationReason ?? this.disqualificationReason,
     );
   }
 
@@ -74,7 +83,6 @@ class MockExam extends Equatable {
   List<Object?> get props => [
         id,
         levelId,
-        mode,
         questions,
         generatedAt,
         maxScore,
@@ -82,6 +90,7 @@ class MockExam extends Equatable {
         score,
         completedAt,
         isReducedFallback,
+        disqualificationReason,
       ];
 }
 

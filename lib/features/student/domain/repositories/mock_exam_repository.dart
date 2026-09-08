@@ -13,7 +13,6 @@ abstract class MockExamRepository {
   Future<MockExam> generateExam({
     required String levelId,
     required List<CourseModule> levelModules,
-    required MockExamMode mode,
   });
 
   /// Enregistre le résultat final d'une tentative corrigée : applique, côté

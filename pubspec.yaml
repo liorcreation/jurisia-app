@@ -77,6 +77,15 @@ dependencies:
   # plein écran de la fenêtre pendant l'épreuve et détecte sa sortie
   # (voir exam_session_guard_io.dart). Aucun équivalent Flutter natif.
   window_manager: ^0.4.3
+  # Proctoring caméra de l'examen blanc (détection de mouvement par
+  # différence d'image, voir exam_camera_guard.dart) — Android/iOS via
+  # l'implémentation officielle. macOS n'a aucune implémentation officielle
+  # ni fiable vérifiable ici : désactivé sur cette plateforme (voir le
+  # guard). Windows via camera_windows ci-dessous — implémentation non
+  # endorsée (à ajouter explicitement), sans flux d'image en continu, d'où
+  # l'approche par photos périodiques plutôt que par flux dans le guard.
+  camera: ^0.11.0
+  camera_windows: ^0.2.6+5
 
 dev_dependencies:
   flutter_test:

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
@@ -7,9 +9,11 @@ import '../../theme/app_theme.dart';
 /// neutre au repos ou en réflexion (correction en cours).
 enum VoiceOrbState { idle, speaking, listening, thinking }
 
-/// Orbe circulaire animé façon « Voice Mode » : respire doucement au repos,
-/// et grossit/s'illumine en réaction au niveau sonore capté ([level], de 0 à
-/// 1) pendant l'écoute ou la synthèse vocale.
+/// Orbe circulaire animé façon « Voice Mode », inspiré du rendu nuage/ciel
+/// tourbillonnant de ChatGPT Voice Mode (dans la palette or/cobalt de la
+/// marque plutôt que le bleu) : respire doucement au repos, tourbillonne en
+/// continu, et grossit/s'illumine en réaction au niveau sonore capté
+/// ([level], de 0 à 1) pendant l'écoute ou la synthèse vocale.
 class VoiceOrb extends StatefulWidget {
   const VoiceOrb({
     super.key,
@@ -29,26 +33,42 @@ class VoiceOrb extends StatefulWidget {
   State<VoiceOrb> createState() => _VoiceOrbState();
 }
 
-class _VoiceOrbState extends State<VoiceOrb> with SingleTickerProviderStateMixin {
+class _VoiceOrbState extends State<VoiceOrb> with TickerProviderStateMixin {
   late final AnimationController _breathController =
       AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
+  late final AnimationController _swirlController =
+      AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
 
   double _smoothedLevel = 0;
 
   @override
   void dispose() {
     _breathController.dispose();
+    _swirlController.dispose();
     super.dispose();
   }
 
-  Color get _tint {
+  List<Color> get _swirlColors {
+    switch (widget.state) {
+      case VoiceOrbState.idle:
+        return const [AppColors.metalSilver, AppColors.metalCobalt, Color(0xFF0B1F3A)];
+      case VoiceOrbState.speaking:
+        return const [Colors.white, AppColors.goldLight, AppColors.gold];
+      case VoiceOrbState.listening:
+        return const [Colors.white, AppColors.metalCobalt, AppColors.cobalt];
+      case VoiceOrbState.thinking:
+        return const [AppColors.metalSilver, Color(0xFF6B7A8F), Color(0xFF1B2635)];
+    }
+  }
+
+  Color get _glow {
     switch (widget.state) {
       case VoiceOrbState.idle:
         return AppColors.metalCobalt;
       case VoiceOrbState.speaking:
         return AppColors.gold;
       case VoiceOrbState.listening:
-        return AppColors.goldLight;
+        return AppColors.cobalt;
       case VoiceOrbState.thinking:
         return AppColors.metalSilver;
     }
@@ -61,7 +81,7 @@ class _VoiceOrbState extends State<VoiceOrb> with SingleTickerProviderStateMixin
     _smoothedLevel = _smoothedLevel * 0.7 + widget.level.clamp(0.0, 1.0) * 0.3;
 
     return AnimatedBuilder(
-      animation: _breathController,
+      animation: Listenable.merge([_breathController, _swirlController]),
       builder: (context, _) {
         final breath = Curves.easeInOut.transform(_breathController.value);
         final reactive = widget.state == VoiceOrbState.idle ? breath * 0.5 : _smoothedLevel;
@@ -70,7 +90,13 @@ class _VoiceOrbState extends State<VoiceOrb> with SingleTickerProviderStateMixin
           width: widget.size,
           height: widget.size,
           child: CustomPaint(
-            painter: _VoiceOrbPainter(tint: _tint, intensity: reactive, breath: breath),
+            painter: _VoiceOrbPainter(
+              colors: _swirlColors,
+              glow: _glow,
+              intensity: reactive,
+              breath: breath,
+              swirl: _swirlController.value,
+            ),
           ),
         );
       },
@@ -79,11 +105,22 @@ class _VoiceOrbState extends State<VoiceOrb> with SingleTickerProviderStateMixin
 }
 
 class _VoiceOrbPainter extends CustomPainter {
-  const _VoiceOrbPainter({required this.tint, required this.intensity, required this.breath});
+  const _VoiceOrbPainter({
+    required this.colors,
+    required this.glow,
+    required this.intensity,
+    required this.breath,
+    required this.swirl,
+  });
 
-  final Color tint;
+  final List<Color> colors;
+  final Color glow;
   final double intensity;
   final double breath;
+
+  /// 0 → 1 en boucle, fait tourner les nappes de couleur pour l'effet
+  /// « nuage vivant ».
+  final double swirl;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -95,7 +132,7 @@ class _VoiceOrbPainter extends CustomPainter {
     // est élevé.
     final haloPaint = Paint()
       ..shader = RadialGradient(
-        colors: [tint.withValues(alpha: 0.32 + intensity * 0.25), tint.withValues(alpha: 0)],
+        colors: [glow.withValues(alpha: 0.32 + intensity * 0.25), glow.withValues(alpha: 0)],
       ).createShader(Rect.fromCircle(center: center, radius: radius * 2.2));
     canvas.drawCircle(center, radius * 2.2, haloPaint);
 
@@ -107,23 +144,38 @@ class _VoiceOrbPainter extends CustomPainter {
       final ringPaint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2
-        ..color = tint.withValues(alpha: (1 - ringPhase) * 0.22);
+        ..color = glow.withValues(alpha: (1 - ringPhase) * 0.22);
       canvas.drawCircle(center, ringRadius, ringPaint);
     }
 
-    // Corps de l'orbe : dégradé métallique cohérent avec le reste du design
-    // system, plus lumineux au centre.
-    final corePaint = Paint()
+    // Corps de l'orbe : nappes de couleur qui tournent lentement les unes
+    // sur les autres, façon nuage/ciel — le clip circulaire les contient.
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: center, radius: radius)));
+
+    final basePaint = Paint()..color = colors.last;
+    canvas.drawCircle(center, radius, basePaint);
+
+    final layerCount = colors.length - 1;
+    for (var i = 0; i < layerCount; i++) {
+      final angle = (swirl * 2 * math.pi) + (i * (2 * math.pi / layerCount)) + intensity * 0.6;
+      final blobCenter = center + Offset(math.cos(angle), math.sin(angle)) * radius * 0.42;
+      final blobRadius = radius * (0.72 + 0.1 * math.sin(swirl * 2 * math.pi + i));
+      final blobPaint = Paint()
+        ..shader = RadialGradient(
+          colors: [colors[i].withValues(alpha: 0.9), colors[i].withValues(alpha: 0)],
+        ).createShader(Rect.fromCircle(center: blobCenter, radius: blobRadius));
+      canvas.drawCircle(blobCenter, blobRadius, blobPaint);
+    }
+
+    // Lumière spéculaire fixe en haut-gauche, pour la brillance "sphère".
+    final specularPaint = Paint()
       ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.9),
-          tint,
-          tint.withValues(alpha: 0.75),
-        ],
-        stops: const [0.0, 0.55, 1.0],
-        center: const Alignment(-0.25, -0.3),
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawCircle(center, radius, corePaint);
+        colors: [Colors.white.withValues(alpha: 0.55), Colors.white.withValues(alpha: 0)],
+      ).createShader(Rect.fromCircle(center: center + Offset(-radius * 0.32, -radius * 0.38), radius: radius * 0.55));
+    canvas.drawCircle(center + Offset(-radius * 0.32, -radius * 0.38), radius * 0.55, specularPaint);
+
+    canvas.restore();
 
     final rimPaint = Paint()
       ..style = PaintingStyle.stroke
@@ -134,7 +186,11 @@ class _VoiceOrbPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _VoiceOrbPainter oldDelegate) =>
-      oldDelegate.tint != tint || oldDelegate.intensity != intensity || oldDelegate.breath != breath;
+      oldDelegate.colors != colors ||
+      oldDelegate.glow != glow ||
+      oldDelegate.intensity != intensity ||
+      oldDelegate.breath != breath ||
+      oldDelegate.swirl != swirl;
 }
 
 /// Libellé d'état affiché sous l'orbe (« Je vous écoute… », « … »), avec un

@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  camera_windows
   flutter_tts
   screen_retriever_windows
   sentry_flutter

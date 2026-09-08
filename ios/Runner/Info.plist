@@ -56,6 +56,10 @@
 	<string>JurisIA a besoin du microphone pour vous permettre de répondre oralement pendant l'examen blanc en mode Voice Mode.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>JurisIA utilise la reconnaissance vocale pour transcrire vos réponses orales pendant l'examen blanc en mode Voice Mode.</string>
+	<!-- Examen blanc — proctoring caméra (détection de mouvement/présence
+	     par différence d'image, voir exam_camera_guard.dart). -->
+	<key>NSCameraUsageDescription</key>
+	<string>JurisIA utilise la caméra frontale pour détecter un mouvement ou une présence suspecte pendant l'examen blanc.</string>
 	<!-- Retour de connexion Google/Apple (Supabase Auth OAuth) : iOS relance
 	     l'app via ce schéma personnalisé une fois l'utilisateur authentifié
 	     chez le fournisseur. -->
