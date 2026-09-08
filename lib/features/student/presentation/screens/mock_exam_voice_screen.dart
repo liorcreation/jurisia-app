@@ -38,6 +38,16 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   static const _answerDuration = Duration(seconds: 45);
   static const _silenceCheckDuration = Duration(milliseconds: 1400);
 
+  /// Chrome a un bug connu et documenté : `speechSynthesis.speak()` peut
+  /// rester bloqué indéfiniment sans jamais émettre de son ni déclencher
+  /// `onend` (silencieux, sans erreur) quand le navigateur choisit une voix
+  /// réseau plutôt que locale — flutter_tts ne permet pas de forcer une
+  /// voix locale sur web. Un délai généreux (largement au-dessus de la plus
+  /// longue consigne réelle) garantit que l'épreuve ne reste jamais figée :
+  /// à l'expiration, l'étudiant a déjà la question sous les yeux (transcript)
+  /// et l'épreuve continue normalement sans le son.
+  static const _speakTimeout = Duration(seconds: 20);
+
   final FlutterTts _tts = FlutterTts();
   final SpeechToText _stt = SpeechToText();
   final TextEditingController _typedController = TextEditingController();
@@ -63,9 +73,18 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   }
 
   Future<void> _bootstrap() async {
-    await _tts.awaitSpeakCompletion(true);
     try {
-      _sttAvailable = await _stt.initialize(onStatus: _onSttStatus, onError: (_) {});
+      await _tts.awaitSpeakCompletion(true).timeout(_speakTimeout);
+      // Explicite plutôt que de laisser le navigateur retomber sur la
+      // langue par défaut du système (pas forcément le français, et pas
+      // forcément une langue pour laquelle une voix est installée).
+      await _tts.setLanguage('fr-FR').timeout(_speakTimeout);
+    } catch (_) {
+      // Sans conséquence si indisponible : _speak() reste protégé par son
+      // propre délai de sécurité plus bas.
+    }
+    try {
+      _sttAvailable = await _stt.initialize(onStatus: _onSttStatus, onError: (_) {}).timeout(_speakTimeout);
     } catch (_) {
       _sttAvailable = false;
     }
@@ -90,9 +109,14 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     setState(() => _phase = _VoicePhase.aiSpeaking);
     _appendTranscript(isUser: false, text: text);
     try {
-      await _tts.speak(text);
+      // Réinitialise un éventuel état bloqué du moteur vocal (utile sur
+      // web, où le bug ci-dessus peut laisser la file de synthèse "coincée"
+      // après une tentative précédente) avant de parler.
+      await _tts.stop();
+      await _tts.speak(text).timeout(_speakTimeout);
     } catch (_) {
-      // Repli silencieux : l'étudiant lit la question affichée à l'écran.
+      // Repli silencieux (délai dépassé, TTS indisponible) : l'étudiant lit
+      // la question déjà affichée dans le transcript, l'épreuve continue.
     }
   }
 
