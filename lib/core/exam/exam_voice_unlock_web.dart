@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:js_interop';
+
 import 'package:web/web.dart' as web;
 
 /// Web : Chrome (depuis la version 71) bloque `speechSynthesis.speak()` tant
@@ -18,6 +21,35 @@ void primeWebSpeechSynthesis() {
     final utterance = web.SpeechSynthesisUtterance(' ')..volume = 0.01;
     web.window.speechSynthesis.speak(utterance);
     web.window.speechSynthesis.cancel();
+  } catch (_) {
+    // Best effort : une API absente/bloquée ne doit jamais empêcher le
+    // démarrage de l'épreuve.
+  }
+}
+
+/// Chromium (Chrome, Edge...) charge la liste des voix de façon
+/// asynchrone : juste après le chargement de la page, `getVoices()` peut
+/// renvoyer un tableau VIDE, et un `speak()` appelé avant que l'événement
+/// `voiceschanged` ne se déclenche au moins une fois peut être abandonné
+/// silencieusement (aucune voix à associer à l'énoncé). Attend donc que la
+/// liste soit peuplée avant de prononcer quoi que ce soit — avec un délai
+/// de repli, certains navigateurs ne déclenchant jamais l'événement quand
+/// la liste est en réalité déjà prête dès le premier appel.
+Future<void> waitForWebSpeechVoicesReady() async {
+  try {
+    if (web.window.speechSynthesis.getVoices().toDart.isNotEmpty) return;
+
+    final completer = Completer<void>();
+    void handler(web.Event _) {
+      if (!completer.isCompleted) completer.complete();
+    }
+
+    web.window.speechSynthesis.onvoiceschanged = handler.toJS;
+    await completer.future.timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {},
+    );
+    web.window.speechSynthesis.onvoiceschanged = null;
   } catch (_) {
     // Best effort : une API absente/bloquée ne doit jamais empêcher le
     // démarrage de l'épreuve.

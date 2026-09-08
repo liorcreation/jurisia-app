@@ -7,6 +7,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../../../../theme/app_theme.dart';
+import '../../../../core/exam/exam_voice_unlock.dart';
 import '../../../../core/widgets/voice_orb.dart';
 import '../controllers/mock_exam_controller.dart';
 
@@ -87,6 +88,11 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
 
   Future<void> _bootstrap() async {
     try {
+      // Sur Chromium (Chrome, Edge...), la liste des voix se charge de
+      // façon asynchrone : un setLanguage()/speak() appelé avant qu'elle
+      // ne soit prête peut échouer à trouver une voix et être abandonné
+      // silencieusement.
+      await waitForWebSpeechVoicesReady();
       await _tts.awaitSpeakCompletion(true).timeout(_speakTimeout);
       // Explicite plutôt que de laisser le navigateur retomber sur la
       // langue par défaut du système (pas forcément le français, et pas
@@ -326,8 +332,9 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
               ),
             if (_showMicWarning)
               _WarningBanner(
-                text: 'Micro non disponible ou non autorisé — autorisez-le dans les réglages du '
-                    'navigateur pour répondre à l\'oral, ou répondez au clavier.',
+                text: 'Réponse orale indisponible sur ce navigateur (certains, comme Edge, ne '
+                    'la prennent pas en charge — essayez Chrome) ou micro non autorisé : '
+                    'vérifiez les réglages du navigateur, ou répondez au clavier.',
                 onDismiss: () => setState(() => _showMicWarning = false),
               ),
             Expanded(
