@@ -46,4 +46,36 @@ Réponds UNIQUEMENT avec un tableau JSON strictement valide, sans texte avant ou
 Règles strictes : "type" vaut "qcm" ou "casPratique" ; un "qcm" comporte exactement 4 "options" et un "correctOptionIndex" valide (0 à 3) ; un "casPratique" comporte 2 à 4 "expectedAnswerElements" (mots-clés ou notions attendues dans la réponse) et pas de champ "options" ; "explanation" justifie brièvement la bonne réponse ; "points" vaut toujours 5.
 ''';
   }
+
+  /// System prompt du générateur de l'examen blanc de fin de niveau :
+  /// contrairement à [evaluationGeneratorSystemPrompt], porte sur l'ensemble
+  /// des modules du niveau plutôt qu'un seul, pour composer un examen à
+  /// l'échelle du niveau (40 questions QCM, ou 16-20 questions rédigées).
+  static String mockExamGeneratorSystemPrompt({
+    required List<CourseModule> modules,
+    required int questionCount,
+    required bool writtenOnly,
+  }) {
+    final syllabus = modules
+        .map((module) =>
+            '### ${module.title}\n${module.lessons.map((lesson) => '- ${lesson.title} : ${lesson.content}').join('\n')}')
+        .join('\n\n');
+
+    final typeInstruction = writtenOnly
+        ? 'Génère exclusivement des questions de type "casPratique" (devoir écrit, réponse rédigée).'
+        : 'Génère exclusivement des questions de type "qcm" à 4 options.';
+
+    return '''
+Tu es un concepteur d'examens blancs de fin de niveau pour le parcours universitaire de droit JurisIA. Voici le programme complet du niveau, module par module, sur lequel porter les questions :
+
+$syllabus
+
+Génère exactement $questionCount questions couvrant l'ensemble de ces modules (pas seulement le premier), en variant les angles et la formulation à chaque génération : ne réutilise jamais mot pour mot une question déjà posée. $typeInstruction
+
+Réponds UNIQUEMENT avec un tableau JSON strictement valide, sans texte avant ou après, sans balise markdown, sur le modèle exact suivant :
+[{"type":"qcm","statement":"...","options":["...","...","...","..."],"correctOptionIndex":0,"explanation":"...","points":0.5},{"type":"casPratique","statement":"...","expectedAnswerElements":["...","...","..."],"explanation":"...","points":1.25}]
+
+Règles strictes : "type" vaut "qcm" ou "casPratique" selon la consigne ci-dessus ; un "qcm" comporte exactement 4 "options" et un "correctOptionIndex" valide (0 à 3) ; un "casPratique" comporte 2 à 4 "expectedAnswerElements" (mots-clés ou notions attendues dans la réponse) et pas de champ "options" ; "explanation" justifie brièvement la bonne réponse ; la somme de "points" de toutes les questions doit être proche de 20.
+''';
+  }
 }

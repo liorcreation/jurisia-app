@@ -16,6 +16,7 @@ import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/student_controller.dart';
 import '../widgets/module_status_badge.dart';
+import 'mock_exam_mode_select_screen.dart';
 import 'module_detail_screen.dart';
 
 /// Section 3 — Espace étudiant : sélection du niveau à la première
@@ -46,6 +47,18 @@ class _StudentView extends StatelessWidget {
     controller.refresh();
   }
 
+  Future<void> _openMockExam(BuildContext context, StudentController controller, AcademicLevel level) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider<StudentController>.value(
+          value: controller,
+          child: MockExamScreen(level: level),
+        ),
+      ),
+    );
+    controller.refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<StudentController>();
@@ -54,6 +67,7 @@ class _StudentView extends StatelessWidget {
       return _DesktopStudentView(
         controller: controller,
         onOpenModule: (moduleId) => _openModule(context, controller, moduleId),
+        onOpenMockExam: (level) => _openMockExam(context, controller, level),
       );
     }
 
@@ -89,6 +103,7 @@ class _StudentView extends StatelessWidget {
                         level: selectedLevel,
                         controller: controller,
                         onOpenModule: (moduleId) => _openModule(context, controller, moduleId),
+                        onOpenMockExam: () => _openMockExam(context, controller, selectedLevel),
                       ),
               ),
             ),
@@ -158,10 +173,15 @@ ModuleStatus _statusOf(CourseModule module) {
 }
 
 class _DesktopStudentView extends StatelessWidget {
-  const _DesktopStudentView({required this.controller, required this.onOpenModule});
+  const _DesktopStudentView({
+    required this.controller,
+    required this.onOpenModule,
+    required this.onOpenMockExam,
+  });
 
   final StudentController controller;
   final ValueChanged<String> onOpenModule;
+  final ValueChanged<AcademicLevel> onOpenMockExam;
 
   @override
   Widget build(BuildContext context) {
@@ -198,6 +218,7 @@ class _DesktopStudentView extends StatelessWidget {
                                     level: level,
                                     controller: controller,
                                     onOpenModule: onOpenModule,
+                                    onOpenMockExam: () => onOpenMockExam(level),
                                   ),
                           ),
                         ),
@@ -641,11 +662,13 @@ class _LevelWorkspace extends StatelessWidget {
     required this.level,
     required this.controller,
     required this.onOpenModule,
+    required this.onOpenMockExam,
   });
 
   final AcademicLevel level;
   final StudentController controller;
   final ValueChanged<String> onOpenModule;
+  final VoidCallback onOpenMockExam;
 
   @override
   Widget build(BuildContext context) {
@@ -678,6 +701,7 @@ class _LevelWorkspace extends StatelessWidget {
       controller: controller,
       modules: modules,
       progress: progress,
+      onOpenMockExam: onOpenMockExam,
     );
 
     return LayoutBuilder(
@@ -1126,12 +1150,14 @@ class _ProgressPanel extends StatelessWidget {
     required this.controller,
     required this.modules,
     required this.progress,
+    required this.onOpenMockExam,
   });
 
   final AcademicLevel level;
   final StudentController controller;
   final List<CourseModule> modules;
   final StudentProgress? progress;
+  final VoidCallback onOpenMockExam;
 
   String _milestone() {
     if (modules.isEmpty) return 'Programme en préparation.';
@@ -1230,11 +1256,58 @@ class _ProgressPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
+          _MockExamCta(onTap: onOpenMockExam),
+          const SizedBox(height: AppSpacing.lg),
           const Divider(height: 1),
           const SizedBox(height: AppSpacing.lg),
           const _Eyebrow('Le cursus'),
           const SizedBox(height: AppSpacing.md),
           _LevelStepper(controller: controller, activeLevel: level),
+        ],
+      ),
+    );
+  }
+}
+
+/// CTA vers l'examen blanc de fin de niveau — additionnel au quiz de
+/// module, à l'échelle du niveau entier.
+class _MockExamCta extends StatelessWidget {
+  const _MockExamCta({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return GlassContainer(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0x24C9A227), Color(0x0FC9A227)],
+      ),
+      borderColor: AppColors.gold.withValues(alpha: 0.4),
+      borderWidth: 0.8,
+      child: Row(
+        children: [
+          const Icon(Icons.workspace_premium_rounded, size: 20, color: AppColors.goldLight),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Examen blanc', style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  'QCM chronométré, écrit ou oral',
+                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.goldLight),
         ],
       ),
     );

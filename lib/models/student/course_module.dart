@@ -13,6 +13,7 @@ class Lesson extends Equatable {
     required this.title,
     required this.content,
     this.estimatedMinutes = 20,
+    this.videoUrl,
   });
 
   final String id;
@@ -22,6 +23,30 @@ class Lesson extends Equatable {
   final String content;
   final int estimatedMinutes;
 
+  /// URL de la session vidéo explicative associée (YouTube non répertorié),
+  /// ou `null` si la leçon n'a pas encore de vidéo.
+  final String? videoUrl;
+
+  Lesson copyWith({
+    String? id,
+    String? moduleId,
+    int? order,
+    String? title,
+    String? content,
+    int? estimatedMinutes,
+    String? videoUrl,
+  }) {
+    return Lesson(
+      id: id ?? this.id,
+      moduleId: moduleId ?? this.moduleId,
+      order: order ?? this.order,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
+      videoUrl: videoUrl ?? this.videoUrl,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -30,6 +55,7 @@ class Lesson extends Equatable {
       'title': title,
       'content': content,
       'estimatedMinutes': estimatedMinutes,
+      'videoUrl': videoUrl,
     };
   }
 
@@ -41,11 +67,12 @@ class Lesson extends Equatable {
       title: json['title'] as String,
       content: json['content'] as String,
       estimatedMinutes: json['estimatedMinutes'] as int? ?? 20,
+      videoUrl: json['videoUrl'] as String?,
     );
   }
 
   @override
-  List<Object?> get props => [id, moduleId, order, title, content, estimatedMinutes];
+  List<Object?> get props => [id, moduleId, order, title, content, estimatedMinutes, videoUrl];
 }
 
 /// Une fiche de révision synthétique associée à un module.

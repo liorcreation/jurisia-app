@@ -49,6 +49,13 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Examen blanc — mode oral (Voice Mode) : lecture des questions (TTS,
+	     aucune permission requise) et reconnaissance vocale des réponses
+	     (STT, microphone + reconnaissance vocale). -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>JurisIA a besoin du microphone pour vous permettre de répondre oralement pendant l'examen blanc en mode Voice Mode.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>JurisIA utilise la reconnaissance vocale pour transcrire vos réponses orales pendant l'examen blanc en mode Voice Mode.</string>
 	<!-- Retour de connexion Google/Apple (Supabase Auth OAuth) : iOS relance
 	     l'app via ce schéma personnalisé une fois l'utilisateur authentifié
 	     chez le fournisseur. -->

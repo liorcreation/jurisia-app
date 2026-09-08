@@ -12,6 +12,7 @@ import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/markdown_text.dart';
+import '../../../../core/widgets/youtube_embed_view.dart';
 import '../../../../models/chat/message_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../models/student/course_module.dart';
@@ -21,6 +22,7 @@ import '../../data/repositories/module_tutor_repository_impl.dart';
 import '../../domain/usecases/ask_module_tutor_usecase.dart';
 import '../controllers/module_tutor_controller.dart';
 import '../controllers/student_controller.dart';
+import '../student_providers.dart';
 import 'evaluation_screen.dart';
 
 /// Vue détaillée d'un module : cours complet, fiches de révision et
@@ -63,12 +65,19 @@ class ModuleDetailScreen extends StatelessWidget {
     }
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
-      return _DesktopModuleView(
-        module: module,
-        onEvaluate: () => _openEvaluation(context, studentController, module.id),
+      return _CourseReviewMarker(
+        level: module.level,
+        child: _DesktopModuleView(
+          module: module,
+          onEvaluate: () => _openEvaluation(context, studentController, module.id),
+        ),
       );
     }
 
+    return _CourseReviewMarker(level: module.level, child: _buildMobileView(context, studentController, module));
+  }
+
+  Widget _buildMobileView(BuildContext context, StudentController studentController, CourseModule module) {
     return LuxuryScaffoldBackground(
       child: DefaultTabController(
         length: 3,
@@ -153,6 +162,31 @@ class ModuleDetailScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lève, une fois par ouverture de l'écran, l'obligation de reconsultation
+/// du cours qui suit un échec à l'examen blanc du niveau — sans effet si
+/// aucun verrou n'est actif. La reconsultation est ce qui débloque la
+/// prochaine tentative une fois le délai de 7 jours écoulé.
+class _CourseReviewMarker extends StatefulWidget {
+  const _CourseReviewMarker({required this.level, required this.child});
+
+  final AcademicLevel level;
+  final Widget child;
+
+  @override
+  State<_CourseReviewMarker> createState() => _CourseReviewMarkerState();
+}
+
+class _CourseReviewMarkerState extends State<_CourseReviewMarker> {
+  @override
+  void initState() {
+    super.initState();
+    buildMockExamRepository().markCourseReviewed(widget.level.name);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Pied d'écran de la vue module (mobile) : rappelle la meilleure note si
@@ -1053,6 +1087,10 @@ class _LessonBlock extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Container(width: 32, height: 1, color: AppColors.gold.withValues(alpha: 0.35)),
         const SizedBox(height: AppSpacing.md),
+        if (lesson.videoUrl != null) ...[
+          YoutubeEmbedView(videoUrl: lesson.videoUrl!),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         for (final paragraph in lesson.content.split('\n\n'))
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),

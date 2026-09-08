@@ -62,6 +62,18 @@ dependencies:
   # dépendance transitive (url_launcher_web) ; rendu explicite ici.
   web: ^1.1.1
 
+  # Module Étudiant — examen blanc (voir server/supabase/migration_014_mock_exams.sql) :
+  # sessions vidéo explicatives (YouTube non répertorié, web + mobile/desktop).
+  youtube_player_iframe: ^5.2.0
+  # Synthèse vocale (l'IA énonce les questions) et reconnaissance vocale
+  # (l'étudiant répond), pour l'examen oral façon Voice Mode.
+  flutter_tts: ^4.2.0
+  speech_to_text: ^7.0.0
+  # Rappels locaux avant la fin du verrou de 7 jours (pas de Firebase — même
+  # réserve que pour Sign in with Apple, éviter un nouveau mur payant).
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

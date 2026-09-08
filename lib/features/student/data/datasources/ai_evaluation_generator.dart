@@ -34,6 +34,34 @@ class AiEvaluationGenerator {
     return _parseQuestions(buffer.toString());
   }
 
+  /// Génère le jeu de questions d'un examen blanc de fin de niveau, portant
+  /// sur l'ensemble des [modules] plutôt qu'un seul. Utilisé pour les modes
+  /// QCM chronométré (40 questions) et devoir écrit (16-20 questions).
+  Future<List<EvaluationQuestion>> generateForLevel({
+    required List<CourseModule> modules,
+    required int questionCount,
+    required bool writtenOnly,
+  }) async {
+    final buffer = StringBuffer();
+    await for (final chunk in dataSource.streamCompletion(
+      system: StudentAiPrompts.mockExamGeneratorSystemPrompt(
+        modules: modules,
+        questionCount: questionCount,
+        writtenOnly: writtenOnly,
+      ),
+      messages: const [
+        {'role': 'user', 'content': "Génère l'examen au format demandé."},
+      ],
+      // Un examen blanc de 40 questions produit une sortie JSON bien plus
+      // volumineuse qu'un jeu de 4 questions de module — budget élargi pour
+      // ne pas tronquer la génération en cours de tableau.
+      maxTokens: 8192,
+    )) {
+      buffer.write(chunk);
+    }
+    return _parseQuestions(buffer.toString());
+  }
+
   List<EvaluationQuestion> _parseQuestions(String raw) {
     final start = raw.indexOf('[');
     final end = raw.lastIndexOf(']');

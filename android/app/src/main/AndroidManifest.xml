@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Examen blanc — mode oral (Voice Mode) : reconnaissance vocale des
+         réponses de l'étudiant. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Rappels locaux avant la fin du verrou de 7 jours (Android 13+). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="jurisia_app"
         android:name="${applicationName}"
