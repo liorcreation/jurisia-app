@@ -82,7 +82,19 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   }
 
   final FlutterTts _tts = FlutterTts();
-  final SpeechToText _stt = SpeechToText();
+
+  /// Non `final` : une toute NOUVELLE instance est créée avant chaque
+  /// question (voir [_listenForAnswer]). `SpeechToText.initialize()` est un
+  /// no-op silencieux une fois déjà initialisé (`if (_initWorked) return;`
+  /// dans le package) — impossible donc de réinitialiser proprement le
+  /// moteur sous-jacent via la même instance. Or vu en vidéo : la réponse
+  /// de la question 2 dupliquait mot pour mot celle de la question 1 — un
+  /// résultat tardif de l'ancienne session `webkitSpeechRecognition`
+  /// (réutilisée d'une question à l'autre) arrivait après le redémarrage et
+  /// contaminait la nouvelle. Une instance fraîche par question élimine
+  /// toute possibilité qu'un évènement tardif d'une session précédente soit
+  /// livré à la mauvaise question.
+  SpeechToText _stt = SpeechToText();
   final TextEditingController _typedController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   late final AnimationController _answerTimer =
@@ -243,6 +255,28 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   Future<void> _listenForAnswer() async {
     if (!_sttAvailable || !mounted) return;
     _autoConfirmTimer?.cancel();
+    // Instance fraîche à chaque question (voir la doc du champ [_stt]) :
+    // élimine toute chance qu'un résultat tardif d'une ancienne session
+    // vienne contaminer la réponse de la nouvelle question.
+    _stt.cancel();
+    _stt = SpeechToText();
+    try {
+      final ready = await _stt
+          .initialize(
+            onStatus: _onSttStatus,
+            onError: (e) => debugPrint('[voice-exam] stt onError: $e'),
+          )
+          .timeout(_speakTimeout);
+      if (!ready) {
+        if (mounted) setState(() => _phase = _VoicePhase.typingFallback);
+        return;
+      }
+    } catch (e) {
+      debugPrint('[voice-exam] stt re-initialize failed: $e');
+      if (mounted) setState(() => _phase = _VoicePhase.typingFallback);
+      return;
+    }
+    if (!mounted) return;
     setState(() {
       _phase = _VoicePhase.silenceCheck;
       _liveTranscript = '';
@@ -324,7 +358,10 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     final question = widget.controller.exam!.questions[_questionIndex];
     final trimmed = text.trim();
     widget.controller.answerCasPratique(question.id, trimmed);
-    unawaited(_stt.stop().catchError((_) {}));
+    // cancel() (abort) plutôt que stop() : on a déjà la réponse, inutile de
+    // laisser le moteur tenter de renvoyer un résultat final tardif, qui
+    // pourrait sinon être livré après le début de la question suivante.
+    unawaited(_stt.cancel().catchError((_) {}));
     _appendTranscript(isUser: true, text: trimmed.isEmpty ? '(pas de réponse)' : trimmed);
     setState(() => _phase = _VoicePhase.reviewing);
 
