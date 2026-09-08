@@ -3,12 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../features/litigation/presentation/controllers/litigation_chat_controller.dart';
 import '../../theme/app_theme.dart';
-import '../auth/admin_handoff.dart';
-import '../auth/staff_redirect_prompt.dart' show kAdminConsoleUrl;
+import '../auth/admin_console_launcher.dart';
 import '../auth/staff_status.dart';
 import '../navigation/nav_destinations.dart';
 import '../supabase/supabase_config.dart';
@@ -289,17 +287,16 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
     }
   }
 
-  /// Rejoint la console déjà connecté, sans ressaisir ses identifiants — un
-  /// lien d'authentification à usage unique (voir `admin_handoff.dart`) fait
-  /// le pont entre les deux origines web. Se rabat sur le simple lien
-  /// public si la demande échoue (fonction pas encore déployée, etc.),
-  /// jamais un blocage silencieux.
+  /// Rejoint la console déjà connecté, sans ressaisir ses identifiants —
+  /// voir `admin_console_launcher.dart` (le lien d'authentification à
+  /// usage unique fait le pont entre les deux origines web ; se rabat sur
+  /// le simple lien public si la demande échoue, jamais un blocage
+  /// silencieux).
   Future<void> _open() async {
     if (_opening) return;
     setState(() => _opening = true);
     try {
-      final link = await requestAdminHandoffLink();
-      await launchUrl(Uri.parse(link ?? kAdminConsoleUrl), webOnlyWindowName: '_blank');
+      await openAdminConsole();
     } finally {
       if (mounted) setState(() => _opening = false);
     }

@@ -56,6 +56,12 @@ dependencies:
   url_launcher: ^6.3.1
   sentry_flutter: ^9.29.0
 
+  # Ouvrir un onglet de façon synchrone (voir admin_console_launcher_web.dart)
+  # — un window.open() appelé après un aller-retour réseau, même bref, est
+  # traité comme un pop-up non sollicité par les navigateurs. Déjà présent en
+  # dépendance transitive (url_launcher_web) ; rendu explicite ici.
+  web: ^1.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

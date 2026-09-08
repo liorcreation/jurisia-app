@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/supabase/supabase_config.dart';
 import '../../core/widgets/glass_container.dart';
@@ -233,6 +234,10 @@ class _Sidebar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _BrandHeader(),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.sm),
+                    child: _ReturnToAppButton(),
+                  ),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
@@ -337,6 +342,59 @@ class _BrandHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Le chemin retour vers l'application grand public — en or, jamais en
+/// cobalt, pour que la couleur elle-même annonce la destination (le
+/// registre doré du grand public) avant même de lire le texte. Aucun aller-
+/// retour réseau avant l'ouverture : un simple lien externe, jamais bloqué
+/// par un navigateur.
+class _ReturnToAppButton extends StatelessWidget {
+  const _ReturnToAppButton();
+
+  static const _appUrl = 'https://jurisia-app.pages.dev/';
+
+  Future<void> _open() => launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
+
+  @override
+  Widget build(BuildContext context) {
+    return TapScale(
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: _open,
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.32), width: 0.8),
+              gradient: LinearGradient(
+                colors: [AppColors.gold.withValues(alpha: 0.14), AppColors.gold.withValues(alpha: 0.05)],
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.arrow_back_rounded, size: 15, color: AppColors.goldLight),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Retour à JurisIA',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

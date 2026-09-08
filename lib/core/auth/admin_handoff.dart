@@ -1,5 +1,11 @@
 import '../supabase/supabase_config.dart';
 
+/// URL publique de la console d'administration — un déploiement Cloudflare
+/// Pages séparé (voir `lib/admin_main.dart`), jamais atteignable depuis
+/// cette app grand public autrement que par ce lien externe. Utilisée en
+/// repli quand [requestAdminHandoffLink] échoue.
+const String kAdminConsoleUrl = 'https://jurisia-admin.pages.dev/';
+
 /// Demande à l'Edge Function `admin-handoff` un lien d'authentification à
 /// usage unique pour rejoindre la console d'administration sans ressaisir
 /// ses identifiants. La session Supabase ne se partage jamais entre deux
@@ -7,8 +13,7 @@ import '../supabase/supabase_config.dart';
 /// .pages.dev) — ce lien est le pont, valable une seule fois et de courte
 /// durée. Renvoie `null` si la demande échoue (fonction pas encore
 /// déployée, compte non membre du personnel, etc.) : l'appelant se rabat
-/// alors sur le simple lien public vers la console, jamais un blocage
-/// silencieux — voir `kAdminConsoleUrl` (staff_redirect_prompt.dart).
+/// alors sur [kAdminConsoleUrl], jamais un blocage silencieux.
 Future<String?> requestAdminHandoffLink() async {
   if (!SupabaseConfig.isReady) return null;
   try {
