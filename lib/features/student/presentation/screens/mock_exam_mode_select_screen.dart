@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/ai/groq_providers.dart';
+import '../../../../core/exam/exam_voice_unlock.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -275,7 +276,10 @@ class _ErrorView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
-                onPressed: controller.retry,
+                onPressed: () {
+                  primeWebSpeechSynthesis();
+                  controller.retry();
+                },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.nightBlueDeep,
@@ -429,7 +433,13 @@ class _BriefingView extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
               FilledButton.icon(
-                onPressed: controller.start,
+                onPressed: () {
+                  // Synchrone, avant tout aller-retour réseau : sur web,
+                  // inscrit l'activation utilisateur nécessaire à la
+                  // synthèse vocale (voir exam_voice_unlock_web.dart).
+                  primeWebSpeechSynthesis();
+                  controller.start();
+                },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.nightBlueDeep,

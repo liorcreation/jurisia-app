@@ -66,9 +66,22 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   bool _answerConfirmed = false;
   final List<_ChatEntry> _transcript = [];
 
+  /// `true` dès que la synthèse vocale a réellement émis un son au moins
+  /// une fois (callback `onStart` du moteur natif/navigateur — un signal
+  /// bien plus fiable que la simple résolution de `speak()`, qui peut se
+  /// résoudre par notre propre délai de sécurité sans avoir rien joué).
+  bool _ttsConfirmedWorking = false;
+
+  /// Bannières affichées une fois, si la voix ou le micro se révèlent
+  /// indisponibles — pour que l'étudiant comprenne pourquoi plutôt que de
+  /// se retrouver démuni devant un écran silencieux.
+  bool _showTtsWarning = false;
+  bool _showMicWarning = false;
+
   @override
   void initState() {
     super.initState();
+    _tts.setStartHandler(() => _ttsConfirmedWorking = true);
     _bootstrap();
   }
 
@@ -89,6 +102,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       _sttAvailable = false;
     }
     if (!mounted) return;
+    if (!_sttAvailable) setState(() => _showMicWarning = true);
 
     final total = widget.controller.exam!.questions.length;
     await _speak(
@@ -99,6 +113,7 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       "pouvez à tout moment basculer sur la réponse écrite si besoin. C'est parti.",
     );
     if (!mounted) return;
+    if (!_ttsConfirmedWorking) setState(() => _showTtsWarning = true);
     await _silenceCheck();
     if (!mounted) return;
     await _askCurrentQuestion();
@@ -303,6 +318,18 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
               total: total,
               cameraController: cameraController,
             ),
+            if (_showTtsWarning)
+              _WarningBanner(
+                text: "Synthèse vocale indisponible sur ce navigateur — les questions restent "
+                    'affichées ci-dessous, répondez au clavier ou à l\'oral si le micro fonctionne.',
+                onDismiss: () => setState(() => _showTtsWarning = false),
+              ),
+            if (_showMicWarning)
+              _WarningBanner(
+                text: 'Micro non disponible ou non autorisé — autorisez-le dans les réglages du '
+                    'navigateur pour répondre à l\'oral, ou répondez au clavier.',
+                onDismiss: () => setState(() => _showMicWarning = false),
+              ),
             Expanded(
               child: _transcript.isEmpty
                   ? const SizedBox.shrink()
@@ -334,6 +361,43 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
               onSwitchToTyping: _switchToTyping,
               onSubmitTyped: _submitTypedAnswer,
               onQuit: _confirmQuit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WarningBanner extends StatelessWidget {
+  const _WarningBanner({required this.text, required this.onDismiss});
+
+  final String text;
+  final VoidCallback onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(AppRadius.small),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.4), width: 0.8),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(text, style: const TextStyle(color: Colors.white, height: 1.4, fontSize: 12.5)),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            GestureDetector(
+              onTap: onDismiss,
+              child: const Icon(Icons.close_rounded, size: 16, color: Colors.white70),
             ),
           ],
         ),
