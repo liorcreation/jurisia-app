@@ -8,6 +8,7 @@ import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
 import '../../../../models/student/student_level.dart';
 import '../../../../models/student/student_progress_model.dart';
+import '../../domain/entities/evaluation_mode.dart';
 import '../../domain/entities/module_validation_result.dart';
 import '../../domain/repositories/student_repository.dart';
 import '../datasources/ai_evaluation_generator.dart';
@@ -31,8 +32,8 @@ class StudentRepositoryImpl implements StudentRepository {
     this.userId,
     Random? random,
     Uuid? uuid,
-  })  : _random = random ?? Random(),
-        _uuid = uuid ?? const Uuid() {
+  }) : _random = random ?? Random(),
+       _uuid = uuid ?? const Uuid() {
     for (final module in curriculumDataSource.getAll()) {
       _modulesById[module.id] = module;
     }
@@ -58,11 +59,6 @@ class StudentRepositoryImpl implements StudentRepository {
   /// la session courante (dont le détail n'est pas rechargé).
   final Map<String, double> _persistedBestScore = {};
 
-  /// Niveaux dont l'examen blanc a déjà été réussi (≥ 10/20, un des trois
-  /// modes) — condition, en plus de la validation de tous les modules,
-  /// requise par [isLevelUnlocked] pour débloquer le niveau suivant.
-  final Set<AcademicLevel> _passedMockExamLevels = {};
-
   bool get _persistenceEnabled => supabaseClient != null && userId != null;
 
   @override
@@ -72,7 +68,9 @@ class StudentRepositoryImpl implements StudentRepository {
     try {
       final rows = await supabaseClient!
           .from('student_module_progress')
-          .select('module_id, is_unlocked, is_completed, best_score, attempts_count')
+          .select(
+            'module_id, is_unlocked, is_completed, best_score, attempts_count',
+          )
           .eq('user_id', userId!);
 
       for (final row in rows as List) {
@@ -91,29 +89,17 @@ class StudentRepositoryImpl implements StudentRepository {
       }
     } catch (error) {
       // ignore: avoid_print
-      print('Échec du chargement de la progression étudiante Supabase : $error');
-    }
-
-    try {
-      final rows = await supabaseClient!
-          .from('student_mock_exam_attempts')
-          .select('level_id')
-          .eq('user_id', userId!)
-          .eq('passed', true);
-
-      for (final row in rows as List) {
-        _passedMockExamLevels.add(AcademicLevelLabel.fromName(row['level_id'] as String));
-      }
-    } catch (error) {
-      // ignore: avoid_print
-      print("Échec du chargement des examens blancs réussis : $error");
+      print(
+        'Échec du chargement de la progression étudiante Supabase : $error',
+      );
     }
   }
 
   @override
   List<CourseModule> modulesForLevel(AcademicLevel level) {
-    final modules = _modulesById.values.where((module) => module.level == level).toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+    final modules =
+        _modulesById.values.where((module) => module.level == level).toList()
+          ..sort((a, b) => a.order.compareTo(b.order));
     return modules;
   }
 
@@ -129,15 +115,8 @@ class StudentRepositoryImpl implements StudentRepository {
     final previousLevel = levels[index - 1];
     final previousModules = modulesForLevel(previousLevel);
     return previousModules.isNotEmpty &&
-        previousModules.every((module) => module.isCompleted) &&
-        hasPassedMockExamForLevel(previousLevel);
+        previousModules.every((module) => module.isCompleted);
   }
-
-  @override
-  bool hasPassedMockExamForLevel(AcademicLevel level) => _passedMockExamLevels.contains(level);
-
-  @override
-  void recordMockExamPassed(AcademicLevel level) => _passedMockExamLevels.add(level);
 
   @override
   StudentProgress progressForLevel(AcademicLevel level) {
@@ -153,7 +132,11 @@ class StudentRepositoryImpl implements StudentRepository {
         ),
     };
 
-    return StudentProgress(studentId: userId ?? 'local-student', level: level, moduleProgress: moduleProgress);
+    return StudentProgress(
+      studentId: userId ?? 'local-student',
+      level: level,
+      moduleProgress: moduleProgress,
+    );
   }
 
   double? _bestScoreFor(String moduleId) {
@@ -168,30 +151,49 @@ class StudentRepositoryImpl implements StudentRepository {
   }
 
   @override
-  Future<ModuleEvaluation> generateEvaluation(String moduleId) async {
+  Future<ModuleEvaluation> generateEvaluation(
+    String moduleId, {
+    EvaluationMode mode = EvaluationMode.written,
+  }) async {
     final module = findModule(moduleId);
     if (module == null) {
       throw ArgumentError('Module introuvable : $moduleId');
     }
 
+    final attemptNumber =
+        (_attemptsCountByModule[moduleId] ??
+            _attemptsByModule[moduleId]?.length ??
+            0) +
+        1;
     List<EvaluationQuestion> questions;
+    final questionCount = mode.questionCount;
     if (aiGenerator != null && GroqApiConfig.hasEndpoint) {
       try {
-        questions = await aiGenerator!.generate(module: module, questionCount: questionsPerAttempt);
+        final generated = await aiGenerator!.generate(
+          module: module,
+          questionCount: questionCount,
+          mode: mode,
+        );
+        questions = _normalizeQuestions(
+          generated,
+          mode,
+          questionCount,
+          attemptNumber,
+        );
       } catch (_) {
-        questions = _pickLocalQuestions(moduleId);
+        questions = _pickLocalQuestions(moduleId, mode, attemptNumber);
       }
     } else {
-      questions = _pickLocalQuestions(moduleId);
+      questions = _pickLocalQuestions(moduleId, mode, attemptNumber);
     }
 
-    final attemptNumber = (_attemptsCountByModule[moduleId] ?? _attemptsByModule[moduleId]?.length ?? 0) + 1;
     final evaluation = ModuleEvaluation(
       id: _uuid.v4(),
       moduleId: moduleId,
       attemptNumber: attemptNumber,
       questions: questions,
       generatedAt: DateTime.now(),
+      mode: mode,
     );
 
     _attemptsByModule.putIfAbsent(moduleId, () => []).add(evaluation);
@@ -199,14 +201,72 @@ class StudentRepositoryImpl implements StudentRepository {
     return evaluation;
   }
 
-  List<EvaluationQuestion> _pickLocalQuestions(String moduleId) {
-    final candidates = List<EvaluationQuestion>.of(questionBank.candidatesFor(moduleId));
+  List<EvaluationQuestion> _pickLocalQuestions(
+    String moduleId,
+    EvaluationMode mode,
+    int attemptNumber,
+  ) {
+    final candidates = List<EvaluationQuestion>.of(
+      questionBank
+          .candidatesFor(moduleId)
+          .where(
+            (question) =>
+                question.type ==
+                (mode == EvaluationMode.timedQcm
+                    ? QuestionType.qcm
+                    : QuestionType.casPratique),
+          ),
+    );
     if (candidates.isEmpty) {
-      throw StateError('Aucune question disponible pour le module $moduleId.');
+      throw StateError(
+        'Aucune question ${mode == EvaluationMode.timedQcm ? 'QCM' : 'ouverte'} disponible pour le module $moduleId.',
+      );
     }
     candidates.shuffle(_random);
-    final count = questionsPerAttempt.clamp(1, candidates.length);
-    return candidates.take(count).toList();
+    return List.generate(
+      mode.questionCount,
+      (index) => _normalizeQuestion(
+        candidates[index % candidates.length],
+        mode,
+        index,
+        attemptNumber,
+      ),
+    );
+  }
+
+  List<EvaluationQuestion> _normalizeQuestions(
+    List<EvaluationQuestion> questions,
+    EvaluationMode mode,
+    int questionCount,
+    int attemptNumber,
+  ) {
+    final expectedType = mode == EvaluationMode.timedQcm
+        ? QuestionType.qcm
+        : QuestionType.casPratique;
+    final compatible = questions
+        .where((question) => question.type == expectedType)
+        .toList();
+    if (compatible.length < questionCount) {
+      throw const FormatException(
+        'Le nombre de questions généré ne respecte pas le format demandé.',
+      );
+    }
+    return [
+      for (var index = 0; index < questionCount; index++)
+        _normalizeQuestion(compatible[index], mode, index, attemptNumber),
+    ];
+  }
+
+  EvaluationQuestion _normalizeQuestion(
+    EvaluationQuestion question,
+    EvaluationMode mode,
+    int index,
+    int attemptNumber,
+  ) {
+    return question.copyWith(
+      id: '${question.id}-${mode.name}-attempt-$attemptNumber-${index + 1}',
+      points: 20 / mode.questionCount,
+    );
   }
 
   @override
@@ -219,13 +279,21 @@ class StudentRepositoryImpl implements StudentRepository {
     if (attempts == null) return;
     final index = attempts.indexWhere((attempt) => attempt.id == evaluationId);
     if (index == -1) return;
-    final attempt = attempts[index].copyWith(score: score, completedAt: DateTime.now());
+    final attempt = attempts[index].copyWith(
+      score: score,
+      completedAt: DateTime.now(),
+    );
     attempts[index] = attempt;
 
     final bestScore = _bestScoreFor(moduleId);
     if (bestScore != null) _persistedBestScore[moduleId] = bestScore;
 
-    _persistAttempt(moduleId: moduleId, attemptNumber: attempt.attemptNumber, score: score, bestScore: bestScore);
+    _persistAttempt(
+      moduleId: moduleId,
+      attemptNumber: attempt.attemptNumber,
+      score: score,
+      bestScore: bestScore,
+    );
   }
 
   void _persistAttempt({
@@ -237,30 +305,43 @@ class StudentRepositoryImpl implements StudentRepository {
     if (!_persistenceEnabled) return;
     final client = supabaseClient!;
 
-    client.from('student_evaluation_attempts').insert({
-      'user_id': userId,
-      'module_id': moduleId,
-      'attempt_number': attemptNumber,
-      'score': score,
-    }).catchError((Object error) {
-      // ignore: avoid_print
-      print("Échec de l'enregistrement de la tentative ($moduleId) : $error");
-    });
+    client
+        .from('student_evaluation_attempts')
+        .insert({
+          'user_id': userId,
+          'module_id': moduleId,
+          'attempt_number': attemptNumber,
+          'score': score,
+        })
+        .catchError((Object error) {
+          // ignore: avoid_print
+          print(
+            "Échec de l'enregistrement de la tentative ($moduleId) : $error",
+          );
+        });
 
-    client.from('student_module_progress').upsert({
-      'user_id': userId,
-      'module_id': moduleId,
-      'attempts_count': attemptNumber,
-      'best_score': ?bestScore,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).catchError((Object error) {
-      // ignore: avoid_print
-      print('Échec de synchronisation de la progression ($moduleId) : $error');
-    });
+    client
+        .from('student_module_progress')
+        .upsert({
+          'user_id': userId,
+          'module_id': moduleId,
+          'attempts_count': attemptNumber,
+          'best_score': ?bestScore,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .catchError((Object error) {
+          // ignore: avoid_print
+          print(
+            'Échec de synchronisation de la progression ($moduleId) : $error',
+          );
+        });
   }
 
   @override
-  ModuleValidationResult validateModule({required String moduleId, required double score}) {
+  ModuleValidationResult validateModule({
+    required String moduleId,
+    required double score,
+  }) {
     final module = findModule(moduleId);
     if (module == null) {
       throw ArgumentError('Module introuvable : $moduleId');
@@ -271,7 +352,10 @@ class StudentRepositoryImpl implements StudentRepository {
       isCompleted: passed || module.isCompleted,
       lastScore: score,
     );
-    _persistModuleState(moduleId, isCompleted: _modulesById[moduleId]!.isCompleted);
+    _persistModuleState(
+      moduleId,
+      isCompleted: _modulesById[moduleId]!.isCompleted,
+    );
 
     String? unlockedNextModuleId;
     var levelCompleted = false;
@@ -295,13 +379,7 @@ class StudentRepositoryImpl implements StudentRepository {
 
       final refreshed = modulesForLevel(module.level);
       levelCompleted = refreshed.every((candidate) => candidate.isCompleted);
-      // Ne signale le déblocage du niveau supérieur que si l'examen blanc
-      // de CE niveau est déjà réussi — sinon les modules seuls ne
-      // suffisent plus (voir isLevelUnlocked). "levelCompleted" reste vrai
-      // dès que les modules sont finis, indépendamment de l'examen blanc :
-      // c'est ce qui permet à l'écran d'évaluation d'inviter l'étudiant à
-      // le passer plutôt que d'afficher à tort "niveau débloqué".
-      if (levelCompleted && hasPassedMockExamForLevel(module.level)) {
+      if (levelCompleted) {
         final levels = AcademicLevel.values;
         final currentIndex = levels.indexOf(module.level);
         if (currentIndex < levels.length - 1) {
@@ -321,18 +399,25 @@ class StudentRepositoryImpl implements StudentRepository {
     );
   }
 
-  void _persistModuleState(String moduleId, {bool? isUnlocked, bool? isCompleted}) {
+  void _persistModuleState(
+    String moduleId, {
+    bool? isUnlocked,
+    bool? isCompleted,
+  }) {
     if (!_persistenceEnabled) return;
 
-    supabaseClient!.from('student_module_progress').upsert({
-      'user_id': userId,
-      'module_id': moduleId,
-      'is_unlocked': ?isUnlocked,
-      'is_completed': ?isCompleted,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).catchError((Object error) {
-      // ignore: avoid_print
-      print('Échec de synchronisation du déblocage ($moduleId) : $error');
-    });
+    supabaseClient!
+        .from('student_module_progress')
+        .upsert({
+          'user_id': userId,
+          'module_id': moduleId,
+          'is_unlocked': ?isUnlocked,
+          'is_completed': ?isCompleted,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .catchError((Object error) {
+          // ignore: avoid_print
+          print('Échec de synchronisation du déblocage ($moduleId) : $error');
+        });
   }
 }

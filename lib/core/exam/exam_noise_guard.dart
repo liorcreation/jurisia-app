@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Détection de bruit ambiant suspect pendant l'examen blanc — signal
+/// Détection de bruit ambiant suspect pendant une évaluation — signal
 /// distinct de l'interruption "quitter l'app" : un déclenchement disqualifie
 /// immédiatement la tentative (comme un score < 10/20), sans régénération.
 ///

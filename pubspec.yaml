@@ -62,22 +62,18 @@ dependencies:
   # dépendance transitive (url_launcher_web) ; rendu explicite ici.
   web: ^1.1.1
 
-  # Module Étudiant — examen blanc (voir server/supabase/migration_014_mock_exams.sql) :
-  # sessions vidéo explicatives (YouTube non répertorié, web + mobile/desktop).
+  # Module Étudiant — cours et évaluations surveillées.
+  # Sessions vidéo explicatives (YouTube non répertorié, web + mobile/desktop).
   youtube_player_iframe: ^5.2.0
   # Synthèse vocale (l'IA énonce les questions) et reconnaissance vocale
   # (l'étudiant répond), pour l'examen oral façon Voice Mode.
   flutter_tts: ^4.2.0
   speech_to_text: ^7.0.0
-  # Rappels locaux avant la fin du verrou de 7 jours (pas de Firebase — même
-  # réserve que pour Sign in with Apple, éviter un nouveau mur payant).
-  flutter_local_notifications: ^18.0.1
-  timezone: ^0.9.4
-  # Anti-triche de l'examen blanc sur desktop (Windows/macOS) : force le
+  # Anti-triche des évaluations sur desktop (Windows/macOS) : force le
   # plein écran de la fenêtre pendant l'épreuve et détecte sa sortie
   # (voir exam_session_guard_io.dart). Aucun équivalent Flutter natif.
   window_manager: ^0.4.3
-  # Proctoring caméra de l'examen blanc (détection de mouvement par
+  # Proctoring caméra des évaluations (détection de mouvement par
   # différence d'image, voir exam_camera_guard.dart) — Android/iOS via
   # l'implémentation officielle. macOS n'a aucune implémentation officielle
   # ni fiable vérifiable ici : désactivé sur cette plateforme (voir le

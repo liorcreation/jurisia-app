@@ -2,6 +2,7 @@ import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
 import '../../../../models/student/student_level.dart';
 import '../../../../models/student/student_progress_model.dart';
+import '../entities/evaluation_mode.dart';
 import '../entities/module_validation_result.dart';
 
 /// Frontière du domaine vers le parcours universitaire de l'étudiant :
@@ -15,22 +16,8 @@ abstract class StudentRepository {
   CourseModule? findModule(String moduleId);
 
   /// Un niveau est débloqué si c'est le premier (L1), ou si tous les
-  /// modules du niveau précédent ont été validés ET que l'examen blanc de
-  /// ce niveau précédent a été réussi (voir [hasPassedMockExamForLevel]) —
-  /// les deux conditions sont indépendantes et peuvent être remplies dans
-  /// n'importe quel ordre.
+  /// modules du niveau précédent ont été validés.
   bool isLevelUnlocked(AcademicLevel level);
-
-  /// `true` si l'étudiant a déjà réussi (≥ 10/20) au moins une tentative de
-  /// l'examen blanc de ce niveau, quel qu'en soit le mode (QCM chronométré,
-  /// écrit, oral).
-  bool hasPassedMockExamForLevel(AcademicLevel level);
-
-  /// Enregistre localement la réussite de l'examen blanc d'un niveau — à
-  /// appeler dès qu'une tentative est validée (voir
-  /// `MockExamController.onPassed`), pour que [isLevelUnlocked] reflète
-  /// immédiatement le déblocage sans attendre un nouveau [hydrate].
-  void recordMockExamPassed(AcademicLevel level);
 
   /// Suivi de progression composé de l'état courant des modules et de
   /// l'historique de leurs tentatives d'évaluation.
@@ -39,7 +26,10 @@ abstract class StudentRepository {
   /// Génère un nouveau jeu de questions pour une tentative d'évaluation du
   /// module (IA si configurée, banque locale sinon), en le conservant dans
   /// l'historique des tentatives.
-  Future<ModuleEvaluation> generateEvaluation(String moduleId);
+  Future<ModuleEvaluation> generateEvaluation(
+    String moduleId, {
+    EvaluationMode mode = EvaluationMode.written,
+  });
 
   /// Enregistre la note obtenue à une tentative d'évaluation déjà générée,
   /// pour alimenter l'historique et les moyennes.

@@ -43,29 +43,14 @@ class StudentController extends ChangeNotifier {
   List<CourseModule> modulesForLevel(AcademicLevel level) => getModulesUseCase(level);
 
   /// `true` si tous les modules du niveau ont été validés (moyenne ≥ 10/20).
-  /// Ne préjuge pas de l'examen blanc — voir [isLevelFullyCleared].
   bool isLevelCompleted(AcademicLevel level) {
     final modules = getModulesUseCase(level);
     return modules.isNotEmpty && modules.every((module) => module.isCompleted);
   }
 
-  /// `true` si l'étudiant a déjà réussi l'examen blanc de ce niveau.
-  bool hasPassedMockExamForLevel(AcademicLevel level) => repository.hasPassedMockExamForLevel(level);
-
-  /// `true` si le niveau est vraiment terminé : tous les modules validés
-  /// ET l'examen blanc réussi — c'est cette condition, pas seulement
-  /// [isLevelCompleted], qui débloque le niveau supérieur (voir
-  /// [StudentRepository.isLevelUnlocked]) et doit gouverner l'affichage
-  /// "niveau validé" dans l'UI.
-  bool isLevelFullyCleared(AcademicLevel level) => isLevelCompleted(level) && hasPassedMockExamForLevel(level);
-
-  /// À appeler dès qu'une tentative d'examen blanc est réussie (voir
-  /// `MockExamController.onPassed`), pour que le déblocage du niveau
-  /// supérieur soit reflété immédiatement sans attendre une réhydratation.
-  void recordMockExamPassed(AcademicLevel level) {
-    repository.recordMockExamPassed(level);
-    notifyListeners();
-  }
+  /// `true` si tous les modules du niveau sont validés et qu'il peut être
+  /// considéré comme terminé dans le parcours.
+  bool isLevelFullyCleared(AcademicLevel level) => isLevelCompleted(level);
 
   void selectLevel(AcademicLevel level) {
     _selectedLevel = level;

@@ -5,7 +5,7 @@ import '../../../../models/student/evaluation_model.dart';
 import '../../domain/usecases/grade_evaluation_usecase.dart';
 
 /// Note assistée par IA d'une réponse rédigée (cas pratique), utilisée par
-/// les modes écrit et oral de l'examen blanc. Sur tout échec (réseau, IA non
+/// les modes écrit et oral d'une évaluation. Sur tout échec (réseau, IA non
 /// configurée, sortie invalide), se replie sur l'heuristique de
 /// correspondance de mots-clés déjà utilisée par [GradeEvaluationUseCase] —
 /// jamais de blocage de la correction pour une raison d'infrastructure.

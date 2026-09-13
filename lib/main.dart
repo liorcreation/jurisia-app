@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 
 import 'core/auth/auth_gate.dart';
 import 'core/monitoring/crash_reporting.dart';
-import 'core/notifications/notification_service.dart';
 import 'core/storage/local_cache.dart';
 import 'core/supabase/supabase_config.dart';
 import 'core/widgets/splash_screen.dart';
@@ -15,7 +14,6 @@ void main() async {
     await Future.wait([
       SupabaseConfig.initialize(),
       LocalCache.initialize(),
-      NotificationService.initialize(),
     ]);
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(

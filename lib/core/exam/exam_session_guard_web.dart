@@ -34,7 +34,7 @@ class ExamSessionGuard {
     web.document.addEventListener('fullscreenchange', fullscreenListener);
 
     // Doit rester synchrone, dans la pile d'appel du geste de l'utilisateur
-    // qui a déclenché `start()` (voir MockExamController.start) : un appel
+    // qui a déclenché `start()` (voir EvaluationController.start) : un appel
     // différé après un aller-retour réseau serait silencieusement refusé
     // par le navigateur, comme window.open() pour le SSO admin.
     web.document.documentElement?.requestFullscreen();

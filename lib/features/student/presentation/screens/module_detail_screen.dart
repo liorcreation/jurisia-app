@@ -22,7 +22,6 @@ import '../../data/repositories/module_tutor_repository_impl.dart';
 import '../../domain/usecases/ask_module_tutor_usecase.dart';
 import '../controllers/module_tutor_controller.dart';
 import '../controllers/student_controller.dart';
-import '../student_providers.dart';
 import 'evaluation_screen.dart';
 
 /// Vue détaillée d'un module : cours complet, fiches de révision et
@@ -58,26 +57,31 @@ class ModuleDetailScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           appBar: AppBar(),
           body: Center(
-            child: Text('Module introuvable.', style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(
+              'Module introuvable.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
         ),
       );
     }
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
-      return _CourseReviewMarker(
-        level: module.level,
-        child: _DesktopModuleView(
-          module: module,
-          onEvaluate: () => _openEvaluation(context, studentController, module.id),
-        ),
+      return _DesktopModuleView(
+        module: module,
+        onEvaluate: () =>
+            _openEvaluation(context, studentController, module.id),
       );
     }
 
-    return _CourseReviewMarker(level: module.level, child: _buildMobileView(context, studentController, module));
+    return _buildMobileView(context, studentController, module);
   }
 
-  Widget _buildMobileView(BuildContext context, StudentController studentController, CourseModule module) {
+  Widget _buildMobileView(
+    BuildContext context,
+    StudentController studentController,
+    CourseModule module,
+  ) {
     return LuxuryScaffoldBackground(
       child: DefaultTabController(
         length: 3,
@@ -95,20 +99,19 @@ class ModuleDetailScreen extends StatelessWidget {
                     Text(
                       'Module ${module.order} · ${module.level.shortLabel}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.goldLight,
-                            letterSpacing: AppLetterSpacing.label,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: AppColors.goldLight,
+                        letterSpacing: AppLetterSpacing.label,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 1),
                     Text(
                       module.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontFamily: 'Libre Caslon Display'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontFamily: 'Libre Caslon Display',
+                      ),
                     ),
                   ],
                 ),
@@ -136,8 +139,11 @@ class ModuleDetailScreen extends StatelessWidget {
                         ? const SizedBox(width: double.infinity)
                         : _ModuleEvalBar(
                             module: module,
-                            onEvaluate: () =>
-                                _openEvaluation(context, studentController, module.id),
+                            onEvaluate: () => _openEvaluation(
+                              context,
+                              studentController,
+                              module.id,
+                            ),
                           ),
                   );
                 },
@@ -145,7 +151,9 @@ class ModuleDetailScreen extends StatelessWidget {
               body: SafeArea(
                 child: Stack(
                   children: [
-                    const Positioned.fill(child: IgnorePointer(child: _ModuleAmbience())),
+                    const Positioned.fill(
+                      child: IgnorePointer(child: _ModuleAmbience()),
+                    ),
                     TabBarView(
                       children: [
                         _CourseTab(module: module),
@@ -162,31 +170,6 @@ class ModuleDetailScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Lève, une fois par ouverture de l'écran, l'obligation de reconsultation
-/// du cours qui suit un échec à l'examen blanc du niveau — sans effet si
-/// aucun verrou n'est actif. La reconsultation est ce qui débloque la
-/// prochaine tentative une fois le délai de 7 jours écoulé.
-class _CourseReviewMarker extends StatefulWidget {
-  const _CourseReviewMarker({required this.level, required this.child});
-
-  final AcademicLevel level;
-  final Widget child;
-
-  @override
-  State<_CourseReviewMarker> createState() => _CourseReviewMarkerState();
-}
-
-class _CourseReviewMarkerState extends State<_CourseReviewMarker> {
-  @override
-  void initState() {
-    super.initState();
-    buildMockExamRepository().markCourseReviewed(widget.level.name);
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
 
 /// Pied d'écran de la vue module (mobile) : rappelle la meilleure note si
@@ -208,10 +191,18 @@ class _ModuleEvalBar extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          top: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       child: SafeArea(
         top: false,
         child: Column(
@@ -244,10 +235,16 @@ class _ModuleEvalBar extends StatelessWidget {
                 backgroundColor: AppColors.gold,
                 foregroundColor: AppColors.nightBlueDeep,
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               icon: const Icon(Icons.fact_check_rounded, size: 17),
-              label: Text(score != null ? 'Repasser l\'évaluation' : 'Passer l\'évaluation'),
+              label: Text(
+                score != null
+                    ? 'Repasser l\'évaluation'
+                    : 'Passer l\'évaluation',
+              ),
             ),
           ],
         ),
@@ -261,7 +258,9 @@ class _ModuleEvalBar extends StatelessWidget {
 /// tablette on ne veut pas de lignes qui filent d'un bord à l'autre.
 EdgeInsets _tabReadingPadding(BuildContext context) {
   final width = MediaQuery.sizeOf(context).width;
-  final side = width > 720 + AppSpacing.md * 2 ? (width - 720) / 2 : AppSpacing.md;
+  final side = width > 720 + AppSpacing.md * 2
+      ? (width - 720) / 2
+      : AppSpacing.md;
   return EdgeInsets.fromLTRB(side, AppSpacing.lg, side, AppSpacing.xxl);
 }
 
@@ -276,7 +275,10 @@ class _CourseTab extends StatelessWidget {
 
     if (module.lessons.isEmpty) {
       return Center(
-        child: Text('Aucun contenu de cours pour ce module.', style: textTheme.bodyMedium),
+        child: Text(
+          'Aucun contenu de cours pour ce module.',
+          style: textTheme.bodyMedium,
+        ),
       );
     }
 
@@ -284,10 +286,8 @@ class _CourseTab extends StatelessWidget {
       padding: _tabReadingPadding(context),
       itemCount: module.lessons.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xl),
-      itemBuilder: (context, index) => _LessonBlock(
-        order: index + 1,
-        lesson: module.lessons[index],
-      ),
+      itemBuilder: (context, index) =>
+          _LessonBlock(order: index + 1, lesson: module.lessons[index]),
     );
   }
 }
@@ -333,7 +333,9 @@ class _TutorTabState extends State<_TutorTab> {
     _controller = ModuleTutorController(
       module: widget.module,
       useCase: AskModuleTutorUseCase(
-        repository: ModuleTutorRepositoryImpl(dataSource: buildGroqDataSource()),
+        repository: ModuleTutorRepositoryImpl(
+          dataSource: buildGroqDataSource(),
+        ),
       ),
     );
     _controller.addListener(_onControllerChanged);
@@ -368,7 +370,9 @@ class _TutorTabState extends State<_TutorTab> {
   Widget build(BuildContext context) {
     final messages = _controller.messages;
     final itemCount =
-        messages.length + (_controller.isSending ? 1 : 0) + (_controller.errorMessage != null ? 1 : 0);
+        messages.length +
+        (_controller.isSending ? 1 : 0) +
+        (_controller.errorMessage != null ? 1 : 0);
 
     return Column(
       children: [
@@ -400,7 +404,9 @@ class _TutorTabState extends State<_TutorTab> {
                 )
               : ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
                   itemCount: itemCount,
                   itemBuilder: (context, index) {
                     if (index < messages.length) {
@@ -409,7 +415,9 @@ class _TutorTabState extends State<_TutorTab> {
                     var remaining = index - messages.length;
                     if (_controller.isSending) {
                       if (remaining == 0) {
-                        return _TutorThinkingBubble(streamingText: _controller.streamingText);
+                        return _TutorThinkingBubble(
+                          streamingText: _controller.streamingText,
+                        );
                       }
                       remaining -= 1;
                     }
@@ -448,14 +456,22 @@ class _TutorEmptyState extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "Aucune question pour l'instant. Demandez une explication, un exemple, ou de "
             "l'aide sur un exercice de ce module.",
-            style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.45),
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.45,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -484,16 +500,25 @@ class _TutorEmptyState extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.legalBlueDark.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(AppRadius.small),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.28),
+                        width: 0.7,
+                      ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.auto_awesome_rounded, size: 13, color: AppColors.goldLight),
+                        const Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 13,
+                          color: AppColors.goldLight,
+                        ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
                             prompt,
-                            style: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
                       ],
@@ -522,7 +547,9 @@ class _TutorBubble extends StatelessWidget {
       child: isUser
           ? Text(
               message.content,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
             )
           : MarkdownText(message.content),
     );
@@ -604,7 +631,9 @@ class _DesktopModuleView extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _ModuleAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _ModuleAmbience()),
+              ),
               Column(
                 children: [
                   _DesktopModuleHeader(module: module, onEvaluate: onEvaluate),
@@ -633,10 +662,18 @@ class _DesktopModuleHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -665,14 +702,19 @@ class _DesktopModuleHeader extends StatelessWidget {
                   module.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.md),
           if (module.lastScore != null) ...[
-            _HeaderScoreBadge(score: module.lastScore!, completed: module.isCompleted),
+            _HeaderScoreBadge(
+              score: module.lastScore!,
+              completed: module.isCompleted,
+            ),
             const SizedBox(width: AppSpacing.sm),
           ],
           FilledButton.icon(
@@ -680,11 +722,20 @@ class _DesktopModuleHeader extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.gold,
               foregroundColor: AppColors.nightBlueDeep,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 11),
-              textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 11,
+              ),
+              textStyle: textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             icon: const Icon(Icons.fact_check_rounded, size: 17),
-            label: Text(module.lastScore != null ? 'Repasser l\'évaluation' : 'Passer l\'évaluation'),
+            label: Text(
+              module.lastScore != null
+                  ? 'Repasser l\'évaluation'
+                  : 'Passer l\'évaluation',
+            ),
           ),
         ],
       ),
@@ -702,7 +753,10 @@ class _HeaderScoreBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = completed ? AppColors.success : AppColors.warning;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 5,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppRadius.small),
@@ -711,14 +765,18 @@ class _HeaderScoreBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(completed ? Icons.verified_rounded : Icons.trending_up_rounded, size: 14, color: color),
+          Icon(
+            completed ? Icons.verified_rounded : Icons.trending_up_rounded,
+            size: 14,
+            color: color,
+          ),
           const SizedBox(width: 6),
           Text(
             'Meilleure note ${score.toStringAsFixed(1)}/20',
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: color, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -747,11 +805,17 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
     final module = widget.module;
     _anchors = [
       for (var i = 0; i < module.lessons.length; i++)
-        (kind: _AnchorKind.lesson, label: 'Leçon ${i + 1} — ${module.lessons[i].title}'),
+        (
+          kind: _AnchorKind.lesson,
+          label: 'Leçon ${i + 1} — ${module.lessons[i].title}',
+        ),
       if (module.revisionSheets.isNotEmpty)
         (kind: _AnchorKind.revision, label: 'Fiche de révision'),
       if (module.exercises.isNotEmpty)
-        (kind: _AnchorKind.exercises, label: 'Exercices (${module.exercises.length})'),
+        (
+          kind: _AnchorKind.exercises,
+          label: 'Exercices (${module.exercises.length})',
+        ),
     ];
     _keys = List.generate(_anchors.length, (_) => GlobalKey());
     _scroll.addListener(_trackActive);
@@ -792,7 +856,12 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
 
     final scroller = SingleChildScrollView(
       controller: _scroll,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -813,7 +882,11 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
             if (wide)
               SizedBox(
                 width: 264,
-                child: _ModuleToc(anchors: _anchors, active: _active, onTap: _scrollTo),
+                child: _ModuleToc(
+                  anchors: _anchors,
+                  active: _active,
+                  onTap: _scrollTo,
+                ),
               ),
             Expanded(child: scroller),
             SizedBox(width: wide ? 384 : 344, child: tutor),
@@ -825,7 +898,11 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
 }
 
 class _ModuleToc extends StatelessWidget {
-  const _ModuleToc({required this.anchors, required this.active, required this.onTap});
+  const _ModuleToc({
+    required this.anchors,
+    required this.active,
+    required this.onTap,
+  });
 
   final List<({_AnchorKind kind, String label})> anchors;
   final int active;
@@ -847,13 +924,22 @@ class _ModuleToc extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.sm, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.sm,
+        AppSpacing.xxl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(width: 14, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+              Container(
+                width: 14,
+                height: 1,
+                color: AppColors.gold.withValues(alpha: 0.6),
+              ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'DANS CE MODULE',
@@ -913,10 +999,15 @@ class _TocItemState extends State<_TocItem> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
           margin: const EdgeInsets.only(bottom: 2),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 8,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.small),
-            color: widget.active ? AppColors.gold.withValues(alpha: 0.10) : Colors.transparent,
+            color: widget.active
+                ? AppColors.gold.withValues(alpha: 0.10)
+                : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color: widget.active ? AppColors.gold : Colors.transparent,
@@ -940,8 +1031,12 @@ class _TocItemState extends State<_TocItem> {
                 child: Text(
                   widget.label,
                   style: textTheme.labelMedium?.copyWith(
-                    color: lit ? AppColors.textPrimary : AppColors.textSecondary,
-                    fontWeight: widget.active ? FontWeight.w700 : FontWeight.w500,
+                    color: lit
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontWeight: widget.active
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     height: 1.3,
                   ),
                 ),
@@ -955,7 +1050,11 @@ class _TocItemState extends State<_TocItem> {
 }
 
 class _ModuleArticle extends StatelessWidget {
-  const _ModuleArticle({required this.module, required this.anchors, required this.keys});
+  const _ModuleArticle({
+    required this.module,
+    required this.anchors,
+    required this.keys,
+  });
 
   final CourseModule module;
   final List<({_AnchorKind kind, String label})> anchors;
@@ -964,14 +1063,20 @@ class _ModuleArticle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final totalMinutes =
-        module.lessons.fold<int>(0, (sum, lesson) => sum + lesson.estimatedMinutes);
+    final totalMinutes = module.lessons.fold<int>(
+      0,
+      (sum, lesson) => sum + lesson.estimatedMinutes,
+    );
 
     final children = <Widget>[
       // Hero
       Row(
         children: [
-          Container(width: 16, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+          Container(
+            width: 16,
+            height: 1,
+            color: AppColors.gold.withValues(alpha: 0.6),
+          ),
           const SizedBox(width: AppSpacing.sm),
           Text(
             'MODULE ${module.order} · ${module.level.shortLabel}',
@@ -986,27 +1091,49 @@ class _ModuleArticle extends StatelessWidget {
       const SizedBox(height: AppSpacing.sm),
       Text(
         module.title,
-        style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display', height: 1.12),
+        style: textTheme.displaySmall?.copyWith(
+          fontFamily: 'Libre Caslon Display',
+          height: 1.12,
+        ),
       ),
       const SizedBox(height: AppSpacing.sm),
       Text(
         module.description,
-        style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+        style: textTheme.bodyLarge?.copyWith(
+          color: AppColors.textSecondary,
+          height: 1.5,
+        ),
       ),
       const SizedBox(height: AppSpacing.md),
       Wrap(
         spacing: AppSpacing.md,
         runSpacing: AppSpacing.xs,
         children: [
-          _MetaBit(icon: _moduleDomainIcon(module.domain), label: module.domain.label),
-          _MetaBit(icon: Icons.menu_book_rounded, label: '${module.lessons.length} leçons'),
-          _MetaBit(icon: Icons.edit_note_rounded, label: '${module.exercises.length} exercices'),
+          _MetaBit(
+            icon: _moduleDomainIcon(module.domain),
+            label: module.domain.label,
+          ),
+          _MetaBit(
+            icon: Icons.menu_book_rounded,
+            label: '${module.lessons.length} leçons',
+          ),
+          _MetaBit(
+            icon: Icons.edit_note_rounded,
+            label: '${module.exercises.length} exercices',
+          ),
           if (totalMinutes > 0)
-            _MetaBit(icon: Icons.schedule_rounded, label: '≈ $totalMinutes min de lecture'),
+            _MetaBit(
+              icon: Icons.schedule_rounded,
+              label: '≈ $totalMinutes min de lecture',
+            ),
         ],
       ),
       const SizedBox(height: AppSpacing.md),
-      Container(width: 54, height: 2, color: AppColors.gold.withValues(alpha: 0.7)),
+      Container(
+        width: 54,
+        height: 2,
+        color: AppColors.gold.withValues(alpha: 0.7),
+      ),
       const SizedBox(height: AppSpacing.xl),
     ];
 
@@ -1028,14 +1155,19 @@ class _ModuleArticle extends StatelessWidget {
         KeyedSubtree(
           key: keys[i],
           child: Padding(
-            padding: EdgeInsets.only(bottom: i == anchors.length - 1 ? 0 : AppSpacing.xl),
+            padding: EdgeInsets.only(
+              bottom: i == anchors.length - 1 ? 0 : AppSpacing.xl,
+            ),
             child: EntranceFadeSlide(index: i, child: block),
           ),
         ),
       );
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
   }
 }
 
@@ -1071,21 +1203,34 @@ class _LessonBlock extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Icon(Icons.schedule_rounded, size: 13, color: AppColors.textDisabled),
+            Icon(
+              Icons.schedule_rounded,
+              size: 13,
+              color: AppColors.textDisabled,
+            ),
             const SizedBox(width: 4),
             Text(
               '${lesson.estimatedMinutes} min',
-              style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+              ),
             ),
           ],
         ),
         const SizedBox(height: 6),
         Text(
           lesson.title,
-          style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display', height: 1.2),
+          style: textTheme.titleLarge?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+            height: 1.2,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Container(width: 32, height: 1, color: AppColors.gold.withValues(alpha: 0.35)),
+        Container(
+          width: 32,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.35),
+        ),
         const SizedBox(height: AppSpacing.md),
         if (lesson.videoUrl != null) ...[
           YoutubeEmbedView(videoUrl: lesson.videoUrl!),
@@ -1094,7 +1239,11 @@ class _LessonBlock extends StatelessWidget {
         for (final paragraph in lesson.content.split('\n\n'))
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(paragraph.trim(), textAlign: TextAlign.justify, style: reading),
+            child: Text(
+              paragraph.trim(),
+              textAlign: TextAlign.justify,
+              style: reading,
+            ),
           ),
       ],
     );
@@ -1137,12 +1286,18 @@ class _RevisionPanel extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.bookmark_rounded, size: 16, color: AppColors.goldLight),
+                    const Icon(
+                      Icons.bookmark_rounded,
+                      size: 16,
+                      color: AppColors.goldLight,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         sheet.title,
-                        style: textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display'),
+                        style: textTheme.titleMedium?.copyWith(
+                          fontFamily: 'Libre Caslon Display',
+                        ),
                       ),
                     ),
                   ],
@@ -1214,7 +1369,10 @@ class _ExercisesSection extends StatelessWidget {
             ),
             child: GlassContainer(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              child: _DesktopExerciseTile(order: i + 1, exercise: module.exercises[i]),
+              child: _DesktopExerciseTile(
+                order: i + 1,
+                exercise: module.exercises[i],
+              ),
             ),
           ),
       ],
@@ -1262,7 +1420,9 @@ class _DesktopExerciseTileState extends State<_DesktopExerciseTile> {
               ),
               child: Text(
                 _difficultyLabel(widget.exercise.difficulty),
-                style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -1279,13 +1439,18 @@ class _DesktopExerciseTileState extends State<_DesktopExerciseTile> {
         const SizedBox(height: AppSpacing.md),
         AnimatedCrossFade(
           duration: const Duration(milliseconds: 200),
-          crossFadeState: _showCorrection ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: _showCorrection
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           firstChild: Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
               onPressed: () => setState(() => _showCorrection = true),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 9,
+                ),
               ),
               icon: const Icon(Icons.lightbulb_outline_rounded, size: 15),
               label: const Text('Voir la correction'),
@@ -1298,7 +1463,10 @@ class _DesktopExerciseTileState extends State<_DesktopExerciseTile> {
               color: AppColors.legalBlueDark.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(AppRadius.small),
               border: Border(
-                left: BorderSide(color: AppColors.gold.withValues(alpha: 0.5), width: 2),
+                left: BorderSide(
+                  color: AppColors.gold.withValues(alpha: 0.5),
+                  width: 2,
+                ),
               ),
             ),
             child: Column(
@@ -1306,7 +1474,11 @@ class _DesktopExerciseTileState extends State<_DesktopExerciseTile> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.goldLight),
+                    const Icon(
+                      Icons.check_circle_rounded,
+                      size: 14,
+                      color: AppColors.goldLight,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Correction',
@@ -1350,7 +1522,9 @@ class _MetaBit extends StatelessWidget {
         const SizedBox(width: 5),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -1370,7 +1544,10 @@ class _TutorRail extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.nightBlueDeep.withValues(alpha: 0.35),
         border: Border(
-          left: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 1),
+          left: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.16),
+            width: 1,
+          ),
         ),
       ),
       child: _TutorTab(module: module),
@@ -1387,9 +1564,12 @@ class _ModuleAmbience extends StatefulWidget {
   State<_ModuleAmbience> createState() => _ModuleAmbienceState();
 }
 
-class _ModuleAmbienceState extends State<_ModuleAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 38))..repeat();
+class _ModuleAmbienceState extends State<_ModuleAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 38),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1401,7 +1581,8 @@ class _ModuleAmbienceState extends State<_ModuleAmbience> with SingleTickerProvi
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _ModuleAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _ModuleAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -1422,12 +1603,14 @@ class _ModuleAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.7 + (i % 3) * 0.6;
-      final opacity = 0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ModuleAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _ModuleAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }

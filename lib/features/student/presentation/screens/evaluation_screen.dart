@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/ai/groq_providers.dart';
+import '../../../../core/exam/exam_voice_unlock.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/glow_focus_field.dart';
@@ -12,15 +14,22 @@ import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
 import '../../../../models/student/student_level.dart';
 import '../../../../theme/app_theme.dart';
+import '../../data/datasources/ai_answer_grader.dart';
+import '../../domain/entities/evaluation_mode.dart';
 import '../controllers/evaluation_controller.dart';
 import '../controllers/student_controller.dart';
-import 'mock_exam_mode_select_screen.dart';
+import '../widgets/timed_qcm_evaluation_view.dart';
+import '../widgets/voice_evaluation_view.dart';
 
 /// Écran d'évaluation de fin de module : quiz interactif (QCM et cas
 /// pratiques), calcul de la note sur 20, déblocage du module suivant en cas
 /// de réussite, invitation à reprendre avec de nouvelles questions sinon.
 class EvaluationScreen extends StatelessWidget {
-  const EvaluationScreen({super.key, required this.moduleId, this.controllerOverride});
+  const EvaluationScreen({
+    super.key,
+    required this.moduleId,
+    this.controllerOverride,
+  });
 
   final String moduleId;
 
@@ -40,6 +49,7 @@ class EvaluationScreen extends StatelessWidget {
             generateUseCase: studentController.generateEvaluationUseCase,
             validateUseCase: studentController.validateModuleUseCase,
             repository: studentController.repository,
+            answerGrader: AiAnswerGrader(dataSource: buildGroqDataSource()),
           ),
       child: const _EvaluationView(),
     );
@@ -52,7 +62,9 @@ class _EvaluationView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<EvaluationController>();
-    final module = context.read<StudentController>().repository.findModule(controller.moduleId);
+    final module = context.read<StudentController>().repository.findModule(
+      controller.moduleId,
+    );
     return _DesktopEvaluationView(controller: controller, module: module);
   }
 }
@@ -66,20 +78,24 @@ class _EvaluationView extends StatelessWidget {
   if (q.type == QuestionType.qcm) {
     final idx = int.tryParse(q.studentAnswer ?? '');
     final correct = idx != null && idx == q.correctOptionIndex;
-    return (awarded: correct ? q.points : 0, verdict: correct ? _Verdict.correct : _Verdict.wrong);
+    return (
+      awarded: correct ? q.points : 0,
+      verdict: correct ? _Verdict.correct : _Verdict.wrong,
+    );
   }
   final answer = (q.studentAnswer ?? '').trim().toLowerCase();
   if (answer.isEmpty || q.expectedAnswerElements.isEmpty) {
     return (awarded: 0, verdict: _Verdict.wrong);
   }
-  final matched =
-      q.expectedAnswerElements.where((e) => answer.contains(e.toLowerCase())).length;
+  final matched = q.expectedAnswerElements
+      .where((e) => answer.contains(e.toLowerCase()))
+      .length;
   final awarded = q.points * (matched / q.expectedAnswerElements.length);
   final verdict = matched == q.expectedAnswerElements.length
       ? _Verdict.correct
       : matched == 0
-          ? _Verdict.wrong
-          : _Verdict.partial;
+      ? _Verdict.wrong
+      : _Verdict.partial;
   return (awarded: awarded, verdict: verdict);
 }
 
@@ -87,26 +103,30 @@ enum _Verdict { correct, partial, wrong }
 
 extension _VerdictStyle on _Verdict {
   Color get color => switch (this) {
-        _Verdict.correct => AppColors.success,
-        _Verdict.partial => AppColors.warning,
-        _Verdict.wrong => AppColors.error,
-      };
+    _Verdict.correct => AppColors.success,
+    _Verdict.partial => AppColors.warning,
+    _Verdict.wrong => AppColors.error,
+  };
   IconData get icon => switch (this) {
-        _Verdict.correct => Icons.check_circle_rounded,
-        _Verdict.partial => Icons.adjust_rounded,
-        _Verdict.wrong => Icons.cancel_rounded,
-      };
+    _Verdict.correct => Icons.check_circle_rounded,
+    _Verdict.partial => Icons.adjust_rounded,
+    _Verdict.wrong => Icons.cancel_rounded,
+  };
   String get label => switch (this) {
-        _Verdict.correct => 'Juste',
-        _Verdict.partial => 'Partiel',
-        _Verdict.wrong => 'À revoir',
-      };
+    _Verdict.correct => 'Juste',
+    _Verdict.partial => 'Partiel',
+    _Verdict.wrong => 'À revoir',
+  };
 }
 
-String _typeLabel(QuestionType t) => t == QuestionType.qcm ? 'QCM' : 'Cas pratique';
+String _typeLabel(QuestionType t) =>
+    t == QuestionType.qcm ? 'QCM' : 'Cas pratique';
 
 class _DesktopEvaluationView extends StatelessWidget {
-  const _DesktopEvaluationView({required this.controller, required this.module});
+  const _DesktopEvaluationView({
+    required this.controller,
+    required this.module,
+  });
 
   final EvaluationController controller;
   final CourseModule? module;
@@ -121,8 +141,16 @@ class _DesktopEvaluationView extends StatelessWidget {
         message: controller.errorMessage ?? 'Une erreur est survenue.',
         onRetry: controller.retryWithNewQuestions,
       );
+    } else if (controller.status == EvaluationLoadStatus.grading) {
+      body = const _DesktopGrading();
     } else if (controller.isSubmitted) {
       body = _DesktopResult(controller: controller, module: module);
+    } else if (!controller.isStarted) {
+      body = _EvaluationBriefing(controller: controller, module: module);
+    } else if (controller.mode == EvaluationMode.timedQcm) {
+      body = TimedQcmEvaluationView(controller: controller);
+    } else if (controller.mode == EvaluationMode.voice) {
+      body = VoiceEvaluationView(controller: controller);
     } else {
       body = _DesktopEvalForm(controller: controller);
     }
@@ -133,11 +161,21 @@ class _DesktopEvaluationView extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _EvalAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _EvalAmbience()),
+              ),
               Column(
                 children: [
                   _DesktopEvalHeader(module: module, controller: controller),
-                  Expanded(child: body),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        if (controller.isStarted && !controller.isSubmitted)
+                          _ProctoringStrip(controller: controller),
+                        Expanded(child: body),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -164,7 +202,10 @@ class _DesktopEvalHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -182,7 +223,11 @@ class _DesktopEvalHeader extends StatelessWidget {
           ),
           if (!compact) ...[
             const SizedBox(width: AppSpacing.xs),
-            const Icon(Icons.fact_check_rounded, size: 18, color: AppColors.gold),
+            const Icon(
+              Icons.fact_check_rounded,
+              size: 18,
+              color: AppColors.gold,
+            ),
           ],
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -195,7 +240,9 @@ class _DesktopEvalHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: compact
-                      ? textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display')
+                      ? textTheme.titleMedium?.copyWith(
+                          fontFamily: 'Libre Caslon Display',
+                        )
                       : textTheme.headlineSmall,
                 ),
                 if (module != null)
@@ -203,7 +250,9 @@ class _DesktopEvalHeader extends StatelessWidget {
                     module!.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
               ],
             ),
@@ -211,15 +260,48 @@ class _DesktopEvalHeader extends StatelessWidget {
           if (attempt != null) ...[
             const SizedBox(width: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 5),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 5,
+              ),
               decoration: BoxDecoration(
                 color: AppColors.gold.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.28),
+                  width: 0.7,
+                ),
               ),
               child: Text(
                 compact ? 'N° $attempt' : 'Tentative n° $attempt',
-                style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700),
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.goldLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+          if (controller.mode != null && !compact) ...[
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.cobalt.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: AppColors.cobaltLight.withValues(alpha: 0.35),
+                  width: 0.7,
+                ),
+              ),
+              child: Text(
+                controller.mode!.shortLabel,
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.cobaltLight,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -250,7 +332,9 @@ class _DesktopLoading extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             'Préparation de votre épreuve',
-            style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+            style: textTheme.headlineSmall?.copyWith(
+              fontFamily: 'Libre Caslon Display',
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           ConstrainedBox(
@@ -260,7 +344,10 @@ class _DesktopLoading extends StatelessWidget {
                   ? 'L\'IA compose un jeu de questions inédit.'
                   : 'L\'IA compose un jeu de questions inédit à partir du module « ${module!.title} ».',
               textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.5),
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -274,9 +361,12 @@ class _PulsingMark extends StatefulWidget {
   State<_PulsingMark> createState() => _PulsingMarkState();
 }
 
-class _PulsingMarkState extends State<_PulsingMark> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat(reverse: true);
+class _PulsingMarkState extends State<_PulsingMark>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1600),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -304,7 +394,10 @@ class _PulsingMarkState extends State<_PulsingMark> with SingleTickerProviderSta
               ),
             ],
           ),
-          child: Opacity(opacity: 0.7 + 0.3 * t, child: const JurisIAMark(size: 52)),
+          child: Opacity(
+            opacity: 0.7 + 0.3 * t,
+            child: const JurisIAMark(size: 52),
+          ),
         );
       },
     );
@@ -330,12 +423,19 @@ class _DesktopError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 36,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
@@ -343,11 +443,230 @@ class _DesktopError extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.nightBlueDeep,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: 12,
+                  ),
                 ),
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: const Text('Réessayer'),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DesktopGrading extends StatelessWidget {
+  const _DesktopGrading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: AppColors.gold),
+          SizedBox(height: AppSpacing.lg),
+          Text('Correction analytique en cours…'),
+        ],
+      ),
+    );
+  }
+}
+
+class _EvaluationBriefing extends StatefulWidget {
+  const _EvaluationBriefing({required this.controller, required this.module});
+
+  final EvaluationController controller;
+  final CourseModule? module;
+
+  @override
+  State<_EvaluationBriefing> createState() => _EvaluationBriefingState();
+}
+
+class _EvaluationBriefingState extends State<_EvaluationBriefing> {
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  String _description(EvaluationMode mode) => switch (mode) {
+    EvaluationMode.timedQcm =>
+      '40 diapositives QCM · 5 secondes par question · passage automatique',
+    EvaluationMode.written =>
+      '18 questions rédigées · correction analytique IA · note sur 20',
+    EvaluationMode.voice =>
+      '14 questions orales · synthèse et reconnaissance vocale · note sur 20',
+  };
+
+  void _startEvaluation() {
+    if (widget.controller.mode == EvaluationMode.voice) {
+      // Ces appels doivent rester dans la pile du tap pour que Chromium
+      // autorise speechSynthesis et getUserMedia après la génération IA.
+      primeWebSpeechSynthesis();
+      primeWebMicrophonePermission();
+    }
+    widget.controller.start();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = widget.controller.mode!;
+    final textTheme = Theme.of(context).textTheme;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: GlassContainer(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            borderColor: AppColors.gold.withValues(alpha: 0.42),
+            child: Column(
+              children: [
+                const Icon(
+                  Icons.shield_moon_rounded,
+                  color: AppColors.goldLight,
+                  size: 44,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Votre format a été tiré au sort par JurisIA',
+                  textAlign: TextAlign.center,
+                  style: textTheme.headlineSmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  mode.label,
+                  textAlign: TextAlign.center,
+                  style: textTheme.displaySmall?.copyWith(
+                    color: AppColors.goldLight,
+                    fontFamily: 'Libre Caslon Display',
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  _description(mode),
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                _BriefingRow(
+                  icon: Icons.videocam_rounded,
+                  text: 'Caméra frontale / webcam active pendant la session',
+                ),
+                _BriefingRow(
+                  icon: Icons.mic_rounded,
+                  text:
+                      'Microphone surveillé par fenêtres acoustiques calibrées',
+                ),
+                _BriefingRow(
+                  icon: Icons.fullscreen_rounded,
+                  text:
+                      'Plein écran obligatoire · une récidive annule la tentative',
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                FilledButton.icon(
+                  onPressed: _startEvaluation,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.gold,
+                    foregroundColor: AppColors.nightBlueDeep,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xl,
+                      vertical: 15,
+                    ),
+                  ),
+                  icon: const Icon(Icons.lock_open_rounded),
+                  label: const Text('Activer le proctoring et commencer'),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Module : ${widget.module?.title ?? 'Évaluation JurisIA'}',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BriefingRow extends StatelessWidget {
+  const _BriefingRow({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.cobaltLight, size: 19),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProctoringStrip extends StatelessWidget {
+  const _ProctoringStrip({required this.controller});
+  final EvaluationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final warning = controller.proctoringWarning;
+    return Material(
+      color: warning == null
+          ? AppColors.success.withValues(alpha: 0.08)
+          : AppColors.warning.withValues(alpha: 0.12),
+      child: InkWell(
+        onTap: warning == null ? null : controller.dismissProctoringWarning,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                warning == null
+                    ? Icons.verified_user_rounded
+                    : Icons.warning_amber_rounded,
+                size: 17,
+                color: warning == null ? AppColors.success : AppColors.warning,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  warning ??
+                      'Proctoring actif · caméra ${controller.cameraMonitoringActive ? 'active' : 'en attente'} · micro ${controller.microphoneMonitoringActive ? 'actif' : 'en attente'}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: warning == null
+                        ? AppColors.success
+                        : AppColors.warning,
+                  ),
+                ),
+              ),
+              if (warning != null) const Icon(Icons.close_rounded, size: 16),
             ],
           ),
         ),
@@ -380,7 +699,10 @@ class _DesktopEvalFormState extends State<_DesktopEvalForm> {
   @override
   void initState() {
     super.initState();
-    _keys = List.generate(widget.controller.evaluation!.questions.length, (_) => GlobalKey());
+    _keys = List.generate(
+      widget.controller.evaluation!.questions.length,
+      (_) => GlobalKey(),
+    );
   }
 
   @override
@@ -409,7 +731,8 @@ class _DesktopEvalFormState extends State<_DesktopEvalForm> {
     final evaluation = controller.evaluation!;
     final questions = evaluation.questions;
     final answered = [
-      for (final q in questions) (controller.answerFor(q.id) ?? '').trim().isNotEmpty,
+      for (final q in questions)
+        (controller.answerFor(q.id) ?? '').trim().isNotEmpty,
     ];
     final answeredCount = answered.where((e) => e).length;
     final totalPoints = questions.fold<double>(0, (s, q) => s + q.points);
@@ -445,22 +768,25 @@ class _DesktopEvalFormState extends State<_DesktopEvalForm> {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Composez votre copie',
-                style: Theme.of(context)
-                    .textTheme
-                    .displaySmall
-                    ?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Répondez aux ${questions.length} questions. Une moyenne de 10/20 valide le '
                 'module et débloque le suivant.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Container(width: 54, height: 2, color: AppColors.gold.withValues(alpha: 0.7)),
+              Container(
+                width: 54,
+                height: 2,
+                color: AppColors.gold.withValues(alpha: 0.7),
+              ),
               const SizedBox(height: AppSpacing.xl),
               for (var i = 0; i < questions.length; i++)
                 KeyedSubtree(
@@ -475,7 +801,8 @@ class _DesktopEvalFormState extends State<_DesktopEvalForm> {
                         index: i + 1,
                         question: questions[i],
                         controller: controller,
-                        textController: questions[i].type == QuestionType.casPratique
+                        textController:
+                            questions[i].type == QuestionType.casPratique
                             ? _controllerFor(questions[i].id)
                             : null,
                       ),
@@ -540,10 +867,18 @@ class _MobileEvalBar extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          top: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          top: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
       child: SafeArea(
         top: false,
         child: Column(
@@ -554,13 +889,17 @@ class _MobileEvalBar extends StatelessWidget {
               children: [
                 Text(
                   '$answeredCount / $total répondue${answeredCount > 1 ? 's' : ''}',
-                  style: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.labelMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const Spacer(),
                 if (!canSubmit)
                   Text(
                     'Répondez à tout pour valider',
-                    style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.textDisabled,
+                    ),
                   ),
               ],
             ),
@@ -574,7 +913,9 @@ class _MobileEvalBar extends StatelessWidget {
                     widthFactor: fraction <= 0 ? 0.001 : fraction,
                     child: Container(
                       height: 5,
-                      decoration: const BoxDecoration(gradient: AppGradients.goldMetallic),
+                      decoration: const BoxDecoration(
+                        gradient: AppGradients.goldMetallic,
+                      ),
                     ),
                   ),
                 ],
@@ -589,7 +930,9 @@ class _MobileEvalBar extends StatelessWidget {
                 disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.18),
                 disabledForegroundColor: AppColors.textDisabled,
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               icon: const Icon(Icons.done_all_rounded, size: 17),
               label: const Text('Valider mes réponses'),
@@ -628,7 +971,12 @@ class _QuestionNavigator extends StatelessWidget {
     final fraction = total == 0 ? 0.0 : answeredCount / total;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.sm, AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.sm,
+        AppSpacing.xl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -639,18 +987,26 @@ class _QuestionNavigator extends StatelessWidget {
             runSpacing: AppSpacing.sm,
             children: [
               for (var i = 0; i < total; i++)
-                _NavPill(number: i + 1, answered: answered[i], onTap: () => onJump(i)),
+                _NavPill(
+                  number: i + 1,
+                  answered: answered[i],
+                  onTap: () => onJump(i),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
           RichText(
             text: TextSpan(
-              style: textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display'),
+              style: textTheme.titleMedium?.copyWith(
+                fontFamily: 'Libre Caslon Display',
+              ),
               children: [
                 TextSpan(text: '$answeredCount'),
                 TextSpan(
                   text: ' / $total répondu${answeredCount > 1 ? 'es' : 'e'}',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -665,18 +1021,24 @@ class _QuestionNavigator extends StatelessWidget {
                   widthFactor: fraction <= 0 ? 0.001 : fraction,
                   child: Container(
                     height: 6,
-                    decoration: const BoxDecoration(gradient: AppGradients.goldMetallic),
+                    decoration: const BoxDecoration(
+                      gradient: AppGradients.goldMetallic,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          _NavRow(icon: Icons.flag_rounded, text: 'Moyenne ≥ 10/20 pour valider'),
+          _NavRow(
+            icon: Icons.flag_rounded,
+            text: 'Moyenne ≥ 10/20 pour valider',
+          ),
           const SizedBox(height: AppSpacing.sm),
           _NavRow(
             icon: Icons.star_rounded,
-            text: '${totalPoints.toStringAsFixed(totalPoints % 1 == 0 ? 0 : 1)} points au total',
+            text:
+                '${totalPoints.toStringAsFixed(totalPoints % 1 == 0 ? 0 : 1)} points au total',
           ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
@@ -689,7 +1051,9 @@ class _QuestionNavigator extends StatelessWidget {
                 disabledBackgroundColor: AppColors.gold.withValues(alpha: 0.18),
                 disabledForegroundColor: AppColors.textDisabled,
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                textStyle: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               icon: const Icon(Icons.done_all_rounded, size: 17),
               label: const Text('Valider mes réponses'),
@@ -699,7 +1063,9 @@ class _QuestionNavigator extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Répondez à toutes les questions pour valider.',
-              style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+              ),
             ),
           ],
         ],
@@ -709,7 +1075,11 @@ class _QuestionNavigator extends StatelessWidget {
 }
 
 class _NavPill extends StatelessWidget {
-  const _NavPill({required this.number, required this.answered, required this.onTap});
+  const _NavPill({
+    required this.number,
+    required this.answered,
+    required this.onTap,
+  });
 
   final int number;
   final bool answered;
@@ -731,18 +1101,24 @@ class _NavPill extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: answered ? AppGradients.goldMetallic : null,
-              color: answered ? null : AppColors.legalBlueDark.withValues(alpha: 0.5),
+              color: answered
+                  ? null
+                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
               border: Border.all(
-                color: answered ? Colors.transparent : AppColors.gold.withValues(alpha: 0.4),
+                color: answered
+                    ? Colors.transparent
+                    : AppColors.gold.withValues(alpha: 0.4),
                 width: 0.9,
               ),
             ),
             child: Text(
               '$number',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: answered ? AppColors.nightBlueDeep : AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: answered
+                    ? AppColors.nightBlueDeep
+                    : AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
@@ -767,10 +1143,10 @@ class _NavRow extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
           ),
         ),
       ],
@@ -852,13 +1228,18 @@ class _DesktopQuestionCard extends StatelessWidget {
               child: TextField(
                 controller: textController,
                 maxLines: 5,
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.5),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  height: 1.5,
+                ),
                 decoration: const InputDecoration(
-                  hintText: 'Rédigez votre réponse — structurez, citez, illustrez…',
+                  hintText:
+                      'Rédigez votre réponse — structurez, citez, illustrez…',
                   alignLabelWithHint: true,
                   filled: false,
                 ),
-                onChanged: (value) => controller.answerCasPratique(question.id, value),
+                onChanged: (value) =>
+                    controller.answerCasPratique(question.id, value),
               ),
             ),
         ],
@@ -900,12 +1281,17 @@ class _DesktopOptionState extends State<_DesktopOption> {
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 3,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.medium),
             color: selected
                 ? AppColors.gold.withValues(alpha: 0.13)
-                : AppColors.legalBlueDark.withValues(alpha: _hovered ? 0.6 : 0.45),
+                : AppColors.legalBlueDark.withValues(
+                    alpha: _hovered ? 0.6 : 0.45,
+                  ),
             border: Border.all(
               color: selected
                   ? AppColors.gold.withValues(alpha: 0.6)
@@ -924,14 +1310,18 @@ class _DesktopOptionState extends State<_DesktopOption> {
                   gradient: selected ? AppGradients.goldMetallic : null,
                   color: selected ? null : Colors.transparent,
                   border: Border.all(
-                    color: selected ? Colors.transparent : AppColors.textSecondary.withValues(alpha: 0.5),
+                    color: selected
+                        ? Colors.transparent
+                        : AppColors.textSecondary.withValues(alpha: 0.5),
                     width: 1,
                   ),
                 ),
                 child: Text(
                   widget.letter,
                   style: textTheme.labelSmall?.copyWith(
-                    color: selected ? AppColors.nightBlueDeep : AppColors.textSecondary,
+                    color: selected
+                        ? AppColors.nightBlueDeep
+                        : AppColors.textSecondary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -941,13 +1331,19 @@ class _DesktopOptionState extends State<_DesktopOption> {
                 child: Text(
                   widget.label,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                    color: selected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
                     height: 1.4,
                   ),
                 ),
               ),
               if (selected)
-                const Icon(Icons.check_rounded, size: 16, color: AppColors.goldLight),
+                const Icon(
+                  Icons.check_rounded,
+                  size: 16,
+                  color: AppColors.goldLight,
+                ),
             ],
           ),
         ),
@@ -972,7 +1368,9 @@ class _DesktopResult extends StatelessWidget {
     final result = controller.result!;
     final evaluation = controller.evaluation!;
     final passed = result.passed;
-    final hPad = MediaQuery.sizeOf(context).width < 600 ? AppSpacing.lg : AppSpacing.xl;
+    final hPad = MediaQuery.sizeOf(context).width < 600
+        ? AppSpacing.lg
+        : AppSpacing.xl;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(hPad, AppSpacing.xxl, hPad, AppSpacing.xxl),
@@ -981,11 +1379,17 @@ class _DesktopResult extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 760),
           child: Column(
             children: [
-              _ScoreRing(score: result.score, max: evaluation.maxScore, passed: passed),
+              _ScoreRing(
+                score: result.score,
+                max: evaluation.maxScore,
+                passed: passed,
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 passed ? 'Module validé' : 'Pas encore validé',
-                style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: textTheme.displaySmall?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               ConstrainedBox(
@@ -993,41 +1397,51 @@ class _DesktopResult extends StatelessWidget {
                 child: Text(
                   passed
                       ? (result.unlockedNextModuleId != null
-                          ? 'Bravo. Le module suivant vient d\'être débloqué.'
-                          : 'Bravo. Vous avez validé le dernier module de ce niveau.')
+                            ? 'Bravo. Le module suivant vient d\'être débloqué.'
+                            : 'Bravo. Vous avez validé le dernier module de ce niveau.')
                       : 'La moyenne requise est de 10/20. Revoyez la copie ci-dessous, puis reprenez avec un nouveau jeu de questions.',
                   textAlign: TextAlign.center,
-                  style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
                 ),
               ),
-              if (result.levelCompleted && result.unlockedNextLevel != null) ...[
+              if (result.levelCompleted &&
+                  result.unlockedNextLevel != null) ...[
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0x24C9A227), Color(0x0FC9A227)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0x24C9A227), Color(0x0FC9A227)],
+                    ),
                     borderRadius: BorderRadius.circular(AppRadius.medium),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.9),
+                    border: Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.45),
+                      width: 0.9,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.emoji_events_rounded, color: AppColors.goldLight, size: 20),
+                      const Icon(
+                        Icons.emoji_events_rounded,
+                        color: AppColors.goldLight,
+                        size: 20,
+                      ),
                       const SizedBox(width: AppSpacing.sm),
                       Flexible(
                         child: Text(
                           'Niveau entièrement validé — ${result.unlockedNextLevel!.fullLabel} est débloqué !',
-                          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ] else if (result.levelCompleted &&
-                  module != null &&
-                  AcademicLevel.values.indexOf(module!.level) < AcademicLevel.values.length - 1) ...[
-                const SizedBox(height: AppSpacing.lg),
-                _MockExamPendingBanner(level: module!.level),
               ],
               const SizedBox(height: AppSpacing.xl),
               Wrap(
@@ -1041,8 +1455,13 @@ class _DesktopResult extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.gold,
                         foregroundColor: AppColors.nightBlueDeep,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 12),
-                        textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: 12,
+                        ),
+                        textStyle: textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       icon: const Icon(Icons.refresh_rounded, size: 16),
                       label: const Text('Nouvelles questions'),
@@ -1053,8 +1472,13 @@ class _DesktopResult extends StatelessWidget {
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.gold,
                             foregroundColor: AppColors.nightBlueDeep,
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 12),
-                            textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: 12,
+                            ),
+                            textStyle: textTheme.labelLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                           icon: const Icon(Icons.arrow_back_rounded, size: 16),
                           label: const Text('Retour au module'),
@@ -1062,7 +1486,10 @@ class _DesktopResult extends StatelessWidget {
                       : OutlinedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: 12,
+                            ),
                           ),
                           child: const Text('Retour au module'),
                         ),
@@ -1077,88 +1504,29 @@ class _DesktopResult extends StatelessWidget {
               for (var i = 0; i < evaluation.questions.length; i++)
                 Padding(
                   padding: EdgeInsets.only(
-                    bottom: i == evaluation.questions.length - 1 ? 0 : AppSpacing.md,
+                    bottom: i == evaluation.questions.length - 1
+                        ? 0
+                        : AppSpacing.md,
                   ),
-                  child: _ReviewCard(index: i + 1, question: evaluation.questions[i]),
+                  child: _ReviewCard(
+                    index: i + 1,
+                    question: evaluation.questions[i],
+                  ),
                 ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Bannière affichée quand tous les modules d'un niveau sont validés mais
-/// que le niveau supérieur reste verrouillé : il ne manque plus que la
-/// réussite de l'examen blanc de ce niveau (condition, en plus des modules,
-/// désormais requise pour débloquer le niveau suivant).
-class _MockExamPendingBanner extends StatelessWidget {
-  const _MockExamPendingBanner({required this.level});
-
-  final AcademicLevel level;
-
-  Future<void> _openMockExam(BuildContext context) async {
-    final studentController = context.read<StudentController>();
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider<StudentController>.value(
-          value: studentController,
-          child: MockExamScreen(level: level),
-        ),
-      ),
-    );
-    studentController.refresh();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0x24C9A227), Color(0x0FC9A227)]),
-        borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.9),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.fact_check_rounded, color: AppColors.goldLight, size: 20),
-              const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  'Modules terminés ! Réussissez l\'examen blanc de ${level.shortLabel} pour '
-                  'débloquer le niveau supérieur.',
-                  style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton.icon(
-            onPressed: () => _openMockExam(context),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.gold,
-              foregroundColor: AppColors.nightBlueDeep,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 11),
-              textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            icon: const Icon(Icons.workspace_premium_rounded, size: 17),
-            label: const Text('Passer l\'examen blanc'),
-          ),
-        ],
       ),
     );
   }
 }
 
 class _ScoreRing extends StatelessWidget {
-  const _ScoreRing({required this.score, required this.max, required this.passed});
+  const _ScoreRing({
+    required this.score,
+    required this.max,
+    required this.passed,
+  });
 
   final double score;
   final double max;
@@ -1187,13 +1555,17 @@ class _ScoreRing extends StatelessWidget {
                     text: TextSpan(
                       style: textTheme.displaySmall?.copyWith(
                         fontFamily: 'Libre Caslon Display',
-                        color: passed ? AppColors.goldLight : AppColors.textPrimary,
+                        color: passed
+                            ? AppColors.goldLight
+                            : AppColors.textPrimary,
                       ),
                       children: [
                         TextSpan(text: score.toStringAsFixed(1)),
                         TextSpan(
                           text: ' /${max.toStringAsFixed(0)}',
-                          style: textTheme.titleMedium?.copyWith(color: AppColors.textSecondary),
+                          style: textTheme.titleMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1242,8 +1614,14 @@ class _ScoreRingPainter extends CustomPainter {
 
     // Repère du seuil de réussite (10/20 = 0.5).
     final thresholdAngle = start + 2 * math.pi * 0.5;
-    final tickOuter = center + Offset(math.cos(thresholdAngle), math.sin(thresholdAngle)) * (radius + 7);
-    final tickInner = center + Offset(math.cos(thresholdAngle), math.sin(thresholdAngle)) * (radius - 7);
+    final tickOuter =
+        center +
+        Offset(math.cos(thresholdAngle), math.sin(thresholdAngle)) *
+            (radius + 7);
+    final tickInner =
+        center +
+        Offset(math.cos(thresholdAngle), math.sin(thresholdAngle)) *
+            (radius - 7);
     canvas.drawLine(
       tickInner,
       tickOuter,
@@ -1263,16 +1641,21 @@ class _ScoreRingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10
         ..strokeCap = StrokeCap.round
-        ..shader = (passed
-                ? const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.goldLight, AppColors.gold, AppColors.goldDark],
-                  )
-                : const LinearGradient(
-                    colors: [AppColors.warning, Color(0xFFB9863A)],
-                  ))
-            .createShader(rect),
+        ..shader =
+            (passed
+                    ? const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.goldLight,
+                          AppColors.gold,
+                          AppColors.goldDark,
+                        ],
+                      )
+                    : const LinearGradient(
+                        colors: [AppColors.warning, Color(0xFFB9863A)],
+                      ))
+                .createShader(rect),
     );
   }
 
@@ -1318,7 +1701,10 @@ class _ReviewCard extends StatelessWidget {
                   '${verdict.label} · ${grade.awarded.toStringAsFixed(grade.awarded % 1 == 0 ? 0 : 1)}/${question.points.toStringAsFixed(question.points % 1 == 0 ? 0 : 1)}',
                   textAlign: TextAlign.right,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: verdict.color, fontWeight: FontWeight.w700),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: verdict.color,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -1326,7 +1712,10 @@ class _ReviewCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             question.statement,
-            style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.4),
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textPrimary,
+              height: 1.4,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           if (question.type == QuestionType.qcm)
@@ -1342,7 +1731,10 @@ class _ReviewCard extends StatelessWidget {
                 color: AppColors.legalBlueDark.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(AppRadius.small),
                 border: Border(
-                  left: BorderSide(color: AppColors.gold.withValues(alpha: 0.5), width: 2),
+                  left: BorderSide(
+                    color: AppColors.gold.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
                 ),
               ),
               child: Column(
@@ -1359,7 +1751,10 @@ class _ReviewCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     question.explanation,
-                    style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -1402,7 +1797,10 @@ class _QcmReview extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 6),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppRadius.small),
                   color: (isCorrect || isChosen)
@@ -1438,7 +1836,9 @@ class _QcmReview extends StatelessWidget {
                     if (isChosen && !isCorrect)
                       Text(
                         'votre choix',
-                        style: textTheme.labelSmall?.copyWith(color: AppColors.error),
+                        style: textTheme.labelSmall?.copyWith(
+                          color: AppColors.error,
+                        ),
                       ),
                     if (icon != null) ...[
                       const SizedBox(width: 6),
@@ -1480,7 +1880,9 @@ class _CasReview extends StatelessWidget {
         Text(
           answer.isEmpty ? '— (aucune réponse)' : answer,
           style: textTheme.bodySmall?.copyWith(
-            color: answer.isEmpty ? AppColors.textDisabled : AppColors.textPrimary,
+            color: answer.isEmpty
+                ? AppColors.textDisabled
+                : AppColors.textPrimary,
             height: 1.5,
             fontStyle: answer.isEmpty ? FontStyle.italic : FontStyle.normal,
           ),
@@ -1518,7 +1920,10 @@ class _CasReview extends StatelessWidget {
                   Expanded(
                     child: Text(
                       element,
-                      style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -1550,7 +1955,9 @@ class _MiniTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
       ),
     );
   }
@@ -1566,16 +1973,20 @@ class _Eyebrow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 16, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+        Container(
+          width: 16,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.goldLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.goldLight,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -1592,9 +2003,12 @@ class _EvalAmbience extends StatefulWidget {
   State<_EvalAmbience> createState() => _EvalAmbienceState();
 }
 
-class _EvalAmbienceState extends State<_EvalAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 38))..repeat();
+class _EvalAmbienceState extends State<_EvalAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 38),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1606,7 +2020,8 @@ class _EvalAmbienceState extends State<_EvalAmbience> with SingleTickerProviderS
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _EvalAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _EvalAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -1627,12 +2042,14 @@ class _EvalAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.7 + (i % 3) * 0.6;
-      final opacity = 0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _EvalAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _EvalAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }

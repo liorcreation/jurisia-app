@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../features/student/domain/entities/evaluation_mode.dart';
+
 /// Type de question au sein d'une évaluation de fin de module.
 enum QuestionType { qcm, casPratique }
 
@@ -134,6 +136,7 @@ class ModuleEvaluation extends Equatable {
     required this.attemptNumber,
     required this.questions,
     required this.generatedAt,
+    this.mode = EvaluationMode.written,
     this.maxScore = 20,
     this.passingScore = 10,
     this.score,
@@ -148,6 +151,7 @@ class ModuleEvaluation extends Equatable {
 
   final List<EvaluationQuestion> questions;
   final DateTime generatedAt;
+  final EvaluationMode mode;
   final double maxScore;
   final double passingScore;
 
@@ -166,6 +170,7 @@ class ModuleEvaluation extends Equatable {
     int? attemptNumber,
     List<EvaluationQuestion>? questions,
     DateTime? generatedAt,
+    EvaluationMode? mode,
     double? maxScore,
     double? passingScore,
     double? score,
@@ -177,6 +182,7 @@ class ModuleEvaluation extends Equatable {
       attemptNumber: attemptNumber ?? this.attemptNumber,
       questions: questions ?? this.questions,
       generatedAt: generatedAt ?? this.generatedAt,
+      mode: mode ?? this.mode,
       maxScore: maxScore ?? this.maxScore,
       passingScore: passingScore ?? this.passingScore,
       score: score ?? this.score,
@@ -191,6 +197,7 @@ class ModuleEvaluation extends Equatable {
       'attemptNumber': attemptNumber,
       'questions': questions.map((q) => q.toJson()).toList(),
       'generatedAt': generatedAt.toIso8601String(),
+      'mode': mode.name,
       'maxScore': maxScore,
       'passingScore': passingScore,
       'score': score,
@@ -207,6 +214,10 @@ class ModuleEvaluation extends Equatable {
           .map((q) => EvaluationQuestion.fromJson(q as Map<String, dynamic>))
           .toList(),
       generatedAt: DateTime.parse(json['generatedAt'] as String),
+      mode: EvaluationMode.values.firstWhere(
+        (value) => value.name == json['mode'],
+        orElse: () => EvaluationMode.written,
+      ),
       maxScore: (json['maxScore'] as num?)?.toDouble() ?? 20,
       passingScore: (json['passingScore'] as num?)?.toDouble() ?? 10,
       score: (json['score'] as num?)?.toDouble(),
@@ -219,8 +230,9 @@ class ModuleEvaluation extends Equatable {
         id,
         moduleId,
         attemptNumber,
-        questions,
-        generatedAt,
+    questions,
+    generatedAt,
+    mode,
         maxScore,
         passingScore,
         score,

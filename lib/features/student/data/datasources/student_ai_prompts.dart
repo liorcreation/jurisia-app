@@ -1,4 +1,5 @@
 import '../../../../models/student/course_module.dart';
+import '../../domain/entities/evaluation_mode.dart';
 
 /// Prompts système du service IA de l'Espace étudiant : un tuteur
 /// académique dédié au module en cours, utilisé à la fois pour le chat
@@ -30,49 +31,42 @@ Reste concis et clair : privilégie des réponses de quelques paragraphes plutô
   /// System prompt du générateur d'évaluations de fin de module. Exige une
   /// sortie strictement JSON, sans texte ni balisage additionnel, afin
   /// d'être directement exploitable par l'application.
-  static String evaluationGeneratorSystemPrompt(CourseModule module, int questionCount) {
+  static String evaluationGeneratorSystemPrompt(
+    CourseModule module,
+    int questionCount,
+    EvaluationMode mode,
+  ) {
     final lessonsSummary =
         module.lessons.map((lesson) => '- ${lesson.title} : ${lesson.content}').join('\n');
+
+    final formatRules = switch (mode) {
+      EvaluationMode.timedQcm => '''
+Génère exclusivement des QCM à 4 options. Chaque question doit être concise, directement lisible sur une diapositive et posséder une seule bonne réponse.
+''',
+      EvaluationMode.written => '''
+Génère exclusivement des questions ouvertes ou de courts cas pratiques. Les réponses doivent être corrigibles analytiquement à partir de 2 à 4 notions attendues.
+''',
+      EvaluationMode.voice => '''
+Génère exclusivement des questions ouvertes contextualisées, naturelles à poser oralement. Mélange rappel de règle, définition et cas pratique, sans QCM.
+''',
+    };
+    final example = switch (mode) {
+      EvaluationMode.timedQcm =>
+          '[{"type":"qcm","statement":"...","options":["...","...","...","..."],"correctOptionIndex":0,"explanation":"...","points":0.5}]',
+      EvaluationMode.written || EvaluationMode.voice =>
+          '[{"type":"casPratique","statement":"...","expectedAnswerElements":["...","...","..."],"explanation":"...","points":1.11}]',
+    };
 
     return '''
 Tu es un concepteur d'évaluations pour le module de droit « ${module.title} » (${module.description}). Voici le contenu du cours sur lequel porter les questions :
 $lessonsSummary
 
-Génère exactement $questionCount questions d'évaluation portant exclusivement sur ce contenu, en mélangeant des QCM à 4 options et, si pertinent, un ou deux cas pratiques courts. Varie la formulation et les angles abordés à chaque génération : ne réutilise jamais mot pour mot une question déjà posée précédemment sur ce module.
+Génère exactement $questionCount questions d'évaluation portant exclusivement sur ce contenu. $formatRules Varie la formulation et les angles abordés à chaque génération : ne réutilise jamais mot pour mot une question déjà posée précédemment sur ce module.
 
 Réponds UNIQUEMENT avec un tableau JSON strictement valide, sans texte avant ou après, sans balise markdown, sur le modèle exact suivant :
-[{"type":"qcm","statement":"...","options":["...","...","...","..."],"correctOptionIndex":0,"explanation":"...","points":5},{"type":"casPratique","statement":"...","expectedAnswerElements":["...","...","..."],"explanation":"...","points":5}]
+$example
 
-Règles strictes : "type" vaut "qcm" ou "casPratique" ; un "qcm" comporte exactement 4 "options" et un "correctOptionIndex" valide (0 à 3) ; un "casPratique" comporte 2 à 4 "expectedAnswerElements" (mots-clés ou notions attendues dans la réponse) et pas de champ "options" ; "explanation" justifie brièvement la bonne réponse ; "points" vaut toujours 5.
-''';
-  }
-
-  /// System prompt du générateur de l'examen blanc de fin de niveau :
-  /// contrairement à [evaluationGeneratorSystemPrompt], porte sur l'ensemble
-  /// des modules du niveau plutôt qu'un seul, et génère exclusivement des
-  /// questions ouvertes — l'examen blanc est désormais une conversation
-  /// vocale unique (l'IA pose la question à voix haute, l'étudiant répond
-  /// oralement), mélangeant rappel rapide et analyse plus approfondie.
-  static String mockExamGeneratorSystemPrompt({
-    required List<CourseModule> modules,
-    required int questionCount,
-  }) {
-    final syllabus = modules
-        .map((module) =>
-            '### ${module.title}\n${module.lessons.map((lesson) => '- ${lesson.title} : ${lesson.content}').join('\n')}')
-        .join('\n\n');
-
-    return '''
-Tu es un concepteur d'examens blancs oraux de fin de niveau pour le parcours universitaire de droit JurisIA. Voici le programme complet du niveau, module par module, sur lequel porter les questions :
-
-$syllabus
-
-Génère exactement $questionCount questions ouvertes, destinées à être posées à voix haute puis répondues oralement par l'étudiant — jamais de question à choix multiples. Couvre l'ensemble de ces modules (pas seulement le premier), et mélange délibérément deux registres au sein du même jeu : environ la moitié des questions appellent une réponse courte et précise (rappel rapide d'une règle, d'une définition, d'une exception), l'autre moitié appellent une réponse plus développée (analyse d'un cas, comparaison de deux notions, raisonnement). Varie les angles et la formulation à chaque génération : ne réutilise jamais mot pour mot une question déjà posée.
-
-Réponds UNIQUEMENT avec un tableau JSON strictement valide, sans texte avant ou après, sans balise markdown, sur le modèle exact suivant :
-[{"type":"casPratique","statement":"...","expectedAnswerElements":["...","...","..."],"explanation":"...","points":1.4}]
-
-Règles strictes : "type" vaut toujours "casPratique" ; chaque question comporte 2 à 4 "expectedAnswerElements" (mots-clés ou notions attendues dans la réponse orale) et pas de champ "options" ; "explanation" justifie brièvement la bonne réponse ; la somme de "points" de toutes les questions doit être proche de 20.
+Règles strictes : "type" vaut "qcm" ou "casPratique" selon le mode ; un "qcm" comporte exactement 4 "options" et un "correctOptionIndex" valide (0 à 3) ; un "casPratique" comporte 2 à 4 "expectedAnswerElements" (mots-clés ou notions attendues dans la réponse) et pas de champ "options" ; "explanation" justifie brièvement la bonne réponse ; les points doivent être positifs et seront normalisés par l'application pour obtenir exactement 20.
 ''';
   }
 }

@@ -1,4 +1,5 @@
 import '../../../../models/student/evaluation_model.dart';
+import '../entities/evaluation_mode.dart';
 import '../repositories/student_repository.dart';
 
 /// Génère dynamiquement un nouveau jeu de questions pour une tentative
@@ -10,5 +11,8 @@ class GenerateEvaluationUseCase {
 
   final StudentRepository repository;
 
-  Future<ModuleEvaluation> call(String moduleId) => repository.generateEvaluation(moduleId);
+  Future<ModuleEvaluation> call(
+    String moduleId, {
+    EvaluationMode mode = EvaluationMode.written,
+  }) => repository.generateEvaluation(moduleId, mode: mode);
 }

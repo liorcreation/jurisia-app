@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/ai/groq_api_datasource.dart';
 import '../../../../models/student/course_module.dart';
 import '../../../../models/student/evaluation_model.dart';
+import '../../domain/entities/evaluation_mode.dart';
 import 'student_ai_prompts.dart';
 
 /// Génère un jeu de questions d'évaluation via l'IA, en exigeant une sortie
@@ -20,36 +21,15 @@ class AiEvaluationGenerator {
   Future<List<EvaluationQuestion>> generate({
     required CourseModule module,
     required int questionCount,
+    required EvaluationMode mode,
   }) async {
     final buffer = StringBuffer();
     await for (final chunk in dataSource.streamCompletion(
-      system: StudentAiPrompts.evaluationGeneratorSystemPrompt(module, questionCount),
+      system: StudentAiPrompts.evaluationGeneratorSystemPrompt(module, questionCount, mode),
       messages: const [
         {'role': 'user', 'content': 'Génère les questions au format demandé.'},
       ],
       maxTokens: 2048,
-    )) {
-      buffer.write(chunk);
-    }
-    return _parseQuestions(buffer.toString());
-  }
-
-  /// Génère le jeu de questions ouvertes (vocales) de l'examen blanc de fin
-  /// de niveau, portant sur l'ensemble des [modules] plutôt qu'un seul.
-  Future<List<EvaluationQuestion>> generateForLevel({
-    required List<CourseModule> modules,
-    required int questionCount,
-  }) async {
-    final buffer = StringBuffer();
-    await for (final chunk in dataSource.streamCompletion(
-      system: StudentAiPrompts.mockExamGeneratorSystemPrompt(modules: modules, questionCount: questionCount),
-      messages: const [
-        {'role': 'user', 'content': "Génère l'examen au format demandé."},
-      ],
-      // Un examen blanc de 14 questions produit une sortie JSON bien plus
-      // volumineuse qu'un jeu de 4 questions de module — budget élargi pour
-      // ne pas tronquer la génération en cours de tableau.
-      maxTokens: 4096,
     )) {
       buffer.write(chunk);
     }

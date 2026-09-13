@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jurisia_app/features/student/data/datasources/evaluation_question_bank.dart';
 import 'package:jurisia_app/features/student/data/datasources/student_curriculum_local_datasource.dart';
 import 'package:jurisia_app/features/student/data/repositories/student_repository_impl.dart';
+import 'package:jurisia_app/features/student/domain/entities/evaluation_mode.dart';
 import 'package:jurisia_app/features/student/domain/repositories/student_repository.dart';
 import 'package:jurisia_app/features/student/domain/usecases/generate_evaluation_usecase.dart';
 import 'package:jurisia_app/features/student/domain/usecases/get_student_modules_usecase.dart';
@@ -62,40 +63,18 @@ void main() {
       expect(modules[1].isUnlocked, isFalse);
     });
 
-    test(
-      'la validation de tous les modules ne débloque le niveau supérieur '
-      'qu\'après réussite de l\'examen blanc du niveau',
-      () {
-        final repository = _buildRepository();
-        final validate = ValidateModuleUseCase(repository: repository);
+    test('la validation de tous les modules débloque le niveau supérieur', () {
+      final repository = _buildRepository();
+      final validate = ValidateModuleUseCase(repository: repository);
 
-        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
+      validate(moduleId: 'l1-module-1', score: 15);
+      validate(moduleId: 'l1-module-2', score: 15);
+      final result = validate(moduleId: 'l1-module-3', score: 15);
 
-        validate(moduleId: 'l1-module-1', score: 15);
-        validate(moduleId: 'l1-module-2', score: 15);
-        final result = validate(moduleId: 'l1-module-3', score: 15);
-
-        // Modules tous validés, mais l'examen blanc du niveau n'a pas
-        // encore été réussi : le niveau supérieur reste verrouillé.
-        expect(result.levelCompleted, isTrue);
-        expect(result.unlockedNextLevel, isNull);
-        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
-
-        repository.recordMockExamPassed(AcademicLevel.l1);
-
-        expect(repository.isLevelUnlocked(AcademicLevel.l2), isTrue);
-        expect(repository.isLevelUnlocked(AcademicLevel.l3), isFalse);
-      },
-    );
-
-    test(
-      'réussir l\'examen blanc seul, sans avoir validé tous les modules, ne débloque rien',
-      () {
-        final repository = _buildRepository();
-        repository.recordMockExamPassed(AcademicLevel.l1);
-        expect(repository.isLevelUnlocked(AcademicLevel.l2), isFalse);
-      },
-    );
+      expect(result.levelCompleted, isTrue);
+      expect(result.unlockedNextLevel, AcademicLevel.l2);
+      expect(repository.isLevelUnlocked(AcademicLevel.l2), isTrue);
+    });
 
     test('L1 est toujours débloqué', () {
       final repository = _buildRepository();
@@ -110,15 +89,26 @@ void main() {
   });
 
   group('Génération et renouvellement des évaluations', () {
-    test('une évaluation générée compte quatre questions notées sur 20 au total', () async {
+    test('chaque mode génère le nombre de questions et le total exact sur 20', () async {
       final repository = _buildRepository();
       final generate = GenerateEvaluationUseCase(repository: repository);
 
-      final evaluation = await generate('l1-module-1');
+      final qcm = await generate('l1-module-1', mode: EvaluationMode.timedQcm);
+      final written = await generate('l1-module-1', mode: EvaluationMode.written);
+      final voice = await generate('l1-module-1', mode: EvaluationMode.voice);
 
-      expect(evaluation.questions, hasLength(4));
-      expect(evaluation.questions.fold<double>(0, (sum, q) => sum + q.points), 20);
-      expect(evaluation.attemptNumber, 1);
+      expect(qcm.questions, hasLength(40));
+      expect(written.questions, hasLength(18));
+      expect(voice.questions, hasLength(14));
+      for (final evaluation in [qcm, written, voice]) {
+        expect(evaluation.questions.fold<double>(0, (sum, q) => sum + q.points), closeTo(20, 0.000001));
+      }
+      expect(qcm.mode, EvaluationMode.timedQcm);
+      expect(written.mode, EvaluationMode.written);
+      expect(voice.mode, EvaluationMode.voice);
+      expect(qcm.questions.every((q) => q.type == QuestionType.qcm), isTrue);
+      expect(written.questions.every((q) => q.type == QuestionType.casPratique), isTrue);
+      expect(voice.questions.every((q) => q.type == QuestionType.casPratique), isTrue);
     });
 
     test('le numéro de tentative augmente à chaque nouvelle génération', () async {
