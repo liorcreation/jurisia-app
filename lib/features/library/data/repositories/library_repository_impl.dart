@@ -39,17 +39,21 @@ class LibraryRepositoryImpl implements LibraryRepository {
     // 2. État personnel : favoris + compteurs de téléchargement.
     if (!_persistenceEnabled) return;
     try {
-      final favoriteRows = await client
-          .from('library_favorites')
-          .select('document_id')
-          .eq('user_id', userId!);
+      final rows = await Future.wait([
+        client
+            .from('library_favorites')
+            .select('document_id')
+            .eq('user_id', userId!),
+        client
+            .from('library_document_stats')
+            .select('document_id, download_count'),
+      ]);
+      final favoriteRows = rows[0];
       final favoriteIds = (favoriteRows as List)
           .map((row) => row['document_id'] as String)
           .toSet();
 
-      final statsRows = await client
-          .from('library_document_stats')
-          .select('document_id, download_count');
+      final statsRows = rows[1];
       final downloadCounts = {
         for (final row in statsRows as List)
           row['document_id'] as String: row['download_count'] as int,
@@ -72,12 +76,16 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   Future<void> _mergeServerCorpus(SupabaseClient client) async {
     try {
-      final docRows = await client.from('legal_documents').select();
+      final docRows = await client
+          .from('legal_documents')
+          .select(
+            'id,title,type,domain,reference,date_publication,date_entree_en_vigueur,status,summary,full_content,outline,summary_only,official_source_name,source_url,tags,related_ids,updated_at',
+          );
       if ((docRows as List).isEmpty) return;
 
       final articleRows = await client
           .from('legal_articles')
-          .select()
+          .select('document_id,number,heading,body,path,ord')
           .order('ord');
       final articlesByDoc = <String, List<LegalArticle>>{};
       for (final row in articleRows as List) {

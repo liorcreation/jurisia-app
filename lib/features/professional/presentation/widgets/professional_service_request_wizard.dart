@@ -14,11 +14,17 @@ import '../../domain/entities/professional_service_request.dart';
 Future<void> showProfessionalServiceRequestWizard(
   BuildContext context, {
   ProfessionalRequestKind initialKind = ProfessionalRequestKind.legalAct,
+  ProfessionalCategory? initialCategory,
+  String? initialActType,
 }) async {
   final controller = context.read<ProfessionalServiceRequestController>();
   controller.resetStatus();
 
-  final wizard = ProfessionalServiceRequestWizard(initialKind: initialKind);
+  final wizard = ProfessionalServiceRequestWizard(
+    initialKind: initialKind,
+    initialCategory: initialCategory,
+    initialActType: initialActType,
+  );
   if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
     await showDialog<void>(
       context: context,
@@ -51,9 +57,13 @@ class ProfessionalServiceRequestWizard extends StatefulWidget {
   const ProfessionalServiceRequestWizard({
     super.key,
     this.initialKind = ProfessionalRequestKind.legalAct,
+    this.initialCategory,
+    this.initialActType,
   });
 
   final ProfessionalRequestKind initialKind;
+  final ProfessionalCategory? initialCategory;
+  final String? initialActType;
 
   @override
   State<ProfessionalServiceRequestWizard> createState() =>
@@ -63,7 +73,7 @@ class ProfessionalServiceRequestWizard extends StatefulWidget {
 class _ProfessionalServiceRequestWizardState
     extends State<ProfessionalServiceRequestWizard> {
   late ProfessionalRequestKind _kind;
-  ProfessionalCategory _category = ProfessionalCategory.juriste;
+  late ProfessionalCategory _category;
   ProfessionalRequestUrgency _urgency = ProfessionalRequestUrgency.standard;
   ProfessionalAppointmentMode _appointmentMode =
       ProfessionalAppointmentMode.video;
@@ -81,6 +91,10 @@ class _ProfessionalServiceRequestWizardState
   void initState() {
     super.initState();
     _kind = widget.initialKind;
+    _category = widget.initialCategory ?? ProfessionalCategory.juriste;
+    if (widget.initialActType != null) {
+      _actTypeController.text = widget.initialActType!;
+    }
   }
 
   @override
@@ -240,11 +254,48 @@ class _ProfessionalServiceRequestWizardState
       children: [
         _StepTitle(
           eyebrow: '01 — Orientation',
-          title: 'Quel accompagnement recherchez-vous ?',
+          title: 'Dans quelle catégorie ?',
           subtitle:
-              'Nous adaptons le parcours au professionnel et au niveau d’urgence.',
+              'Votre choix oriente immédiatement le type d’expert et le circuit de traitement.',
         ),
         const SizedBox(height: AppSpacing.lg),
+        for (final category in ProfessionalCategory.values) ...[
+          _ChoiceTile(
+            selected: _category == category,
+            icon: _categoryIcon(category),
+            title: category.label,
+            subtitle: category.description,
+            onTap: () => setState(() => _category = category),
+          ),
+          if (category != ProfessionalCategory.values.last)
+            const SizedBox(height: AppSpacing.sm),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildNeedStep() {
+    final isAppointment = _kind == ProfessionalRequestKind.expertAppointment;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _StepTitle(
+          eyebrow: '02 — Type de service',
+          title: isAppointment
+              ? 'Préparons votre rendez-vous'
+              : 'Cadrez l’acte à préparer',
+          subtitle:
+              'Ces éléments servent à orienter le dossier et à préparer un devis juste.',
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Choisissez maintenant le service à lancer',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: AppColors.goldLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         for (final kind in ProfessionalRequestKind.values) ...[
           _ChoiceTile(
             selected: _kind == kind,
@@ -258,38 +309,6 @@ class _ProfessionalServiceRequestWizardState
           if (kind != ProfessionalRequestKind.values.last)
             const SizedBox(height: AppSpacing.sm),
         ],
-        const SizedBox(height: AppSpacing.lg),
-        DropdownButtonFormField<ProfessionalCategory>(
-          initialValue: _category,
-          decoration: const InputDecoration(
-            labelText: 'Professionnel recherché',
-            prefixIcon: Icon(Icons.gavel_rounded),
-          ),
-          items: [
-            for (final category in ProfessionalCategory.values)
-              DropdownMenuItem(value: category, child: Text(category.label)),
-          ],
-          onChanged: (value) {
-            if (value != null) setState(() => _category = value);
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNeedStep() {
-    final isAppointment = _kind == ProfessionalRequestKind.expertAppointment;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _StepTitle(
-          eyebrow: '02 — Besoin',
-          title: isAppointment
-              ? 'Préparons votre rendez-vous'
-              : 'Cadrez l’acte à préparer',
-          subtitle:
-              'Ces éléments servent à orienter le dossier et à préparer un devis juste.',
-        ),
         const SizedBox(height: AppSpacing.lg),
         if (!isAppointment)
           TextField(
@@ -736,6 +755,15 @@ class _ReviewLine extends StatelessWidget {
     );
   }
 }
+
+IconData _categoryIcon(ProfessionalCategory category) => switch (category) {
+  ProfessionalCategory.notaire => Icons.account_balance_rounded,
+  ProfessionalCategory.avocat => Icons.gavel_rounded,
+  ProfessionalCategory.juriste => Icons.balance_rounded,
+  ProfessionalCategory.huissier => Icons.markunread_mailbox_rounded,
+  ProfessionalCategory.greffier => Icons.assignment_rounded,
+  ProfessionalCategory.juge => Icons.account_balance_wallet_rounded,
+};
 
 String _formatDate(DateTime date) =>
     '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

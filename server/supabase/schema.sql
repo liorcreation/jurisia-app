@@ -240,3 +240,70 @@ create policy "Un utilisateur gère ses propres demandes de contact"
   on public.professional_contact_requests for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- Catalogue de formations et certificats électroniques
+-- ---------------------------------------------------------------------
+
+create table if not exists public.training_categories (
+  id text primary key,
+  title text not null,
+  subtitle text,
+  description text not null,
+  training_type text not null check (training_type in ('certifying', 'lmd')),
+  is_available boolean not null default false,
+  domain text not null default 'autre',
+  icon text not null default 'school',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.training_categories enable row level security;
+
+create policy "Le catalogue de formations est public"
+  on public.training_categories for select
+  using (true);
+
+create table if not exists public.training_certificates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  category_id text not null references public.training_categories (id),
+  title text not null,
+  certificate_number text not null unique,
+  verification_code text not null unique,
+  status text not null default 'pending' check (status in ('pending', 'issued', 'revoked')),
+  issued_at timestamptz,
+  signed_at timestamptz,
+  signer_name text,
+  signature_hash text,
+  pdf_storage_path text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.training_certificates enable row level security;
+
+create policy "Un utilisateur lit ses certificats"
+  on public.training_certificates for select
+  using (auth.uid() = user_id or public.jurisia_is_staff());
+
+create or replace function public.verify_training_certificate(p_code text)
+returns table (
+  certificate_number text,
+  title text,
+  category_id text,
+  status text,
+  issued_at timestamptz,
+  signer_name text
+)
+language sql stable security definer set search_path = public
+as $$
+  select c.certificate_number, c.title, c.category_id, c.status,
+         c.issued_at, c.signer_name
+  from public.training_certificates c
+  where c.verification_code = nullif(trim(p_code), '')
+    and c.status = 'issued';
+$$;
+
+grant execute on function public.verify_training_certificate(text) to anon, authenticated;

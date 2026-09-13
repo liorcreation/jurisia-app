@@ -8,7 +8,8 @@ abstract class ProfessionalTemplateDataSource {
 
 /// Quatre modèles d'actes courants du droit des affaires, couvrant les
 /// actions rapides du tableau de bord professionnel.
-class LocalProfessionalTemplateDataSource implements ProfessionalTemplateDataSource {
+class LocalProfessionalTemplateDataSource
+    implements ProfessionalTemplateDataSource {
   const LocalProfessionalTemplateDataSource();
 
   @override
@@ -20,7 +21,8 @@ const _templates = <ProfessionalTemplate>[
     id: 'template-bail-commercial',
     type: DraftingActType.bailCommercial,
     title: 'Bail commercial',
-    description: 'Contrat de location d\'un local à usage commercial, industriel ou artisanal.',
+    description:
+        'Contrat de location d\'un local à usage commercial, industriel ou artisanal.',
     domain: LegalDomain.commercial,
     requiredFields: [
       'Nom et adresse du bailleur',
@@ -35,7 +37,8 @@ const _templates = <ProfessionalTemplate>[
     id: 'template-contrat-prestation',
     type: DraftingActType.contratPrestation,
     title: 'Contrat de prestation',
-    description: 'Contrat de prestation de services entre un prestataire et un client.',
+    description:
+        'Contrat de prestation de services entre un prestataire et un client.',
     domain: LegalDomain.civil,
     requiredFields: [
       'Nom du prestataire',
@@ -49,7 +52,8 @@ const _templates = <ProfessionalTemplate>[
     id: 'template-statuts-societe',
     type: DraftingActType.statutsSociete,
     title: 'Statuts SARL/SAS',
-    description: 'Statuts constitutifs d\'une société à responsabilité limitée ou par actions simplifiée.',
+    description:
+        'Statuts constitutifs d\'une société à responsabilité limitée ou par actions simplifiée.',
     domain: LegalDomain.commercial,
     requiredFields: [
       'Forme sociale (SARL ou SAS)',
@@ -74,5 +78,14 @@ const _templates = <ProfessionalTemplate>[
       'Durée du travail',
       'Rémunération mensuelle brute',
     ],
+  ),
+  ProfessionalTemplate(
+    id: 'template-autre',
+    type: DraftingActType.other,
+    title: 'Autre',
+    description:
+        'Un besoin spécifique ? Transmettez vos références pour être orienté vers le bon professionnel.',
+    domain: LegalDomain.autre,
+    requiredFields: [],
   ),
 ];

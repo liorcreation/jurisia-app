@@ -6,6 +6,7 @@ enum DraftingActType {
   contratPrestation,
   statutsSociete,
   contratTravail,
+  other,
 }
 
 extension DraftingActTypeLabel on DraftingActType {
@@ -19,6 +20,8 @@ extension DraftingActTypeLabel on DraftingActType {
         return 'Statuts SARL/SAS';
       case DraftingActType.contratTravail:
         return 'Contrat de travail';
+      case DraftingActType.other:
+        return 'Autre';
     }
   }
 }

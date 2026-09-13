@@ -24,7 +24,9 @@ class StudentProgressSection extends StatelessWidget {
       return const SidebarSection(
         title: 'Votre progression',
         children: [
-          SidebarSectionEmpty('Choisissez votre niveau pour démarrer votre parcours.'),
+          SidebarSectionEmpty(
+            'Le parcours universitaire LMD sera disponible dans une prochaine phase.',
+          ),
         ],
       );
     }
@@ -37,15 +39,18 @@ class StudentProgressSection extends StatelessWidget {
     final average = progress?.overallAverage ?? 0;
 
     final CourseModule? next = modules.cast<CourseModule?>().firstWhere(
-          (m) => m != null && m.isUnlocked && !m.isCompleted,
-          orElse: () => null,
-        );
+      (m) => m != null && m.isUnlocked && !m.isCompleted,
+      orElse: () => null,
+    );
 
     return SidebarSection(
       title: 'Votre progression',
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: 3,
+          ),
           child: GlassContainer(
             padding: const EdgeInsets.all(AppSpacing.sm),
             child: Column(
@@ -53,7 +58,10 @@ class StudentProgressSection extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(level.shortLabel, style: Theme.of(context).textTheme.titleSmall),
+                    Text(
+                      level.shortLabel,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     const Spacer(),
                     Text(
                       '$done/$total modules',
@@ -88,18 +96,23 @@ class StudentProgressSection extends StatelessWidget {
             subtitle: 'Prochain module',
             onTap: () {
               AppShellScope.of(context).selectModule(2);
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider<StudentController>.value(
-                    value: controller,
-                    child: ModuleDetailScreen(moduleId: next.id),
-                  ),
-                ),
-              ).then((_) => controller.refresh());
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          ChangeNotifierProvider<StudentController>.value(
+                            value: controller,
+                            child: ModuleDetailScreen(moduleId: next.id),
+                          ),
+                    ),
+                  )
+                  .then((_) => controller.refresh());
             },
           )
         else
-          const SidebarSectionEmpty('Tous les modules débloqués sont validés. Bravo !'),
+          const SidebarSectionEmpty(
+            'Tous les modules débloqués sont validés. Bravo !',
+          ),
       ],
     );
   }

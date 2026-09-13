@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../../models/legal_document/legal_document_model.dart';
@@ -17,7 +19,7 @@ class LibraryController extends ChangeNotifier {
     required this.repository,
   }) {
     _runSearch();
-    repository.hydrate().then((_) => _runSearch());
+    _hydrate();
   }
 
   final SearchLegalDocumentsUseCase searchUseCase;
@@ -30,7 +32,10 @@ class LibraryController extends ChangeNotifier {
   bool _favoritesOnly = false;
   List<LegalDocument> _results = const [];
   bool _isSearchingCorpus = false;
+  bool _isHydrating = true;
+  Timer? _remoteDebounce;
   int _remoteSearchGeneration = 0;
+  bool _disposed = false;
 
   String get keyword => _keyword;
   LegalDocumentType? get selectedType => _selectedType;
@@ -38,6 +43,7 @@ class LibraryController extends ChangeNotifier {
   bool get favoritesOnly => _favoritesOnly;
   List<LegalDocument> get results => _results;
   bool get isSearchingCorpus => _isSearchingCorpus;
+  bool get isHydrating => _isHydrating;
 
   /// Consultation directe par identifiant, utilisée par la visionneuse de
   /// document pour rester à jour même si le document a quitté la liste de
@@ -68,6 +74,7 @@ class LibraryController extends ChangeNotifier {
     _selectedDomain = null;
     _favoritesOnly = false;
     _remoteSearchGeneration++;
+    _remoteDebounce?.cancel();
     _isSearchingCorpus = false;
     _runSearch();
   }
@@ -75,25 +82,25 @@ class LibraryController extends ChangeNotifier {
   void updateKeyword(String value) {
     _keyword = value;
     _runSearch();
-    _runRemoteSearch();
+    _scheduleRemoteSearch();
   }
 
   void selectType(LegalDocumentType? type) {
     _selectedType = _selectedType == type ? null : type;
     _runSearch();
-    _runRemoteSearch();
+    _scheduleRemoteSearch();
   }
 
   void selectDomain(LegalDomain? domain) {
     _selectedDomain = _selectedDomain == domain ? null : domain;
     _runSearch();
-    _runRemoteSearch();
+    _scheduleRemoteSearch();
   }
 
   void toggleFavoritesOnly() {
     _favoritesOnly = !_favoritesOnly;
     _runSearch();
-    _runRemoteSearch();
+    _scheduleRemoteSearch();
   }
 
   void toggleBookmark(String documentId) {
@@ -118,9 +125,27 @@ class LibraryController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _runRemoteSearch() async {
-    final keyword = _keyword.trim();
+  Future<void> _hydrate() async {
+    try {
+      await repository.hydrate();
+    } finally {
+      _isHydrating = false;
+    }
+    if (_disposed) return;
+    _runSearch();
+  }
+
+  void _scheduleRemoteSearch() {
+    _remoteDebounce?.cancel();
     final generation = ++_remoteSearchGeneration;
+    _remoteDebounce = Timer(const Duration(milliseconds: 280), () {
+      unawaited(_runRemoteSearch(generation));
+    });
+  }
+
+  Future<void> _runRemoteSearch(int generation) async {
+    if (_disposed) return;
+    final keyword = _keyword.trim();
     if (keyword.isEmpty || _favoritesOnly) {
       _isSearchingCorpus = false;
       return;
@@ -136,11 +161,19 @@ class LibraryController extends ChangeNotifier {
         favoritesOnly: _favoritesOnly,
       ),
     );
+    if (_disposed) return;
     if (generation != _remoteSearchGeneration || keyword != _keyword.trim()) {
       return;
     }
     _results = remoteResults;
     _isSearchingCorpus = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _remoteDebounce?.cancel();
+    super.dispose();
   }
 }

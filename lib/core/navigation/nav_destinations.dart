@@ -43,10 +43,10 @@ const List<NavDestination> kNavDestinations = [
     screenTitle: 'Espace étudiant',
   ),
   NavDestination(
-    label: 'Professionnel',
+    label: 'Service professionnel',
     icon: Icons.workspace_premium_outlined,
     selectedIcon: Icons.workspace_premium_rounded,
-    screenTitle: 'Espace professionnel',
+    screenTitle: 'Service professionnel',
   ),
   NavDestination(
     label: 'Contacter',

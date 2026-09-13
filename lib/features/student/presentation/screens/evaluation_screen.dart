@@ -281,6 +281,15 @@ class _DesktopEvalHeader extends StatelessWidget {
               ),
             ),
           ],
+          if (controller.isStarted &&
+              !controller.isSubmitted &&
+              controller.remainingDuration != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            _EvaluationTimerBadge(
+              duration: controller.remainingDuration!,
+              compact: compact,
+            ),
+          ],
           if (controller.mode != null && !compact) ...[
             const SizedBox(width: AppSpacing.sm),
             Container(
@@ -459,6 +468,49 @@ class _DesktopError extends StatelessWidget {
   }
 }
 
+class _EvaluationTimerBadge extends StatelessWidget {
+  const _EvaluationTimerBadge({required this.duration, required this.compact});
+
+  final Duration duration;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final hours = duration.inHours.toString().padLeft(2, '0');
+    final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    final urgent = duration <= const Duration(minutes: 10);
+    final color = urgent ? AppColors.error : AppColors.goldLight;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 5,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.32)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.timer_outlined, size: 14, color: color),
+          const SizedBox(width: 5),
+          Text(
+            compact ? '$hours:$minutes' : '$hours:$minutes:$seconds',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DesktopGrading extends StatelessWidget {
   const _DesktopGrading();
 
@@ -568,6 +620,11 @@ class _EvaluationBriefingState extends State<_EvaluationBriefing> {
                   icon: Icons.fullscreen_rounded,
                   text:
                       'Plein écran obligatoire · une récidive annule la tentative',
+                ),
+                const _BriefingRow(
+                  icon: Icons.timer_outlined,
+                  text:
+                      'Durée maximale : 3 heures · soumission possible à tout moment',
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 FilledButton.icon(

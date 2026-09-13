@@ -29,21 +29,26 @@ class ExamCameraGuard {
 
   final VoidCallback onDisqualified;
 
-  static const Duration _sampleInterval = Duration(milliseconds: 1200);
-  static const int _thumbnailSize = 24;
+  static const Duration _sampleInterval = Duration(milliseconds: 1500);
+  static const int _thumbnailSize = 32;
 
   /// Différence moyenne de luminance (0-255) au-delà de laquelle deux
   /// images successives sont jugées "très différentes". Seuil de première
   /// approche, à affiner sur de vrais appareils.
-  static const double _diffThreshold = 28;
+  static const double _diffThreshold = 24;
 
   /// Échantillons consécutifs au-dessus du seuil avant disqualification.
-  static const int _consecutiveTrigger = 3;
+  static const int _consecutiveTrigger = 5;
+
+  /// Quelques captures laissent la caméra stabiliser exposition et mise au
+  /// point avant de considérer un mouvement réel.
+  static const int _warmupSamples = 3;
 
   CameraController? _controller;
   Timer? _timer;
   Uint8List? _lastThumbnail;
   int _consecutiveHits = 0;
+  int _sampleCount = 0;
   bool _disqualified = false;
   bool _sampling = false;
 
@@ -65,6 +70,8 @@ class ExamCameraGuard {
   /// raison d'infrastructure.
   Future<bool> start() async {
     if (!isSupported) return false;
+    _disqualified = false;
+    _sampleCount = 0;
     try {
       // Délai maximal : un canal caméra natif absent ou bloqué (permission
       // jamais accordée ni refusée, plateforme de test sans implémentation)
@@ -108,15 +115,23 @@ class ExamCameraGuard {
       final thumbnail = await _toGrayscaleThumbnail(bytes);
       final previous = _lastThumbnail;
       _lastThumbnail = thumbnail;
+      _sampleCount++;
       if (previous == null ||
           thumbnail.isEmpty ||
           previous.length != thumbnail.length) {
         return;
       }
+      if (_sampleCount <= _warmupSamples) return;
 
-      var totalDiff = 0;
+      var totalDiff = 0.0;
+      final currentMean = _mean(thumbnail);
+      final previousMean = _mean(previous);
       for (var i = 0; i < thumbnail.length; i++) {
-        totalDiff += (thumbnail[i] - previous[i]).abs();
+        // Retire la dérive globale de luminosité (exposition automatique,
+        // écran qui s'allume, variation du soleil) avant la comparaison.
+        final current = thumbnail[i] - currentMean;
+        final before = previous[i] - previousMean;
+        totalDiff += (current - before).abs();
       }
       final meanDiff = totalDiff / thumbnail.length;
 
@@ -135,6 +150,15 @@ class ExamCameraGuard {
     } finally {
       _sampling = false;
     }
+  }
+
+  double _mean(Uint8List values) {
+    if (values.isEmpty) return 0;
+    var total = 0;
+    for (final value in values) {
+      total += value;
+    }
+    return total / values.length;
   }
 
   Future<Uint8List> _toGrayscaleThumbnail(Uint8List imageBytes) async {
@@ -164,6 +188,8 @@ class ExamCameraGuard {
     _timer = null;
     _lastThumbnail = null;
     _consecutiveHits = 0;
+    _sampleCount = 0;
+    _disqualified = false;
     final controller = _controller;
     _controller = null;
     if (controller != null) {

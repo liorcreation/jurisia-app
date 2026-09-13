@@ -21,6 +21,8 @@ enum EvaluationLoadStatus { loading, ready, grading, error }
 /// Contrôleur d'état de l'écran d'évaluation : génération du jeu de
 /// questions, saisie des réponses, correction et validation du module.
 class EvaluationController extends ChangeNotifier {
+  static const Duration maximumDuration = Duration(hours: 3);
+
   EvaluationController({
     required this.moduleId,
     required this.generateUseCase,
@@ -89,6 +91,17 @@ class EvaluationController extends ChangeNotifier {
   bool _isStarted = false;
   bool get isStarted => _isStarted;
 
+  Timer? _durationTimer;
+  DateTime? _deadline;
+
+  /// Temps restant de l'épreuve globale, distinct du chrono de 5 secondes
+  /// propre aux diapositives QCM.
+  Duration? get remainingDuration {
+    if (!_isStarted || _deadline == null) return null;
+    final remaining = _deadline!.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
   bool _isGrading = false;
   bool get isGrading => _isGrading;
 
@@ -149,7 +162,8 @@ class EvaluationController extends ChangeNotifier {
     }
     _isStarted = true;
     _proctoringWarning = null;
-    _sessionGuard.start();
+    _startDurationClock();
+    unawaited(_sessionGuard.start());
     _noiseGuard.armed = _mode != EvaluationMode.voice;
     unawaited(_startSensors());
     notifyListeners();
@@ -159,6 +173,7 @@ class EvaluationController extends ChangeNotifier {
 
   Future<void> _generate() async {
     await _stopProctoring();
+    _stopDurationClock();
     _status = EvaluationLoadStatus.loading;
     _errorMessage = null;
     _answers.clear();
@@ -234,6 +249,7 @@ class EvaluationController extends ChangeNotifier {
     List<EvaluationQuestion> answeredQuestions,
     double score,
   ) async {
+    _stopDurationClock();
     await _stopProctoring();
 
     repository.recordEvaluationResult(
@@ -282,7 +298,7 @@ class EvaluationController extends ChangeNotifier {
     }
     _proctoringWarning =
         'Interruption détectée. Revenez immédiatement dans JurisIA et restez en plein écran.';
-    _sessionGuard.start();
+    unawaited(_sessionGuard.start());
     notifyListeners();
   }
 
@@ -302,13 +318,35 @@ class EvaluationController extends ChangeNotifier {
 
   Future<void> _stopProctoring() async {
     _noiseGuard.reset();
-    _sessionGuard.stop();
+    await _sessionGuard.stop();
     await Future.wait([_cameraGuard.stop(), _microphoneGuard.stop()]);
   }
 
   @override
   void dispose() {
+    _stopDurationClock();
     unawaited(_stopProctoring());
     super.dispose();
+  }
+
+  void _startDurationClock() {
+    _durationTimer?.cancel();
+    _deadline = DateTime.now().add(maximumDuration);
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final deadline = _deadline;
+      if (!_isStarted || _result != null || deadline == null) return;
+      if (!deadline.isAfter(DateTime.now())) {
+        _stopDurationClock();
+        unawaited(_submit(allowUnanswered: true));
+        return;
+      }
+      notifyListeners();
+    });
+  }
+
+  void _stopDurationClock() {
+    _durationTimer?.cancel();
+    _durationTimer = null;
+    _deadline = null;
   }
 }

@@ -197,7 +197,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Quel accompagnement recherchez-vous ?'), findsOneWidget);
+    expect(find.text('Dans quelle catégorie ?'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

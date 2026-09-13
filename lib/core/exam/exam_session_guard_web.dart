@@ -18,7 +18,7 @@ class ExamSessionGuard {
   JSFunction? _visibilityListener;
   JSFunction? _fullscreenListener;
 
-  void start() {
+  Future<void> start() async {
     if (_visibilityListener != null) return;
 
     final visibilityListener = ((web.Event _) {
@@ -40,7 +40,7 @@ class ExamSessionGuard {
     web.document.documentElement?.requestFullscreen();
   }
 
-  void stop() {
+  Future<void> stop() async {
     final visibilityListener = _visibilityListener;
     if (visibilityListener != null) {
       web.document.removeEventListener('visibilitychange', visibilityListener);

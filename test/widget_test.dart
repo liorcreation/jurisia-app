@@ -47,7 +47,7 @@ void main() {
       'Litiges',
       'Bibliothèque',
       'Étudiant',
-      'Professionnel',
+      'Service professionnel',
       'Contacter',
     ]) {
       expect(find.text(label), findsOneWidget);
@@ -76,7 +76,7 @@ void main() {
         'Litiges',
         'Bibliothèque',
         'Étudiant',
-        'Professionnel',
+        'Service professionnel',
         'Contacter',
       ]) {
         expect(find.text(label), findsOneWidget);
@@ -87,7 +87,7 @@ void main() {
       for (final entry in const {
         'Bibliothèque': 'Bibliothèque juridique',
         'Étudiant': 'Espace étudiant',
-        'Professionnel': 'Espace professionnel',
+        'Service professionnel': 'Service professionnel',
         'Contacter': 'Contacter un professionnel',
         'Litiges': 'Litiges et consultations',
       }.entries) {

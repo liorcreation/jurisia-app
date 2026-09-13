@@ -46,11 +46,15 @@
    `migration_010_legal_corpus.sql` crée le corpus public (`legal_documents`,
    `legal_articles`) et son index plein texte français.
    `migration_014_mock_exams.sql` et `migration_015_mock_exam_voice_mode.sql`
-   activent le parcours d'examen blanc oral.
+   sont conservées comme migrations historiques ; le parcours d'évaluation
+   actuel est désormais intégré à chaque module étudiant.
    `migration_016_professional_service_requests.sql` crée les demandes
    structurées d'actes/rendez-vous, avec RLS utilisateur stricte.
    `migration_017_legal_corpus_search.sql` expose la RPC de recherche plein
    texte utilisée par l'application.
+   `migration_018_training_catalog_certificates.sql` ajoute le catalogue des
+   formations certifiantes/LMD et les certificats signés électroniquement,
+   avec une RPC publique de vérification par code.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
@@ -75,6 +79,10 @@
   rendez-vous, notifiées par `professional-request*`.
 - `legal_documents` / `legal_articles` — Corpus juridique public et recherche
   plein texte (migrations 010 et 017).
+- `training_categories` — Catalogue thématique des formations certifiantes et
+  parcours LMD, avec disponibilité pilotable.
+- `training_certificates` — Certificats individuels, empreinte de signature,
+  code de vérification et lien vers le PDF signé.
 - `staff_roles` / `admin_audit_log` — console d'admin (migration 006 ;
   amorcer le premier `super_admin` en insérant sa ligne à la main).
 - `plans` / `subscriptions` / `usage_counters` / `usage_events` / `ai_limits` —

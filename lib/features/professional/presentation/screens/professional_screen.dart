@@ -14,6 +14,7 @@ import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
+import '../../../contact_professional/domain/entities/professional_category.dart';
 import '../../data/datasources/professional_template_local_datasource.dart';
 import '../../domain/entities/drafting_request.dart';
 import '../../domain/entities/legal_drafting_result.dart';
@@ -26,7 +27,7 @@ import 'drafting_workspace_screen.dart';
 
 const _templateDataSource = LocalProfessionalTemplateDataSource();
 
-/// Section 4 — Espace professionnel : tableau de bord avec trois actions
+/// Section 4 — Service professionnel : tableau de bord avec trois actions
 /// rapides (rédaction d'actes, audit de contrat, consultation approfondie),
 /// menant à l'espace de rédaction interactif.
 class ProfessionalScreen extends StatelessWidget {
@@ -70,6 +71,17 @@ class ProfessionalScreen extends StatelessWidget {
     showProfessionalServiceRequestWizard(context);
   }
 
+  void _openOtherRequest(BuildContext context) {
+    showProfessionalServiceRequestWizard(context, initialActType: 'Autre');
+  }
+
+  void _openServiceCategory(
+    BuildContext context,
+    ProfessionalCategory category,
+  ) {
+    showProfessionalServiceRequestWizard(context, initialCategory: category);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
@@ -77,6 +89,9 @@ class ProfessionalScreen extends StatelessWidget {
         onOpenIntake: (mode, {template}) =>
             _openIntake(context, mode, template: template),
         onOpenServiceRequest: () => _openServiceRequest(context),
+        onOpenServiceCategory: (category) =>
+            _openServiceCategory(context, category),
+        onOpenOtherRequest: () => _openOtherRequest(context),
       );
     }
 
@@ -88,7 +103,7 @@ class ProfessionalScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Espace professionnel'),
+          title: const Text('Service professionnel'),
           leading: const AppShellMenuButton(),
         ),
         body: SafeArea(
@@ -109,6 +124,9 @@ class ProfessionalScreen extends StatelessWidget {
                   onOpenIntake: (mode, {template}) =>
                       _openIntake(context, mode, template: template),
                   onOpenServiceRequest: () => _openServiceRequest(context),
+                  onOpenServiceCategory: (category) =>
+                      _openServiceCategory(context, category),
+                  onOpenOtherRequest: () => _openOtherRequest(context),
                 ),
               ),
             ],
@@ -254,10 +272,14 @@ class _DesktopProfessionalView extends StatelessWidget {
   const _DesktopProfessionalView({
     required this.onOpenIntake,
     required this.onOpenServiceRequest,
+    required this.onOpenServiceCategory,
+    required this.onOpenOtherRequest,
   });
 
   final _OpenIntake onOpenIntake;
   final VoidCallback onOpenServiceRequest;
+  final ValueChanged<ProfessionalCategory> onOpenServiceCategory;
+  final VoidCallback onOpenOtherRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +315,8 @@ class _DesktopProfessionalView extends StatelessWidget {
                               recent: recent,
                               onOpenIntake: onOpenIntake,
                               onOpenServiceRequest: onOpenServiceRequest,
+                              onOpenServiceCategory: onOpenServiceCategory,
+                              onOpenOtherRequest: onOpenOtherRequest,
                             ),
                           ),
                         ),
@@ -345,7 +369,7 @@ class _DesktopProfessionalHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Espace professionnel', style: textTheme.headlineSmall),
+                Text('Service professionnel', style: textTheme.headlineSmall),
                 const SizedBox(height: 3),
                 Text(
                   'Atelier d\'ingénierie juridique — actes, audits et notes de synthèse',
@@ -412,11 +436,15 @@ class _AtelierBody extends StatelessWidget {
     required this.recent,
     required this.onOpenIntake,
     required this.onOpenServiceRequest,
+    required this.onOpenServiceCategory,
+    required this.onOpenOtherRequest,
   });
 
   final List<LegalDraftingResult> recent;
   final _OpenIntake onOpenIntake;
   final VoidCallback onOpenServiceRequest;
+  final ValueChanged<ProfessionalCategory> onOpenServiceCategory;
+  final VoidCallback onOpenOtherRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -477,7 +505,10 @@ class _AtelierBody extends StatelessWidget {
           style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.md),
-        _TemplateGrid(onOpenIntake: onOpenIntake),
+        _TemplateGrid(
+          onOpenIntake: onOpenIntake,
+          onOpenOther: onOpenOtherRequest,
+        ),
       ],
     );
 
@@ -581,6 +612,8 @@ class _AtelierBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
+        _ProfessionalServiceNavigator(onSelectCategory: onOpenServiceCategory),
+        const SizedBox(height: AppSpacing.xl),
         instruments,
         const SizedBox(height: AppSpacing.xxl),
         LayoutBuilder(
@@ -609,6 +642,123 @@ class _AtelierBody extends StatelessWidget {
     );
   }
 }
+
+class _ProfessionalServiceNavigator extends StatelessWidget {
+  const _ProfessionalServiceNavigator({required this.onSelectCategory});
+
+  final ValueChanged<ProfessionalCategory> onSelectCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Eyebrow('SERVICE PROFESSIONNEL'),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Commencez par votre catégorie',
+          style: textTheme.headlineSmall?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Puis choisissez le type de service ou d’acte à préparer.',
+          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 900
+                ? 3
+                : constraints.maxWidth >= 560
+                ? 2
+                : 1;
+            final gap = AppSpacing.sm * (columns - 1);
+            final width = (constraints.maxWidth - gap) / columns;
+            return Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (var i = 0; i < ProfessionalCategory.values.length; i++)
+                  SizedBox(
+                    width: width,
+                    child: _ServiceCategoryTile(
+                      category: ProfessionalCategory.values[i],
+                      onTap: () =>
+                          onSelectCategory(ProfessionalCategory.values[i]),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceCategoryTile extends StatefulWidget {
+  const _ServiceCategoryTile({required this.category, required this.onTap});
+
+  final ProfessionalCategory category;
+  final VoidCallback onTap;
+
+  @override
+  State<_ServiceCategoryTile> createState() => _ServiceCategoryTileState();
+}
+
+class _ServiceCategoryTileState extends State<_ServiceCategoryTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.category == ProfessionalCategory.juge
+        ? AppColors.metalCobalt
+        : AppColors.gold;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: AppMotion.standard,
+        transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+        child: GlassContainer(
+          onTap: widget.onTap,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          borderColor: color.withValues(alpha: _hovered ? 0.58 : 0.28),
+          borderWidth: _hovered ? 1 : 0.6,
+          child: Row(
+            children: [
+              Icon(_categoryIcon(widget.category), color: color, size: 21),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  widget.category.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+IconData _categoryIcon(ProfessionalCategory category) => switch (category) {
+  ProfessionalCategory.notaire => Icons.account_balance_rounded,
+  ProfessionalCategory.avocat => Icons.gavel_rounded,
+  ProfessionalCategory.juriste => Icons.balance_rounded,
+  ProfessionalCategory.huissier => Icons.markunread_mailbox_rounded,
+  ProfessionalCategory.greffier => Icons.assignment_rounded,
+  ProfessionalCategory.juge => Icons.account_balance_wallet_rounded,
+};
 
 class _InstrumentCard extends StatefulWidget {
   const _InstrumentCard({required this.mode, required this.onOpen});
@@ -734,9 +884,10 @@ class _InstrumentCardState extends State<_InstrumentCard> {
 }
 
 class _TemplateGrid extends StatelessWidget {
-  const _TemplateGrid({required this.onOpenIntake});
+  const _TemplateGrid({required this.onOpenIntake, required this.onOpenOther});
 
   final _OpenIntake onOpenIntake;
+  final VoidCallback onOpenOther;
 
   @override
   Widget build(BuildContext context) {
@@ -759,10 +910,12 @@ class _TemplateGrid extends StatelessWidget {
                   index: i,
                   child: _TemplateCard(
                     template: templates[i],
-                    onOpen: () => onOpenIntake(
-                      DraftingMode.redaction,
-                      template: templates[i],
-                    ),
+                    onOpen: templates[i].type == DraftingActType.other
+                        ? onOpenOther
+                        : () => onOpenIntake(
+                            DraftingMode.redaction,
+                            template: templates[i],
+                          ),
                   ),
                 ),
               ),
