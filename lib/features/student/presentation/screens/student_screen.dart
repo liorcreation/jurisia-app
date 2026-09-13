@@ -157,6 +157,14 @@ ModuleStatus _statusOf(CourseModule module) {
   return ModuleStatus.inProgress;
 }
 
+String _lockMessageFor(CourseModule module) {
+  if (module.level == AcademicLevel.l1 && module.order == 1) {
+    return 'État de progression à synchroniser';
+  }
+  if (module.order == 1) return 'Niveau précédent à valider';
+  return 'Module précédent à valider';
+}
+
 class _DesktopStudentView extends StatelessWidget {
   const _DesktopStudentView({
     required this.controller,
@@ -966,7 +974,7 @@ class _ModuleCardFooter extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Text(
-              'Module précédent à valider',
+              _lockMessageFor(module),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: textTheme.labelMedium?.copyWith(color: AppColors.textDisabled),

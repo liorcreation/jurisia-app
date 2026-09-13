@@ -78,14 +78,31 @@ class StudentRepositoryImpl implements StudentRepository {
         final module = _modulesById[moduleId];
         if (module == null) continue;
 
+        final persistedIsUnlocked = row['is_unlocked'] as bool?;
+        final attemptsCount = (row['attempts_count'] as num?)?.toInt() ?? 0;
         final bestScore = (row['best_score'] as num?)?.toDouble();
-        _modulesById[moduleId] = module.copyWith(
-          isUnlocked: row['is_unlocked'] as bool? ?? module.isUnlocked,
-          isCompleted: row['is_completed'] as bool? ?? module.isCompleted,
-          lastScore: bestScore ?? module.lastScore,
+        final isUnlocked = _isCanonicalUnlockState(
+          module,
+          persistedIsUnlocked,
         );
-        _attemptsCountByModule[moduleId] = row['attempts_count'] as int? ?? 0;
-        if (bestScore != null) _persistedBestScore[moduleId] = bestScore;
+        _modulesById[moduleId] = module.copyWith(
+          isUnlocked: isUnlocked,
+          isCompleted: row['is_completed'] as bool? ?? module.isCompleted,
+          // Une ligne historique peut contenir best_score = 0 alors qu'aucune
+          // tentative n'a encore été réalisée. Ne pas afficher cette valeur
+          // comme une note réelle dans ce cas.
+          lastScore: attemptsCount > 0 ? bestScore ?? module.lastScore : null,
+        );
+        _attemptsCountByModule[moduleId] = attemptsCount;
+        if (attemptsCount > 0 && bestScore != null) {
+          _persistedBestScore[moduleId] = bestScore;
+        }
+
+        // L'état canonique du parcours doit survivre aux anciennes lignes
+        // Supabase qui verrouillaient à tort le premier module de L1.
+        if (persistedIsUnlocked == false && isUnlocked) {
+          _persistModuleState(moduleId, isUnlocked: true);
+        }
       }
     } catch (error) {
       // ignore: avoid_print
@@ -93,6 +110,13 @@ class StudentRepositoryImpl implements StudentRepository {
         'Échec du chargement de la progression étudiante Supabase : $error',
       );
     }
+  }
+
+  /// Le parcours commence toujours par L1 / module 1. Une valeur persistée
+  /// obsolète ne doit donc jamais pouvoir le verrouiller.
+  bool _isCanonicalUnlockState(CourseModule module, bool? persistedValue) {
+    if (module.level == AcademicLevel.l1 && module.order == 1) return true;
+    return persistedValue ?? module.isUnlocked;
   }
 
   @override
