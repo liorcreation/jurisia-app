@@ -64,10 +64,18 @@ class MockExamController extends ChangeNotifier {
     ExamCameraGuard? cameraGuard,
   }) {
     _guard = sessionGuard ?? ExamSessionGuard(onInterrupted: _onInterrupted);
-    _noiseGuard = noiseGuard ??
-        ExamNoiseGuard(onDisqualified: () => _disqualify(MockExamDisqualificationReason.suspiciousNoise));
-    _cameraGuard = cameraGuard ??
-        ExamCameraGuard(onDisqualified: () => _disqualify(MockExamDisqualificationReason.suspiciousMotion));
+    _noiseGuard =
+        noiseGuard ??
+        ExamNoiseGuard(
+          onDisqualified: () =>
+              _disqualify(MockExamDisqualificationReason.suspiciousNoise),
+        );
+    _cameraGuard =
+        cameraGuard ??
+        ExamCameraGuard(
+          onDisqualified: () =>
+              _disqualify(MockExamDisqualificationReason.suspiciousMotion),
+        );
     _loadLockState();
   }
 
@@ -90,6 +98,10 @@ class MockExamController extends ChangeNotifier {
   /// Aperçu caméra à afficher (transparence envers l'étudiant) une fois le
   /// proctoring armé, ou `null` tant qu'il n'est pas prêt/non supporté.
   ExamCameraGuard get cameraGuard => _cameraGuard;
+
+  bool get cameraMonitoringSupported => _cameraGuard.isSupported;
+
+  bool get cameraMonitoringActive => _cameraGuard.isMonitoring;
 
   /// Arme ou désarme la détection de bruit — à appeler par l'écran autour
   /// des courtes fenêtres de silence dédiées (jamais pendant que l'IA parle
@@ -128,7 +140,9 @@ class MockExamController extends ChangeNotifier {
   bool get allQuestionsAnswered {
     final currentExam = _exam;
     if (currentExam == null || currentExam.questions.isEmpty) return false;
-    return currentExam.questions.every((q) => (_answers[q.id] ?? '').trim().isNotEmpty);
+    return currentExam.questions.every(
+      (q) => (_answers[q.id] ?? '').trim().isNotEmpty,
+    );
   }
 
   Future<void> _loadLockState() async {
@@ -136,7 +150,9 @@ class MockExamController extends ChangeNotifier {
     notifyListeners();
 
     _lockState = await repository.lockStateFor(levelId);
-    _status = (_lockState?.isLocked ?? false) || (_lockState?.requiresCourseReview ?? false)
+    _status =
+        (_lockState?.isLocked ?? false) ||
+            (_lockState?.requiresCourseReview ?? false)
         ? MockExamStatus.locked
         : MockExamStatus.readyToStart;
     notifyListeners();
@@ -161,15 +177,20 @@ class MockExamController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _exam = await repository.generateExam(levelId: levelId, levelModules: levelModules);
+      _exam = await repository.generateExam(
+        levelId: levelId,
+        levelModules: levelModules,
+      );
       _status = MockExamStatus.inProgress;
       // Best effort : indisponible/refusée, l'épreuve continue sans ce
       // signal plutôt que de bloquer l'étudiant (voir ExamCameraGuard).
       // L'aperçu ne devient disponible qu'une fois la caméra initialisée,
       // d'où le notifyListeners() différé pour que l'écran le découvre.
-      unawaited(_cameraGuard.start().then((_) {
-        if (!_disposed) notifyListeners();
-      }));
+      unawaited(
+        _cameraGuard.start().then((_) {
+          if (!_disposed) notifyListeners();
+        }),
+      );
     } catch (error) {
       _guard.stop();
       _status = MockExamStatus.error;
@@ -207,7 +228,11 @@ class MockExamController extends ChangeNotifier {
     _status = MockExamStatus.grading;
     notifyListeners();
 
-    _exam = currentExam.copyWith(score: 0, completedAt: DateTime.now(), disqualificationReason: reason);
+    _exam = currentExam.copyWith(
+      score: 0,
+      completedAt: DateTime.now(),
+      disqualificationReason: reason,
+    );
     await repository.recordResult(exam: _exam!);
     await _scheduleRetryReminder();
     await _loadLockState();
@@ -227,15 +252,26 @@ class MockExamController extends ChangeNotifier {
 
     final gradedQuestions = await Future.wait(
       currentExam.questions.map((question) async {
-        final answered = question.copyWith(studentAnswer: _answers[question.id]);
+        final answered = question.copyWith(
+          studentAnswer: _answers[question.id],
+        );
         final graded = await answerGrader.grade(answered);
-        return answered.copyWith(awardedPoints: answered.points * graded.fraction);
+        return answered.copyWith(
+          awardedPoints: answered.points * graded.fraction,
+        );
       }),
     );
 
-    final score = gradedQuestions.fold<double>(0, (sum, q) => sum + (q.awardedPoints ?? 0));
+    final score = gradedQuestions.fold<double>(
+      0,
+      (sum, q) => sum + (q.awardedPoints ?? 0),
+    );
 
-    _exam = currentExam.copyWith(questions: gradedQuestions, score: score, completedAt: DateTime.now());
+    _exam = currentExam.copyWith(
+      questions: gradedQuestions,
+      score: score,
+      completedAt: DateTime.now(),
+    );
     await repository.recordResult(exam: _exam!);
 
     if (score >= 10) {

@@ -29,12 +29,15 @@ class LibraryController extends ChangeNotifier {
   LegalDomain? _selectedDomain;
   bool _favoritesOnly = false;
   List<LegalDocument> _results = const [];
+  bool _isSearchingCorpus = false;
+  int _remoteSearchGeneration = 0;
 
   String get keyword => _keyword;
   LegalDocumentType? get selectedType => _selectedType;
   LegalDomain? get selectedDomain => _selectedDomain;
   bool get favoritesOnly => _favoritesOnly;
   List<LegalDocument> get results => _results;
+  bool get isSearchingCorpus => _isSearchingCorpus;
 
   /// Consultation directe par identifiant, utilisée par la visionneuse de
   /// document pour rester à jour même si le document a quitté la liste de
@@ -48,7 +51,8 @@ class LibraryController extends ChangeNotifier {
 
   /// L'intégralité du catalogue, hors filtres — pour l'en-tête (compte total)
   /// et les compteurs par catégorie du bandeau de navigation.
-  List<LegalDocument> get allDocuments => searchUseCase(const LibrarySearchQuery());
+  List<LegalDocument> get allDocuments =>
+      searchUseCase(const LibrarySearchQuery());
 
   /// `true` quand aucun critère n'est actif (mot-clé, type, branche, favoris).
   bool get hasActiveFilters =>
@@ -63,27 +67,33 @@ class LibraryController extends ChangeNotifier {
     _selectedType = null;
     _selectedDomain = null;
     _favoritesOnly = false;
+    _remoteSearchGeneration++;
+    _isSearchingCorpus = false;
     _runSearch();
   }
 
   void updateKeyword(String value) {
     _keyword = value;
     _runSearch();
+    _runRemoteSearch();
   }
 
   void selectType(LegalDocumentType? type) {
     _selectedType = _selectedType == type ? null : type;
     _runSearch();
+    _runRemoteSearch();
   }
 
   void selectDomain(LegalDomain? domain) {
     _selectedDomain = _selectedDomain == domain ? null : domain;
     _runSearch();
+    _runRemoteSearch();
   }
 
   void toggleFavoritesOnly() {
     _favoritesOnly = !_favoritesOnly;
     _runSearch();
+    _runRemoteSearch();
   }
 
   void toggleBookmark(String documentId) {
@@ -105,6 +115,32 @@ class LibraryController extends ChangeNotifier {
         favoritesOnly: _favoritesOnly,
       ),
     );
+    notifyListeners();
+  }
+
+  Future<void> _runRemoteSearch() async {
+    final keyword = _keyword.trim();
+    final generation = ++_remoteSearchGeneration;
+    if (keyword.isEmpty || _favoritesOnly) {
+      _isSearchingCorpus = false;
+      return;
+    }
+
+    _isSearchingCorpus = true;
+    notifyListeners();
+    final remoteResults = await repository.searchCorpus(
+      LibrarySearchQuery(
+        keyword: keyword,
+        type: _selectedType,
+        domain: _selectedDomain,
+        favoritesOnly: _favoritesOnly,
+      ),
+    );
+    if (generation != _remoteSearchGeneration || keyword != _keyword.trim()) {
+      return;
+    }
+    _results = remoteResults;
+    _isSearchingCorpus = false;
     notifyListeners();
   }
 }

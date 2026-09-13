@@ -43,6 +43,14 @@
    `jurisia_billing_create_intent` / `jurisia_billing_apply` appelées par
    les Edge Functions de paiement (`supabase/functions/`, voir leur README).
    Nécessite 006 et 007.
+   `migration_010_legal_corpus.sql` crée le corpus public (`legal_documents`,
+   `legal_articles`) et son index plein texte français.
+   `migration_014_mock_exams.sql` et `migration_015_mock_exam_voice_mode.sql`
+   activent le parcours d'examen blanc oral.
+   `migration_016_professional_service_requests.sql` crée les demandes
+   structurées d'actes/rendez-vous, avec RLS utilisateur stricte.
+   `migration_017_legal_corpus_search.sql` expose la RPC de recherche plein
+   texte utilisée par l'application.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
@@ -63,6 +71,10 @@
 - `student_module_progress` / `student_evaluation_attempts` — Module 03.
 - `professional_drafting_results` — Module 04.
 - `professional_contact_requests` — Module 05.
+- `professional_service_requests` — demandes d'actes, de devis et de
+  rendez-vous, notifiées par `professional-request*`.
+- `legal_documents` / `legal_articles` — Corpus juridique public et recherche
+  plein texte (migrations 010 et 017).
 - `staff_roles` / `admin_audit_log` — console d'admin (migration 006 ;
   amorcer le premier `super_admin` en insérant sa ligne à la main).
 - `plans` / `subscriptions` / `usage_counters` / `usage_events` / `ai_limits` —
@@ -71,10 +83,7 @@
   ne s'activent que par un paiement confirmé, via les Edge Functions
   `supabase/functions/billing-*`.
 
-## Ce qui n'est pas encore fait
-
-Le schéma existe et est prêt à l'usage, mais **aucun repository de
-l'application ne l'utilise encore** — les quatre modules continuent de
-fonctionner en mémoire locale (mêmes limites qu'avant). Migrer chaque
-module vers ces tables est l'étape suivante de la feuille de route, une
-fois l'authentification vérifiée en conditions réelles.
+Les demandes professionnelles et le corpus sont maintenant consommés par
+leurs repositories Flutter. Le dépôt sécurisé des fichiers binaires reste un
+étape distincte : le wizard enregistre les pièces attendues, puis le dépôt
+Storage pourra être déclenché depuis le lien de suivi envoyé par e-mail.

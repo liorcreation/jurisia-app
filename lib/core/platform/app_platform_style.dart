@@ -9,19 +9,25 @@ enum AppPlatformStyle {
   android,
   desktop;
 
-  /// Seuil du registre « desktop » (sidebar permanente, mises en page denses
-  /// à deux colonnes conçues pour ≥ 1180 px).
+  /// Seuil du registre « desktop » (sidebar complète, mises en page denses
+  /// à deux colonnes conçues pour une vraie surface de travail).
   ///
-  /// Fixé à **1000** pour que la grammaire desktop ne s'active qu'à partir
-  /// d'une vraie grande surface : une tablette **en paysage** (iPad ~1080–1194)
-  /// ou une fenêtre d'ordinateur. Tout le reste — téléphones (toutes
-  /// orientations, jusqu'à ~956 px en paysage sur les grands modèles) et
-  /// **tablettes en portrait** (iPad ~744–834) — reste sur le registre
-  /// mobile/tablette : même corps premium, mais navigation par tiroir
-  /// (bouton hamburger) et non par colonne fixe de 316 px, ce qui laisse aux
-  /// contenus la largeur nécessaire pour se déployer (leurs `LayoutBuilder`
-  /// internes passent alors à deux ou trois colonnes selon la place).
+  /// Les surfaces intermédiaires sont gérées par [AppViewportClass] : une
+  /// tablette conserve un rail compact permanent, tandis qu'un téléphone
+  /// conserve le tiroir afin de préserver l'espace de lecture.
   static const double wideBreakpoint = 1000;
+
+  /// Registre de densité du shell, indépendant du système d'exploitation.
+  ///
+  /// Le mobile conserve le tiroir, la tablette affiche un rail permanent
+  /// pour ne pas sacrifier la largeur utile au contenu, et le desktop expose
+  /// la sidebar complète repliable.
+  static AppViewportClass viewportOf(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width >= wideBreakpoint) return AppViewportClass.desktop;
+    if (width >= 600) return AppViewportClass.tablet;
+    return AppViewportClass.mobile;
+  }
 
   static AppPlatformStyle of(BuildContext context) {
     if (MediaQuery.sizeOf(context).width >= wideBreakpoint) {
@@ -32,3 +38,5 @@ enum AppPlatformStyle {
         : AppPlatformStyle.android;
   }
 }
+
+enum AppViewportClass { mobile, tablet, desktop }

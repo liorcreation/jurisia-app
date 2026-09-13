@@ -18,10 +18,13 @@ import '../../features/profile/presentation/controllers/profile_controller.dart'
 import '../../features/profile/presentation/profile_providers.dart';
 import '../../features/professional/presentation/controllers/professional_documents_controller.dart';
 import '../../features/professional/presentation/professional_providers.dart';
+import '../../features/professional/presentation/controllers/professional_service_request_controller.dart';
+import '../../features/professional/presentation/professional_service_request_providers.dart';
 import '../../features/professional/presentation/screens/professional_screen.dart';
 import '../../features/student/presentation/controllers/student_controller.dart';
 import '../../features/student/presentation/screens/student_screen.dart';
 import '../../features/student/presentation/student_providers.dart';
+import '../../theme/app_theme.dart';
 import '../entitlements/entitlements_controller.dart';
 import '../entitlements/entitlements_providers.dart';
 import '../navigation/nav_destinations.dart';
@@ -43,11 +46,12 @@ abstract class AppShellController {
   void selectModule(int index);
 
   /// Ouvre la navigation : le tiroir sur mobile, ou déplie le rail sur
-  /// desktop s'il était replié.
+  /// desktop s'il était replié. Sur tablette, ouvre la palette de recherche
+  /// depuis le rail compact permanent.
   void openNav();
 
-  /// Bascule la navigation : replie/déplie le rail desktop, ouvre le tiroir
-  /// sur mobile.
+  /// Bascule la navigation : replie/déplie le rail desktop, ouvre la palette
+  /// sur tablette, ou le tiroir sur mobile.
   void toggleNav();
 }
 
@@ -73,12 +77,15 @@ class AppShellScope extends InheritedWidget {
   }
 
   static AppShellController? maybeOf(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<AppShellScope>()?.controller;
+    return context
+        .dependOnInheritedWidgetOfExactType<AppShellScope>()
+        ?.controller;
   }
 
   @override
   bool updateShouldNotify(AppShellScope oldWidget) {
-    return selectedIndex != oldWidget.selectedIndex || railCollapsed != oldWidget.railCollapsed;
+    return selectedIndex != oldWidget.selectedIndex ||
+        railCollapsed != oldWidget.railCollapsed;
   }
 }
 
@@ -97,6 +104,7 @@ class AppShell extends StatefulWidget {
   /// « Replier la navigation » (ou ⌘/Ctrl B) bascule entre les deux.
   static const double sidebarWidth = 316;
   static const double railWidth = 80;
+  static const double tabletRailWidth = 92;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -145,7 +153,10 @@ class _AppShellState extends State<AppShell> implements AppShellController {
     ContactProfessionalScreen(),
   ];
 
-  bool get _isDesktop => AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
+  bool get _isDesktop =>
+      AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
+  bool get _isTablet =>
+      AppPlatformStyle.viewportOf(context) == AppViewportClass.tablet;
 
   // --- AppShellController -------------------------------------------------
 
@@ -168,6 +179,8 @@ class _AppShellState extends State<AppShell> implements AppShellController {
   void openNav() {
     if (_isDesktop) {
       if (_railCollapsed) setState(() => _railCollapsed = false);
+    } else if (_isTablet) {
+      showCommandPalette(context, onSelectModule: selectModule);
     } else {
       _scaffoldKey.currentState?.openDrawer();
     }
@@ -178,6 +191,8 @@ class _AppShellState extends State<AppShell> implements AppShellController {
     if (_isDesktop) {
       setState(() => _railCollapsed = !_railCollapsed);
       _persistCollapsedState();
+    } else if (_isTablet) {
+      showCommandPalette(context, onSelectModule: selectModule);
     } else {
       _scaffoldKey.currentState?.openDrawer();
     }
@@ -193,6 +208,8 @@ class _AppShellState extends State<AppShell> implements AppShellController {
   @override
   Widget build(BuildContext context) {
     final isDesktop = _isDesktop;
+    final isTablet = _isTablet;
+    final hasPersistentRail = isDesktop || isTablet;
     final content = IndexedStack(index: _selectedIndex, children: _screens);
 
     final scaffold = LuxuryScaffoldBackground(
@@ -200,7 +217,7 @@ class _AppShellState extends State<AppShell> implements AppShellController {
         key: _scaffoldKey,
         backgroundColor: Colors.transparent,
         drawerScrimColor: Colors.black.withValues(alpha: 0.55),
-        drawer: isDesktop
+        drawer: hasPersistentRail
             ? null
             : Drawer(
                 backgroundColor: Colors.transparent,
@@ -208,10 +225,13 @@ class _AppShellState extends State<AppShell> implements AppShellController {
                 width: math.min(360, MediaQuery.sizeOf(context).width * 0.86),
                 child: const JurisIASidebar(variant: SidebarVariant.drawer),
               ),
-        body: isDesktop
+        body: hasPersistentRail
             ? Row(
                 children: [
-                  _DesktopSidebar(collapsed: _railCollapsed),
+                  if (isDesktop)
+                    _DesktopSidebar(collapsed: _railCollapsed)
+                  else
+                    const _TabletSidebar(),
                   Expanded(child: content),
                 ],
               )
@@ -242,6 +262,9 @@ class _AppShellState extends State<AppShell> implements AppShellController {
         ChangeNotifierProvider<ProfessionalDocumentsController>(
           create: (_) => buildProfessionalDocumentsController(),
         ),
+        ChangeNotifierProvider<ProfessionalServiceRequestController>(
+          create: (_) => buildProfessionalServiceRequestController(),
+        ),
       ],
       child: AppShellScope(
         controller: this,
@@ -259,13 +282,17 @@ class _AppShellState extends State<AppShell> implements AppShellController {
       onSelectModule: selectModule,
       child: CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.keyN, meta: true): _newConsultation,
-          const SingleActivator(LogicalKeyboardKey.keyN, control: true): _newConsultation,
+          const SingleActivator(LogicalKeyboardKey.keyN, meta: true):
+              _newConsultation,
+          const SingleActivator(LogicalKeyboardKey.keyN, control: true):
+              _newConsultation,
           const SingleActivator(LogicalKeyboardKey.keyB, meta: true): toggleNav,
-          const SingleActivator(LogicalKeyboardKey.keyB, control: true): toggleNav,
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true):
+              toggleNav,
           for (var i = 0; i < kNavDestinations.length; i++) ...{
             SingleActivator(_digitKeys[i], meta: true): () => selectModule(i),
-            SingleActivator(_digitKeys[i], control: true): () => selectModule(i),
+            SingleActivator(_digitKeys[i], control: true): () =>
+                selectModule(i),
           },
         },
         child: shell,
@@ -295,8 +322,8 @@ class _DesktopSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final targetWidth = collapsed ? AppShell.railWidth : AppShell.sidebarWidth;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.fastOutSlowIn,
+      duration: AppMotion.standard,
+      curve: AppMotion.premium,
       width: targetWidth,
       padding: const EdgeInsets.all(12),
       // Le contenu est toujours mis en page à sa largeur cible et laissé
@@ -311,6 +338,27 @@ class _DesktopSidebar extends StatelessWidget {
           child: JurisIASidebar(
             variant: collapsed ? SidebarVariant.rail : SidebarVariant.permanent,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Rail permanent de la tablette : assez compact pour préserver la largeur
+/// de lecture, mais toujours visible pour éviter le détour par un tiroir sur
+/// une surface tactile intermédiaire. La recherche du rail ouvre la palette
+/// de commandes, qui devient le point d'accès aux actions secondaires.
+class _TabletSidebar extends StatelessWidget {
+  const _TabletSidebar();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: AppShell.tabletRailWidth,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: ClipRect(
+          child: const JurisIASidebar(variant: SidebarVariant.rail),
         ),
       ),
     );

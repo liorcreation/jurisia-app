@@ -20,7 +20,13 @@ class _ChatEntry {
   final String text;
 }
 
-enum _VoicePhase { aiSpeaking, silenceCheck, listening, reviewing, typingFallback }
+enum _VoicePhase {
+  aiSpeaking,
+  silenceCheck,
+  listening,
+  reviewing,
+  typingFallback,
+}
 
 /// Épreuve unique de l'examen blanc — une conversation vocale continue,
 /// façon ChatGPT Voice Mode : l'IA énonce les consignes puis chaque
@@ -37,7 +43,8 @@ class MockExamVoiceBody extends StatefulWidget {
   State<MockExamVoiceBody> createState() => _MockExamVoiceBodyState();
 }
 
-class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTickerProviderStateMixin {
+class _MockExamVoiceBodyState extends State<MockExamVoiceBody>
+    with SingleTickerProviderStateMixin {
   static const _answerDuration = Duration(seconds: 45);
   static const _silenceCheckDuration = Duration(milliseconds: 1400);
 
@@ -76,10 +83,15 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   /// démarrage du moteur — borné pour rester un vrai filet de sécurité
   /// (jamais en dessous de [_speakTimeout], jamais au-delà d'une minute).
   Duration _speakTimeoutFor(String text) {
-    final wordCount = text.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final wordCount = text
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .length;
     final estimated = Duration(seconds: (wordCount / 2).ceil() + 6);
     if (estimated < _speakTimeout) return _speakTimeout;
-    if (estimated > const Duration(seconds: 60)) return const Duration(seconds: 60);
+    if (estimated > const Duration(seconds: 60)) {
+      return const Duration(seconds: 60);
+    }
     return estimated;
   }
 
@@ -134,7 +146,9 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     // sans raison — capter le message réel (ex. "not-allowed" quand Chrome
     // bloque la synthèse faute d'activation utilisateur) permet de le voir
     // dans la console au lieu qu'il soit avalé par nos try/catch en aval.
-    _tts.setErrorHandler((message) => debugPrint('[voice-exam] tts onError: $message'));
+    _tts.setErrorHandler(
+      (message) => debugPrint('[voice-exam] tts onError: $message'),
+    );
     _bootstrap();
   }
 
@@ -324,7 +338,10 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
           if (!mounted || !graceOver) return;
           setState(() => _soundLevel = ((level + 2) / 12).clamp(0.0, 1.0));
         },
-        listenOptions: SpeechListenOptions(partialResults: true, cancelOnError: true),
+        listenOptions: SpeechListenOptions(
+          partialResults: true,
+          cancelOnError: true,
+        ),
       );
     } catch (e) {
       debugPrint('[voice-exam] stt.listen() failed: $e');
@@ -337,7 +354,9 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
 
   void _onSttStatus(String status) {
     if (!mounted) return;
-    if (status == SpeechToText.doneStatus && _phase == _VoicePhase.listening && !_answerConfirmed) {
+    if (status == SpeechToText.doneStatus &&
+        _phase == _VoicePhase.listening &&
+        !_answerConfirmed) {
       if (_liveTranscript.trim().isNotEmpty) {
         _confirmAnswer(_liveTranscript);
       } else {
@@ -364,7 +383,10 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     // laisser le moteur tenter de renvoyer un résultat final tardif, qui
     // pourrait sinon être livré après le début de la question suivante.
     unawaited(_stt.cancel().catchError((_) {}));
-    _appendTranscript(isUser: true, text: trimmed.isEmpty ? '(pas de réponse)' : trimmed);
+    _appendTranscript(
+      isUser: true,
+      text: trimmed.isEmpty ? '(pas de réponse)' : trimmed,
+    );
     setState(() => _phase = _VoicePhase.reviewing);
 
     Future.delayed(const Duration(milliseconds: 900), () {
@@ -394,9 +416,14 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
       builder: (dialogContext) => AlertDialog(
         backgroundColor: AppColors.legalBlueDark,
         title: const Text('Quitter l\'examen ?'),
-        content: const Text('Votre progression sur cette tentative sera perdue.'),
+        content: const Text(
+          'Votre progression sur cette tentative sera perdue.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -409,12 +436,12 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
   }
 
   VoiceOrbState get _orbState => switch (_phase) {
-        _VoicePhase.aiSpeaking => VoiceOrbState.speaking,
-        _VoicePhase.silenceCheck => VoiceOrbState.idle,
-        _VoicePhase.listening => VoiceOrbState.listening,
-        _VoicePhase.reviewing => VoiceOrbState.thinking,
-        _VoicePhase.typingFallback => VoiceOrbState.idle,
-      };
+    _VoicePhase.aiSpeaking => VoiceOrbState.speaking,
+    _VoicePhase.silenceCheck => VoiceOrbState.idle,
+    _VoicePhase.listening => VoiceOrbState.listening,
+    _VoicePhase.reviewing => VoiceOrbState.thinking,
+    _VoicePhase.typingFallback => VoiceOrbState.idle,
+  };
 
   @override
   void dispose() {
@@ -432,58 +459,87 @@ class _MockExamVoiceBodyState extends State<MockExamVoiceBody> with SingleTicker
     final exam = widget.controller.exam!;
     final total = exam.questions.length;
     final cameraController = widget.controller.cameraGuard.previewController;
+    final cameraSupported = widget.controller.cameraMonitoringSupported;
+    final cameraMonitoringActive = widget.controller.cameraMonitoringActive;
 
     return DecoratedBox(
       decoration: const BoxDecoration(color: Colors.black),
       child: Stack(
         children: [
-          const Positioned.fill(child: IgnorePointer(child: _AmbientBackdrop())),
+          const Positioned.fill(
+            child: IgnorePointer(child: _AmbientBackdrop()),
+          ),
           SafeArea(
-            child: Column(
-              children: [
-                _TopBar(
-                  index: math.min(_questionIndex, total - 1),
-                  total: total,
-                  cameraController: cameraController,
-                ),
-                if (_showTtsWarning)
-                  _WarningBanner(
-                    text: "Synthèse vocale indisponible sur ce navigateur — les questions restent "
-                        'affichées ci-dessous, répondez au clavier ou à l\'oral si le micro fonctionne.',
-                    onDismiss: () => setState(() => _showTtsWarning = false),
-                  ),
-                if (_showMicWarning)
-                  _WarningBanner(
-                    text: 'Réponse orale indisponible sur ce navigateur (certains, comme Edge, ne '
-                        'la prennent pas en charge — essayez Chrome) ou micro non autorisé : '
-                        'vérifiez les réglages du navigateur, ou répondez au clavier.',
-                    onDismiss: () => setState(() => _showMicWarning = false),
-                  ),
-                Expanded(
-                  child: _transcript.isEmpty
-                      ? const SizedBox.shrink()
-                      : _TranscriptList(entries: _transcript, scrollController: _scrollController),
-                ),
-                _OrbArea(
-                  orbState: _orbState,
-                  soundLevel: _phase == _VoicePhase.listening ? _soundLevel : 0,
-                  showRing: _phase == _VoicePhase.listening,
-                  ringRemaining: 1 - _answerTimer.value,
-                  animation: _answerTimer,
-                  liveTranscript: _phase == _VoicePhase.listening ? _liveTranscript : '',
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _BottomBar(
-                  isTyping: _phase == _VoicePhase.typingFallback,
-                  sttAvailable: _sttAvailable,
-                  soundLevel: _phase == _VoicePhase.listening ? _soundLevel : 0,
-                  typedController: _typedController,
-                  onSwitchToTyping: _switchToTyping,
-                  onSubmitTyped: _submitTypedAnswer,
-                  onQuit: _confirmQuit,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compactHeight = constraints.maxHeight < 620;
+                return Column(
+                  children: [
+                    _TopBar(
+                      index: math.min(_questionIndex, total - 1),
+                      total: total,
+                      cameraController: cameraController,
+                      cameraSupported: cameraSupported,
+                      cameraMonitoringActive: cameraMonitoringActive,
+                    ),
+                    if (_showTtsWarning)
+                      _WarningBanner(
+                        text:
+                            "Synthèse vocale indisponible sur ce navigateur — les questions restent "
+                            'affichées ci-dessous, répondez au clavier ou à l\'oral si le micro fonctionne.',
+                        onDismiss: () =>
+                            setState(() => _showTtsWarning = false),
+                      ),
+                    if (_showMicWarning)
+                      _WarningBanner(
+                        text:
+                            'Réponse orale indisponible sur ce navigateur (certains, comme Edge, ne '
+                            'la prennent pas en charge — essayez Chrome) ou micro non autorisé : '
+                            'vérifiez les réglages du navigateur, ou répondez au clavier.',
+                        onDismiss: () =>
+                            setState(() => _showMicWarning = false),
+                      ),
+                    Expanded(
+                      child: _transcript.isEmpty
+                          ? const SizedBox.shrink()
+                          : _TranscriptList(
+                              entries: _transcript,
+                              scrollController: _scrollController,
+                            ),
+                    ),
+                    _OrbArea(
+                      orbState: _orbState,
+                      soundLevel: _phase == _VoicePhase.listening
+                          ? _soundLevel
+                          : 0,
+                      showRing: _phase == _VoicePhase.listening,
+                      ringRemaining: 1 - _answerTimer.value,
+                      animation: _answerTimer,
+                      liveTranscript: _phase == _VoicePhase.listening
+                          ? _liveTranscript
+                          : '',
+                      compact: compactHeight,
+                    ),
+                    SizedBox(
+                      height: compactHeight ? AppSpacing.sm : AppSpacing.md,
+                    ),
+                    _BottomBar(
+                      isTyping: _phase == _VoicePhase.typingFallback,
+                      sttAvailable: _sttAvailable,
+                      soundLevel: _phase == _VoicePhase.listening
+                          ? _soundLevel
+                          : 0,
+                      typedController: _typedController,
+                      onSwitchToTyping: _switchToTyping,
+                      onSubmitTyped: _submitTypedAnswer,
+                      onQuit: _confirmQuit,
+                    ),
+                    SizedBox(
+                      height: compactHeight ? AppSpacing.xs : AppSpacing.sm,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -504,9 +560,12 @@ class _AmbientBackdrop extends StatefulWidget {
   State<_AmbientBackdrop> createState() => _AmbientBackdropState();
 }
 
-class _AmbientBackdropState extends State<_AmbientBackdrop> with SingleTickerProviderStateMixin {
-  late final AnimationController _drift =
-      AnimationController(vsync: this, duration: const Duration(seconds: 26))..repeat();
+class _AmbientBackdropState extends State<_AmbientBackdrop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _drift = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 26),
+  )..repeat();
 
   @override
   void dispose() {
@@ -562,7 +621,8 @@ class _AmbientBackdropPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _AmbientBackdropPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _AmbientBackdropPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 /// Bannière d'alerte en verre dépoli — même langage visuel que
@@ -577,26 +637,46 @@ class _WarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: GlassContainer(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         borderColor: AppColors.warning.withValues(alpha: 0.45),
         borderRadius: AppRadius.medium,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.warning),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 16,
+              color: AppColors.warning,
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 text,
-                style: const TextStyle(color: AppColors.textPrimary, height: 1.4, fontSize: 12.5),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                  fontSize: 12.5,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             GestureDetector(
               onTap: onDismiss,
-              child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
+              child: const Icon(
+                Icons.close_rounded,
+                size: 16,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -610,51 +690,140 @@ class _WarningBanner extends StatelessWidget {
 /// « REC » pulsant — remplace le texte brut et la vignette carrée
 /// d'origine par une signature visuelle propre à JurisIA.
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.index, required this.total, required this.cameraController});
+  const _TopBar({
+    required this.index,
+    required this.total,
+    required this.cameraController,
+    required this.cameraSupported,
+    required this.cameraMonitoringActive,
+  });
 
   final int index;
   final int total;
   final CameraController? cameraController;
+  final bool cameraSupported;
+  final bool cameraMonitoringActive;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'QUESTION ${index + 1} / $total',
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11.5,
-                    letterSpacing: AppLetterSpacing.caps,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 430;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.sm,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var i = 0; i < total; i++)
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.only(right: i == total - 1 ? 0 : 4),
-                          child: _ProgressSegment(state: i < index ? 2 : (i == index ? 1 : 0)),
-                        ),
+                    Text(
+                      'QUESTION ${index + 1} / $total',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11.5,
+                        letterSpacing: AppLetterSpacing.caps,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        for (var i = 0; i < total; i++)
+                          Expanded(
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                right: i == total - 1 ? 0 : 4,
+                              ),
+                              child: _ProgressSegment(
+                                state: i < index ? 2 : (i == index ? 1 : 0),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
+              ),
+              if (!compact) ...[
+                const SizedBox(width: AppSpacing.md),
+                _ProctoringStatus(
+                  supported: cameraSupported,
+                  active: cameraMonitoringActive,
+                ),
               ],
-            ),
+              const SizedBox(width: AppSpacing.md),
+              _CameraMedallion(controller: cameraController),
+            ],
           ),
-          const SizedBox(width: AppSpacing.md),
-          _CameraMedallion(controller: cameraController),
-        ],
+        );
+      },
+    );
+  }
+}
+
+class _ProctoringStatus extends StatelessWidget {
+  const _ProctoringStatus({required this.supported, required this.active});
+
+  final bool supported;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = !supported
+        ? AppColors.textDisabled
+        : active
+        ? AppColors.success
+        : AppColors.warning;
+    final label = !supported
+        ? 'CAMÉRA NON DISPONIBLE'
+        : active
+        ? 'SURVEILLANCE ACTIVE'
+        : 'CAMÉRA EN INITIALISATION';
+
+    return Tooltip(
+      message: !supported
+          ? 'La caméra n’est pas disponible sur cette plateforme. Le micro et le verrouillage de session restent actifs.'
+          : active
+          ? 'Caméra frontale active : présence et agitation sont échantillonnées périodiquement.'
+          : 'Initialisation de la caméra frontale en cours.',
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: color.withValues(alpha: 0.30), width: 0.7),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              supported ? Icons.shield_rounded : Icons.shield_outlined,
+              size: 13,
+              color: color,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: AppLetterSpacing.label,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -695,9 +864,12 @@ class _CameraMedallion extends StatefulWidget {
   State<_CameraMedallion> createState() => _CameraMedallionState();
 }
 
-class _CameraMedallionState extends State<_CameraMedallion> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+class _CameraMedallionState extends State<_CameraMedallion>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -728,9 +900,20 @@ class _CameraMedallionState extends State<_CameraMedallion> with SingleTickerPro
             fit: StackFit.expand,
             children: [
               if (active)
-                FittedBox(fit: BoxFit.cover, child: SizedBox(width: 100, height: 100, child: CameraPreview(widget.controller!)))
+                FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: CameraPreview(widget.controller!),
+                  ),
+                )
               else
-                const Icon(Icons.videocam_off_rounded, size: 16, color: AppColors.textDisabled),
+                const Icon(
+                  Icons.videocam_off_rounded,
+                  size: 16,
+                  color: AppColors.textDisabled,
+                ),
               if (active)
                 Positioned(
                   right: 3,
@@ -742,10 +925,14 @@ class _CameraMedallionState extends State<_CameraMedallion> with SingleTickerPro
                       height: 7,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.error.withValues(alpha: 0.55 + _pulse.value * 0.45),
+                        color: AppColors.error.withValues(
+                          alpha: 0.55 + _pulse.value * 0.45,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.error.withValues(alpha: 0.5 * _pulse.value),
+                            color: AppColors.error.withValues(
+                              alpha: 0.5 * _pulse.value,
+                            ),
                             blurRadius: 5,
                             spreadRadius: 1,
                           ),
@@ -774,9 +961,12 @@ class _FadeInEntry extends StatefulWidget {
   State<_FadeInEntry> createState() => _FadeInEntryState();
 }
 
-class _FadeInEntryState extends State<_FadeInEntry> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 380))..forward();
+class _FadeInEntryState extends State<_FadeInEntry>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 380),
+  )..forward();
 
   @override
   void dispose() {
@@ -790,7 +980,10 @@ class _FadeInEntryState extends State<_FadeInEntry> with SingleTickerProviderSta
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(curved),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.08),
+          end: Offset.zero,
+        ).animate(curved),
         child: widget.child,
       ),
     );
@@ -798,7 +991,10 @@ class _FadeInEntryState extends State<_FadeInEntry> with SingleTickerProviderSta
 }
 
 class _TranscriptList extends StatelessWidget {
-  const _TranscriptList({required this.entries, required this.scrollController});
+  const _TranscriptList({
+    required this.entries,
+    required this.scrollController,
+  });
 
   final List<_ChatEntry> entries;
   final ScrollController scrollController;
@@ -815,7 +1011,12 @@ class _TranscriptList extends StatelessWidget {
       blendMode: BlendMode.dstIn,
       child: ListView.builder(
         controller: scrollController,
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
         itemCount: entries.length,
         itemBuilder: (context, i) {
           final entry = entries[i];
@@ -823,8 +1024,12 @@ class _TranscriptList extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             child: _FadeInEntry(
               child: Align(
-                alignment: entry.isUser ? Alignment.centerRight : Alignment.centerLeft,
-                child: entry.isUser ? _UserBubble(text: entry.text) : _AiTurn(text: entry.text),
+                alignment: entry.isUser
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
+                child: entry.isUser
+                    ? _UserBubble(text: entry.text)
+                    : _AiTurn(text: entry.text),
               ),
             ),
           );
@@ -850,8 +1055,13 @@ class _AiTurn extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               ShaderMask(
-                shaderCallback: (rect) => AppGradients.goldMetallic.createShader(rect),
-                child: const Icon(Icons.auto_awesome_rounded, size: 13, color: Colors.white),
+                shaderCallback: (rect) =>
+                    AppGradients.goldMetallic.createShader(rect),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 13,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 6),
               Text(
@@ -868,7 +1078,11 @@ class _AiTurn extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             text,
-            style: const TextStyle(color: AppColors.textPrimary, height: 1.55, fontSize: 15),
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              height: 1.55,
+              fontSize: 15,
+            ),
           ),
         ],
       ),
@@ -885,19 +1099,32 @@ class _UserBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 480),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 11),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 11,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.gold.withValues(alpha: 0.22), AppColors.gold.withValues(alpha: 0.10)],
+          colors: [
+            AppColors.gold.withValues(alpha: 0.22),
+            AppColors.gold.withValues(alpha: 0.10),
+          ],
         ),
         borderRadius: BorderRadius.circular(AppRadius.large),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.8),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.45),
+          width: 0.8,
+        ),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: AppColors.textPrimary, height: 1.45, fontSize: 14.5),
+        style: const TextStyle(
+          color: AppColors.textPrimary,
+          height: 1.45,
+          fontSize: 14.5,
+        ),
       ),
     );
   }
@@ -914,6 +1141,7 @@ class _OrbArea extends StatelessWidget {
     required this.ringRemaining,
     required this.animation,
     required this.liveTranscript,
+    required this.compact,
   });
 
   final VoiceOrbState orbState;
@@ -922,21 +1150,24 @@ class _OrbArea extends StatelessWidget {
   final double ringRemaining;
   final Animation<double> animation;
   final String liveTranscript;
+  final bool compact;
 
   Color get _stageGlow => switch (orbState) {
-        VoiceOrbState.idle => AppColors.metalCobalt,
-        VoiceOrbState.speaking => AppColors.gold,
-        VoiceOrbState.listening => AppColors.cobalt,
-        VoiceOrbState.thinking => AppColors.metalSilver,
-      };
+    VoiceOrbState.idle => AppColors.metalCobalt,
+    VoiceOrbState.speaking => AppColors.gold,
+    VoiceOrbState.listening => AppColors.cobalt,
+    VoiceOrbState.thinking => AppColors.metalSilver,
+  };
 
   @override
   Widget build(BuildContext context) {
+    final orbSize = compact ? 132.0 : 176.0;
+    final ringSize = orbSize + 32;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(
-          height: 250,
+          height: compact ? 190 : 250,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -954,7 +1185,10 @@ class _OrbArea extends StatelessWidget {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: RadialGradient(
-                            colors: [_stageGlow.withValues(alpha: 0.34), _stageGlow.withValues(alpha: 0)],
+                            colors: [
+                              _stageGlow.withValues(alpha: 0.34),
+                              _stageGlow.withValues(alpha: 0),
+                            ],
                           ),
                         ),
                       ),
@@ -966,14 +1200,16 @@ class _OrbArea extends StatelessWidget {
                 AnimatedBuilder(
                   animation: animation,
                   builder: (context, _) => SizedBox(
-                    width: 208,
-                    height: 208,
-                    child: CustomPaint(painter: _AnswerRingPainter(ringRemaining)),
+                    width: ringSize,
+                    height: ringSize,
+                    child: CustomPaint(
+                      painter: _AnswerRingPainter(ringRemaining),
+                    ),
                   ),
                 ),
-              VoiceOrb(state: orbState, level: soundLevel, size: 176),
+              VoiceOrb(state: orbState, level: soundLevel, size: orbSize),
               Positioned(
-                bottom: 6,
+                bottom: compact ? 2 : 6,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 260),
                   child: KeyedSubtree(
@@ -991,7 +1227,12 @@ class _OrbArea extends StatelessWidget {
               ? const SizedBox(key: ValueKey('empty-live'), height: 0)
               : Padding(
                   key: const ValueKey('live'),
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, 0),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.xl,
+                    AppSpacing.sm,
+                    AppSpacing.xl,
+                    0,
+                  ),
                   child: Text(
                     liveTranscript,
                     textAlign: TextAlign.center,
@@ -1045,15 +1286,21 @@ class _AnswerRingPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2
         ..strokeCap = StrokeCap.round
-        ..shader = (urgent
-                ? const LinearGradient(colors: [AppColors.error, Color(0xFFE0847F)])
-                : const LinearGradient(colors: [AppColors.gold, AppColors.goldLight]))
-            .createShader(Rect.fromCircle(center: center, radius: radius)),
+        ..shader =
+            (urgent
+                    ? const LinearGradient(
+                        colors: [AppColors.error, Color(0xFFE0847F)],
+                      )
+                    : const LinearGradient(
+                        colors: [AppColors.gold, AppColors.goldLight],
+                      ))
+                .createShader(Rect.fromCircle(center: center, radius: radius)),
     );
   }
 
   @override
-  bool shouldRepaint(covariant _AnswerRingPainter oldDelegate) => oldDelegate.remaining != remaining;
+  bool shouldRepaint(covariant _AnswerRingPainter oldDelegate) =>
+      oldDelegate.remaining != remaining;
 }
 
 /// Capsule de contrôle en verre dépoli — même signature que
@@ -1087,15 +1334,24 @@ class _BottomBar extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 6,
+            ),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.legalBlue.withValues(alpha: 0.4), AppColors.nightBlueDeep.withValues(alpha: 0.55)],
+                colors: [
+                  AppColors.legalBlue.withValues(alpha: 0.4),
+                  AppColors.nightBlueDeep.withValues(alpha: 0.55),
+                ],
               ),
               borderRadius: BorderRadius.circular(AppRadius.pill),
-              border: Border.all(color: AppColors.glassBorder.withValues(alpha: 0.7), width: 0.7),
+              border: Border.all(
+                color: AppColors.glassBorder.withValues(alpha: 0.7),
+                width: 0.7,
+              ),
             ),
             child: Row(
               children: [
@@ -1108,27 +1364,40 @@ class _BottomBar extends StatelessWidget {
                         hintText: 'Tapez votre réponse…',
                         hintStyle: TextStyle(color: AppColors.textDisabled),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                        ),
                       ),
                       onSubmitted: (_) => onSubmitTyped(),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.send_rounded, color: AppColors.goldLight),
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: AppColors.goldLight,
+                    ),
                     onPressed: onSubmitTyped,
                     tooltip: 'Envoyer',
                   ),
                 ] else ...[
                   if (sttAvailable)
                     IconButton(
-                      icon: const Icon(Icons.keyboard_rounded, color: AppColors.textSecondary),
+                      icon: const Icon(
+                        Icons.keyboard_rounded,
+                        color: AppColors.textSecondary,
+                      ),
                       onPressed: onSwitchToTyping,
                       tooltip: 'Taper ma réponse',
                     ),
-                  Expanded(child: Center(child: _MicLevelMeter(level: soundLevel))),
+                  Expanded(
+                    child: Center(child: _MicLevelMeter(level: soundLevel)),
+                  ),
                 ],
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                   onPressed: onQuit,
                   tooltip: 'Quitter',
                 ),
@@ -1164,7 +1433,8 @@ class _MicLevelMeter extends StatelessWidget {
               duration: const Duration(milliseconds: 140),
               curve: Curves.easeOut,
               width: 3,
-              height: 4 + (active ? level.clamp(0.0, 1.0) * 15 * _weights[i] : 0),
+              height:
+                  4 + (active ? level.clamp(0.0, 1.0) * 15 * _weights[i] : 0),
               decoration: BoxDecoration(
                 color: active
                     ? AppColors.cobalt.withValues(alpha: 0.9)

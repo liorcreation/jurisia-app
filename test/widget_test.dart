@@ -43,7 +43,13 @@ void main() {
     await tester.tap(menuButton);
     await _settle(tester);
 
-    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Professionnel', 'Contacter']) {
+    for (final label in [
+      'Litiges',
+      'Bibliothèque',
+      'Étudiant',
+      'Professionnel',
+      'Contacter',
+    ]) {
       expect(find.text(label), findsOneWidget);
     }
 
@@ -54,37 +60,44 @@ void main() {
     expect(find.text('Juge'), findsOneWidget);
   });
 
-  testWidgets('Wide layout: the permanent JurisIA sidebar renders without overflow', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1280, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'Wide layout: the permanent JurisIA sidebar renders without overflow',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(_wrapHomeNavigation());
-    await _settle(tester);
-
-    expect(find.text('JurisIA'), findsOneWidget);
-    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Professionnel', 'Contacter']) {
-      expect(find.text(label), findsOneWidget);
-    }
-
-    // Chaque espace rend sa section contextuelle dans la sidebar sans
-    // exception ni débordement.
-    for (final entry in const {
-      'Bibliothèque': 'Bibliothèque juridique',
-      'Étudiant': 'Espace étudiant',
-      'Professionnel': 'Espace professionnel',
-      'Contacter': 'Contacter un professionnel',
-      'Litiges': 'Litiges et consultations',
-    }.entries) {
-      await tester.tap(find.text(entry.key));
+      await tester.pumpWidget(_wrapHomeNavigation());
       await _settle(tester);
-      expect(find.text(entry.value), findsWidgets, reason: entry.key);
-      expect(tester.takeException(), isNull, reason: entry.key);
-    }
-  });
+
+      expect(find.text('JurisIA'), findsOneWidget);
+      for (final label in [
+        'Litiges',
+        'Bibliothèque',
+        'Étudiant',
+        'Professionnel',
+        'Contacter',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+
+      // Chaque espace rend sa section contextuelle dans la sidebar sans
+      // exception ni débordement.
+      for (final entry in const {
+        'Bibliothèque': 'Bibliothèque juridique',
+        'Étudiant': 'Espace étudiant',
+        'Professionnel': 'Espace professionnel',
+        'Contacter': 'Contacter un professionnel',
+        'Litiges': 'Litiges et consultations',
+      }.entries) {
+        await tester.tap(find.text(entry.key));
+        await _settle(tester);
+        expect(find.text(entry.value), findsWidgets, reason: entry.key);
+        expect(tester.takeException(), isNull, reason: entry.key);
+      }
+    },
+  );
 
   testWidgets('Wide layout: the profile card opens the profile sheet', (
     WidgetTester tester,
@@ -104,4 +117,23 @@ void main() {
     expect(find.text('Se déconnecter'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'Tablet layout: a permanent compact rail preserves content space',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_wrapHomeNavigation());
+      await _settle(tester);
+
+      // La tablette garde un rail permanent ; le tiroir mobile et la barre
+      // inférieure ne doivent pas revenir sur cette largeur intermédiaire.
+      expect(find.byTooltip('Rechercher'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

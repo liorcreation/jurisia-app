@@ -8,14 +8,19 @@ import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
+import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/entities/contact_request.dart';
 import '../../domain/entities/professional_category.dart';
+import '../../../professional/domain/entities/professional_service_request.dart';
 import '../controllers/contact_professional_controller.dart';
+import '../../../professional/presentation/controllers/professional_service_request_controller.dart';
 import '../widgets/contact_request_sheet.dart';
 import '../widgets/professional_category_card.dart';
+import '../../../professional/presentation/widgets/professional_service_request_wizard.dart';
 
 /// Section 5 — Contacter un professionnel : mise en relation avec un
 /// notaire, avocat, juriste, huissier, greffier ou juge partenaire, via une
@@ -36,7 +41,8 @@ class _ContactProfessionalView extends StatelessWidget {
     final controller = context.read<ContactProfessionalController>();
     controller.resetStatus();
 
-    Widget sheet() => ChangeNotifierProvider<ContactProfessionalController>.value(
+    Widget sheet() =>
+        ChangeNotifierProvider<ContactProfessionalController>.value(
           value: controller,
           child: ContactRequestSheet(category: category),
         );
@@ -57,14 +63,22 @@ class _ContactProfessionalView extends StatelessWidget {
     }
   }
 
+  void _openServiceRequest(BuildContext context) {
+    showProfessionalServiceRequestWizard(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ContactProfessionalController>();
+    final serviceController = context
+        .watch<ProfessionalServiceRequestController>();
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
       return _DesktopContactView(
         controller: controller,
+        serviceController: serviceController,
         onOpenRequest: (category) => _openRequestSheet(context, category),
+        onOpenServiceRequest: () => _openServiceRequest(context),
       );
     }
 
@@ -78,7 +92,9 @@ class _ContactProfessionalView extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _ContactAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _ContactAmbience()),
+              ),
               SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -88,7 +104,10 @@ class _ContactProfessionalView extends StatelessWidget {
                 ),
                 child: _ContactBody(
                   requests: controller.requests,
-                  onOpenRequest: (category) => _openRequestSheet(context, category),
+                  serviceRequests: serviceController.requests,
+                  onOpenRequest: (category) =>
+                      _openRequestSheet(context, category),
+                  onOpenServiceRequest: () => _openServiceRequest(context),
                 ),
               ),
             ],
@@ -161,10 +180,17 @@ String _relativeDate(DateTime date) {
 }
 
 class _DesktopContactView extends StatelessWidget {
-  const _DesktopContactView({required this.controller, required this.onOpenRequest});
+  const _DesktopContactView({
+    required this.controller,
+    required this.serviceController,
+    required this.onOpenRequest,
+    required this.onOpenServiceRequest,
+  });
 
   final ContactProfessionalController controller;
+  final ProfessionalServiceRequestController serviceController;
   final _OpenRequest onOpenRequest;
+  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +200,9 @@ class _DesktopContactView extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _ContactAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _ContactAmbience()),
+              ),
               Column(
                 children: [
                   const _DesktopContactHeader(),
@@ -192,7 +220,9 @@ class _DesktopContactView extends StatelessWidget {
                             ),
                             child: _ContactBody(
                               requests: controller.requests,
+                              serviceRequests: serviceController.requests,
                               onOpenRequest: onOpenRequest,
+                              onOpenServiceRequest: onOpenServiceRequest,
                             ),
                           ),
                         ),
@@ -220,26 +250,43 @@ class _DesktopContactHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
-          const Icon(Icons.diversity_3_rounded, size: 18, color: AppColors.gold),
+          const Icon(
+            Icons.diversity_3_rounded,
+            size: 18,
+            color: AppColors.gold,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Contacter un professionnel', style: textTheme.headlineSmall),
+                Text(
+                  'Contacter un professionnel',
+                  style: textTheme.headlineSmall,
+                ),
                 const SizedBox(height: 3),
                 Text(
                   'Mise en relation avec le réseau de partenaires du droit',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -251,10 +298,17 @@ class _DesktopContactHeader extends StatelessWidget {
 }
 
 class _ContactBody extends StatelessWidget {
-  const _ContactBody({required this.requests, required this.onOpenRequest});
+  const _ContactBody({
+    required this.requests,
+    required this.serviceRequests,
+    required this.onOpenRequest,
+    required this.onOpenServiceRequest,
+  });
 
   final List<ContactRequest> requests;
+  final List<ProfessionalServiceRequest> serviceRequests;
   final _OpenRequest onOpenRequest;
+  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -265,8 +319,8 @@ class _ContactBody extends StatelessWidget {
         final columns = constraints.maxWidth >= 680
             ? 3
             : constraints.maxWidth >= 460
-                ? 2
-                : 1;
+            ? 2
+            : 1;
         final cats = ProfessionalCategory.values;
         final rows = <Widget>[];
 
@@ -309,6 +363,8 @@ class _ContactBody extends StatelessWidget {
       children: [
         _RequestPanel(requests: requests),
         const SizedBox(height: AppSpacing.md),
+        _ServiceRequestPanel(requests: serviceRequests),
+        if (serviceRequests.isNotEmpty) const SizedBox(height: AppSpacing.md),
         const _ConfidentialityNote(),
       ],
     );
@@ -320,7 +376,9 @@ class _ContactBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Le bon professionnel, au bon moment',
-          style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+          style: textTheme.displaySmall?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         ConstrainedBox(
@@ -329,7 +387,76 @@ class _ContactBody extends StatelessWidget {
             'Choisissez le professionnel qu\'il vous faut : votre demande est transmise au '
             'réseau de partenaires JurisIA, un membre vous recontacte directement. Rien '
             'n\'est engagé sans votre accord.',
-            style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+            style: textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PremiumSurface(
+          tone: PremiumSurfaceTone.cobalt,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final copy = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const PremiumStatusPill(
+                    label: 'Parcours prioritaire',
+                    tone: PremiumStatusTone.gold,
+                    icon: Icons.auto_awesome_rounded,
+                    compact: true,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Demander un acte ou un rendez-vous',
+                    style: textTheme.titleLarge?.copyWith(
+                      fontFamily: 'Libre Caslon Display',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Un formulaire guidé pour cadrer votre besoin, recevoir un accusé et suivre le devis.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              );
+              final action = constraints.maxWidth < 620
+                  ? LuxuryElevatedButton(
+                      onPressed: onOpenServiceRequest,
+                      icon: Icons.arrow_forward_rounded,
+                      child: const Text('Ouvrir le parcours'),
+                    )
+                  : SizedBox(
+                      width: 220,
+                      child: LuxuryElevatedButton(
+                        onPressed: onOpenServiceRequest,
+                        icon: Icons.arrow_forward_rounded,
+                        child: const Text('Ouvrir le parcours'),
+                      ),
+                    );
+              if (constraints.maxWidth < 620) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    copy,
+                    const SizedBox(height: AppSpacing.md),
+                    action,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: copy),
+                  const SizedBox(width: AppSpacing.lg),
+                  action,
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
@@ -391,7 +518,10 @@ class _ProfessionCardState extends State<_ProfessionCard> {
     if (_hovered) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: ShimmerSweep(duration: const Duration(milliseconds: 1600), child: badge),
+        child: ShimmerSweep(
+          duration: const Duration(milliseconds: 1600),
+          child: badge,
+        ),
       );
     }
 
@@ -415,21 +545,33 @@ class _ProfessionCardState extends State<_ProfessionCard> {
               const SizedBox(height: AppSpacing.md),
               Text(
                 category.label,
-                style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: textTheme.titleLarge?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               if (restricted) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.13),
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(color: AppColors.warning.withValues(alpha: 0.4), width: 0.8),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.4),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 11, color: AppColors.warning),
+                      const Icon(
+                        Icons.info_outline_rounded,
+                        size: 11,
+                        color: AppColors.warning,
+                      ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
@@ -449,12 +591,18 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                 Text(
                   'Un juge ne se contacte pas à titre personnel. Cette demande sert à '
                   'obtenir une orientation générale, transmise par un partenaire juriste.',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
               ] else ...[
                 Text(
                   category.description,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
@@ -463,15 +611,23 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                   children: [
                     for (final specialty in specialties)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.legalBlueDark.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(AppRadius.pill),
-                          border: Border.all(color: tint.withValues(alpha: 0.3), width: 0.7),
+                          border: Border.all(
+                            color: tint.withValues(alpha: 0.3),
+                            width: 0.7,
+                          ),
                         ),
                         child: Text(
                           specialty,
-                          style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                   ],
@@ -483,7 +639,9 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                 children: [
                   Flexible(
                     child: Text(
-                      restricted ? 'Demander une orientation' : 'Demander un contact',
+                      restricted
+                          ? 'Demander une orientation'
+                          : 'Demander un contact',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelMedium?.copyWith(
@@ -493,7 +651,11 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.arrow_forward_rounded, size: 15, color: AppColors.goldLight),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 15,
+                    color: AppColors.goldLight,
+                  ),
                 ],
               ),
             ],
@@ -523,9 +685,120 @@ class _RequestPanel extends StatelessWidget {
           else
             for (var i = 0; i < requests.length; i++)
               Padding(
-                padding: EdgeInsets.only(bottom: i == requests.length - 1 ? 0 : AppSpacing.sm),
+                padding: EdgeInsets.only(
+                  bottom: i == requests.length - 1 ? 0 : AppSpacing.sm,
+                ),
                 child: _RequestRow(request: requests[i]),
               ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceRequestPanel extends StatelessWidget {
+  const _ServiceRequestPanel({required this.requests});
+
+  final List<ProfessionalServiceRequest> requests;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _Eyebrow('Actes & rendez-vous'),
+          const SizedBox(height: AppSpacing.md),
+          if (requests.isEmpty)
+            Text(
+              'Les demandes d’actes, devis et créneaux confirmés apparaîtront ici.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            )
+          else
+            for (var i = 0; i < requests.length; i++)
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: i == requests.length - 1 ? 0 : AppSpacing.sm,
+                ),
+                child: _ServiceRequestRow(request: requests[i]),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceRequestRow extends StatelessWidget {
+  const _ServiceRequestRow({required this.request});
+
+  final ProfessionalServiceRequest request;
+
+  PremiumStatusTone get _tone => switch (request.status) {
+    ProfessionalServiceRequestStatus.submitted => PremiumStatusTone.warning,
+    ProfessionalServiceRequestStatus.acknowledged => PremiumStatusTone.info,
+    ProfessionalServiceRequestStatus.quoteReady => PremiumStatusTone.gold,
+    ProfessionalServiceRequestStatus.scheduled => PremiumStatusTone.success,
+    ProfessionalServiceRequestStatus.closed => PremiumStatusTone.neutral,
+    ProfessionalServiceRequestStatus.cancelled => PremiumStatusTone.danger,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final title = request.kind == ProfessionalRequestKind.legalAct
+        ? request.actType ?? 'Acte juridique'
+        : 'Rendez-vous ${request.category.label.toLowerCase()}';
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.legalBlueDark.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        border: Border.all(color: AppColors.glassBorder, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              PremiumStatusPill(
+                label: request.status.label,
+                tone: _tone,
+                compact: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${request.category.label} · ${_relativeDate(request.createdAt)}',
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+          ),
+          if (request.quoteAmount != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Devis : ${request.quoteAmount} ${request.quoteCurrency}',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.goldLight,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -550,12 +823,17 @@ class _HowItWorks extends StatelessWidget {
       children: [
         Text(
           'Vos demandes de mise en relation et leur suivi apparaîtront ici.',
-          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+          style: textTheme.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         for (var i = 0; i < _steps.length; i++)
           Padding(
-            padding: EdgeInsets.only(bottom: i == _steps.length - 1 ? 0 : AppSpacing.sm),
+            padding: EdgeInsets.only(
+              bottom: i == _steps.length - 1 ? 0 : AppSpacing.sm,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -618,7 +896,11 @@ class _RequestRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(iconForCategory(request.category), size: 15, color: _categoryTint(request.category)),
+          Icon(
+            iconForCategory(request.category),
+            size: 15,
+            color: _categoryTint(request.category),
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -629,7 +911,9 @@ class _RequestRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         request.category.label,
-                        style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                        style: textTheme.labelMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     Text(
@@ -646,12 +930,17 @@ class _RequestRow extends StatelessWidget {
                   request.message,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary, height: 1.3),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _relativeDate(request.createdAt),
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textDisabled,
+                  ),
                 ),
               ],
             ),
@@ -674,18 +963,28 @@ class _ConfidentialityNote extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 0.7),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.2),
+          width: 0.7,
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.lock_outline_rounded, size: 15, color: AppColors.goldLight),
+          const Icon(
+            Icons.lock_outline_rounded,
+            size: 15,
+            color: AppColors.goldLight,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend en charge '
               'votre demande, et l\'équipe JurisIA en assure le suivi.',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -704,16 +1003,20 @@ class _Eyebrow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 16, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+        Container(
+          width: 16,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.goldLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.goldLight,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -730,9 +1033,12 @@ class _ContactAmbience extends StatefulWidget {
   State<_ContactAmbience> createState() => _ContactAmbienceState();
 }
 
-class _ContactAmbienceState extends State<_ContactAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 38))..repeat();
+class _ContactAmbienceState extends State<_ContactAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 38),
+  )..repeat();
 
   @override
   void dispose() {
@@ -744,7 +1050,8 @@ class _ContactAmbienceState extends State<_ContactAmbience> with SingleTickerPro
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _ContactAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _ContactAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -765,12 +1072,14 @@ class _ContactAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.8 + (i % 3) * 0.7;
-      final opacity = 0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ContactAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _ContactAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }

@@ -21,3 +21,11 @@ verify_jwt = true
 # Appelée en serveur-à-serveur par le prestataire de paiement : pas de JWT.
 # La sécurité vient de la re-vérification du paiement auprès du prestataire.
 verify_jwt = false
+
+[functions.professional-request]
+# Appelée par l'application avec le jeton de l'utilisateur connecté.
+verify_jwt = true
+
+[functions.professional-request-notify]
+# Appelée par la console du personnel pour notifier un devis/statut.
+verify_jwt = true

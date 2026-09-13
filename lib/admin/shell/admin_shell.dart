@@ -18,6 +18,7 @@ import '../features/dashboard/admin_dashboard_screen.dart';
 import '../features/library_cms/admin_library_cms_screen.dart';
 import '../features/prompt_studio/admin_prompt_studio_screen.dart';
 import '../features/review_room/admin_review_room_screen.dart';
+import '../features/service_requests/admin_service_requests_screen.dart';
 import '../features/staff/admin_staff_screen.dart';
 import '../features/subscriptions/admin_subscriptions_screen.dart';
 import '../theme/admin_theme.dart';
@@ -51,7 +52,11 @@ class _AdminDestination {
 /// « cabinet numérique » cobalt, ambiance vivante, navigation groupée) +
 /// `IndexedStack` des sections autorisées par le rôle de l'opérateur.
 class AdminShell extends StatefulWidget {
-  const AdminShell({super.key, required this.identity, required this.onSignOut});
+  const AdminShell({
+    super.key,
+    required this.identity,
+    required this.onSignOut,
+  });
 
   final StaffIdentity identity;
   final Future<void> Function() onSignOut;
@@ -88,6 +93,13 @@ class _AdminShellState extends State<AdminShell> {
           label: 'Mise en relation',
           icon: Icons.support_agent_rounded,
           screen: AdminContactRequestsScreen(),
+        ),
+      if (identity.canOperate)
+        const _AdminDestination(
+          group: 'Opérations',
+          label: 'Actes & rendez-vous',
+          icon: Icons.assignment_rounded,
+          screen: AdminServiceRequestsScreen(),
         ),
       if (identity.canSeeBilling)
         const _AdminDestination(
@@ -133,7 +145,9 @@ class _AdminShellState extends State<AdminShell> {
           final wide = constraints.maxWidth >= _kWideBreakpoint;
           final content = IndexedStack(
             index: _index,
-            children: [for (final destination in _destinations) destination.screen],
+            children: [
+              for (final destination in _destinations) destination.screen,
+            ],
           );
 
           if (wide) {
@@ -145,7 +159,12 @@ class _AdminShellState extends State<AdminShell> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, 0, AppSpacing.md),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                      ),
                       child: SizedBox(
                         width: _kSidebarWidth,
                         child: _Sidebar(
@@ -221,10 +240,16 @@ class _Sidebar extends StatelessWidget {
     // appelant — un `SizedBox` fixe ici déborderait du tiroir sur un petit
     // téléphone.
     return DecoratedBox(
-      decoration: BoxDecoration(borderRadius: radius, boxShadow: AppShadows.floating),
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        boxShadow: AppShadows.floating,
+      ),
       child: SmokedGlassSurface(
         borderRadius: radius,
-        border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.26), width: 0.8),
+        border: Border.all(
+          color: AdminTheme.accent.withValues(alpha: 0.26),
+          width: 0.8,
+        ),
         child: Stack(
           children: [
             const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
@@ -235,19 +260,30 @@ class _Sidebar extends StatelessWidget {
                 children: [
                   const _BrandHeader(),
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(AppSpacing.sm, 0, AppSpacing.sm, AppSpacing.sm),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.sm,
+                      0,
+                      AppSpacing.sm,
+                      AppSpacing.sm,
+                    ),
                     child: _ReturnToAppButton(),
                   ),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
                       children: _buildNavChildren(),
                     ),
                   ),
                   const _FadingRule(),
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.sm),
-                    child: _ProfileCard(identity: identity, onSignOut: onSignOut),
+                    child: _ProfileCard(
+                      identity: identity,
+                      onSignOut: onSignOut,
+                    ),
                   ),
                 ],
               ),
@@ -265,7 +301,9 @@ class _Sidebar extends StatelessWidget {
       final destination = destinations[i];
       if (destination.group != currentGroup) {
         currentGroup = destination.group;
-        if (children.isNotEmpty) children.add(const SizedBox(height: AppSpacing.sm));
+        if (children.isNotEmpty) {
+          children.add(const SizedBox(height: AppSpacing.sm));
+        }
         children.add(_GroupLabel(currentGroup));
       }
       children.add(
@@ -290,7 +328,12 @@ class _BrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           Container(
@@ -299,7 +342,10 @@ class _BrandHeader extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(11),
-              border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.55), width: 0.9),
+              border: Border.all(
+                color: AdminTheme.accent.withValues(alpha: 0.55),
+                width: 0.9,
+              ),
               gradient: RadialGradient(
                 center: const Alignment(-0.3, -0.4),
                 radius: 1.1,
@@ -307,7 +353,10 @@ class _BrandHeader extends StatelessWidget {
               ),
               boxShadow: AdminGradients.cobaltGlowSoft,
             ),
-            child: JurisIAMark(size: 24, gradient: AdminGradients.cobaltMetallic),
+            child: JurisIAMark(
+              size: 24,
+              gradient: AdminGradients.cobaltMetallic,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -315,11 +364,19 @@ class _BrandHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('JurisIA', style: textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display')),
+                Text(
+                  'JurisIA',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
+                ),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1.5,
+                      ),
                       decoration: BoxDecoration(
                         gradient: AppGradients.goldSheen,
                         borderRadius: BorderRadius.circular(AppRadius.small),
@@ -335,7 +392,12 @@ class _BrandHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text('Console', style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled)),
+                    Text(
+                      'Console',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -357,7 +419,8 @@ class _ReturnToAppButton extends StatelessWidget {
 
   static const _appUrl = 'https://jurisia-app.pages.dev/';
 
-  Future<void> _open() => launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
+  Future<void> _open() =>
+      launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
 
   @override
   Widget build(BuildContext context) {
@@ -368,27 +431,40 @@ class _ReturnToAppButton extends StatelessWidget {
           onTap: _open,
           borderRadius: BorderRadius.circular(AppRadius.medium),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 8,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.medium),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.32), width: 0.8),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.32),
+                width: 0.8,
+              ),
               gradient: LinearGradient(
-                colors: [AppColors.gold.withValues(alpha: 0.14), AppColors.gold.withValues(alpha: 0.05)],
+                colors: [
+                  AppColors.gold.withValues(alpha: 0.14),
+                  AppColors.gold.withValues(alpha: 0.05),
+                ],
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.arrow_back_rounded, size: 15, color: AppColors.goldLight),
+                const Icon(
+                  Icons.arrow_back_rounded,
+                  size: 15,
+                  color: AppColors.goldLight,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'Retour à JurisIA',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.goldLight,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -408,22 +484,31 @@ class _GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.sm, AppSpacing.sm, 6),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        6,
+      ),
       child: Text(
         label.toUpperCase(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textDisabled,
-              letterSpacing: AppLetterSpacing.caps,
-              fontWeight: FontWeight.w700,
-              fontSize: 10,
-            ),
+          color: AppColors.textDisabled,
+          letterSpacing: AppLetterSpacing.caps,
+          fontWeight: FontWeight.w700,
+          fontSize: 10,
+        ),
       ),
     );
   }
 }
 
 class _NavItem extends StatefulWidget {
-  const _NavItem({required this.destination, required this.selected, required this.onTap});
+  const _NavItem({
+    required this.destination,
+    required this.selected,
+    required this.onTap,
+  });
 
   final _AdminDestination destination;
   final bool selected;
@@ -444,17 +529,29 @@ class _NavItemState extends State<_NavItem> {
     Widget pill = AnimatedContainer(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOut,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 10,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadius.medium),
         gradient: selected
             ? LinearGradient(
-                colors: [AdminTheme.accent.withValues(alpha: 0.28), AdminTheme.accent.withValues(alpha: 0.10)],
+                colors: [
+                  AdminTheme.accent.withValues(alpha: 0.28),
+                  AdminTheme.accent.withValues(alpha: 0.10),
+                ],
               )
             : null,
-        color: selected ? null : (_hovered ? Colors.white.withValues(alpha: 0.04) : Colors.transparent),
+        color: selected
+            ? null
+            : (_hovered
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : Colors.transparent),
         border: Border.all(
-          color: selected ? AdminTheme.accent.withValues(alpha: 0.5) : Colors.transparent,
+          color: selected
+              ? AdminTheme.accent.withValues(alpha: 0.5)
+              : Colors.transparent,
           width: 0.8,
         ),
       ),
@@ -481,7 +578,9 @@ class _NavItemState extends State<_NavItem> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: textTheme.labelMedium?.copyWith(
-                color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                color: selected
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -490,7 +589,12 @@ class _NavItemState extends State<_NavItem> {
       ),
     );
 
-    if (selected) pill = ShimmerSweep(duration: const Duration(milliseconds: 2600), child: pill);
+    if (selected) {
+      pill = ShimmerSweep(
+        duration: const Duration(milliseconds: 2600),
+        child: pill,
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -544,8 +648,12 @@ class _ProfileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final email = SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.email : null;
-    final initial = (email?.isNotEmpty ?? false) ? email!.substring(0, 1).toUpperCase() : '?';
+    final email = SupabaseConfig.isReady
+        ? SupabaseConfig.client.auth.currentUser?.email
+        : null;
+    final initial = (email?.isNotEmpty ?? false)
+        ? email!.substring(0, 1).toUpperCase()
+        : '?';
     final roleLabel = identity.primary?.label ?? 'Personnel';
 
     return GlassContainer(
@@ -568,7 +676,10 @@ class _ProfileCard extends StatelessWidget {
                 ),
                 child: Text(
                   initial,
-                  style: textTheme.titleSmall?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w800),
+                  style: textTheme.titleSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -581,7 +692,9 @@ class _ProfileCard extends StatelessWidget {
                       email ?? 'Compte du personnel',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -589,7 +702,10 @@ class _ProfileCard extends StatelessWidget {
                         Container(
                           width: 5,
                           height: 5,
-                          decoration: BoxDecoration(shape: BoxShape.circle, gradient: AdminGradients.cobaltSheen),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AdminGradients.cobaltSheen,
+                          ),
                         ),
                         const SizedBox(width: 5),
                         Flexible(
@@ -597,7 +713,9 @@ class _ProfileCard extends StatelessWidget {
                             roleLabel,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(color: AdminTheme.accentLight),
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AdminTheme.accentLight,
+                            ),
                           ),
                         ),
                       ],
@@ -622,16 +740,26 @@ class _ProfileCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     color: AppColors.error.withValues(alpha: 0.10),
-                    border: Border.all(color: AppColors.error.withValues(alpha: 0.35), width: 0.8),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.35),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.logout_rounded, size: 14, color: AppColors.error),
+                      const Icon(
+                        Icons.logout_rounded,
+                        size: 14,
+                        color: AppColors.error,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Se déconnecter',
-                        style: textTheme.labelSmall?.copyWith(color: AppColors.error, fontWeight: FontWeight.w700),
+                        style: textTheme.labelSmall?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),

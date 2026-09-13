@@ -9,6 +9,12 @@ abstract class LibraryRepository {
   /// dates, favoris).
   List<LegalDocument> search(LibrarySearchQuery query);
 
+  /// Recherche distante plein texte quand un corpus Supabase est disponible.
+  /// Le repli local permet au catalogue embarqué de rester utilisable hors
+  /// ligne et dans les tests.
+  Future<List<LegalDocument>> searchCorpus(LibrarySearchQuery query) async =>
+      search(query);
+
   /// Retrouve un document par identifiant, ou `null` s'il n'existe pas.
   LegalDocument? findById(String id);
 

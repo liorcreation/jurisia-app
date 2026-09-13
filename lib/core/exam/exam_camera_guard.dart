@@ -49,10 +49,15 @@ class ExamCameraGuard {
 
   bool get isSupported => isCameraGuardSupportedPlatform;
 
+  /// `true` uniquement lorsque la caméra est initialisée et que les
+  /// échantillons périodiques sont effectivement planifiés.
+  bool get isMonitoring => _controller != null && _timer != null;
+
   /// Contrôleur à rendre dans un `CameraPreview` (aperçu discret, transparent
   /// envers l'étudiant) une fois prêt — `null` tant que la caméra n'est pas
   /// initialisée ou non supportée sur cette plateforme.
-  CameraController? get previewController => (_controller?.value.isInitialized ?? false) ? _controller : null;
+  CameraController? get previewController =>
+      (_controller?.value.isInitialized ?? false) ? _controller : null;
 
   /// Démarre le proctoring caméra ; renvoie `false` (sans exception) si la
   /// plateforme n'est pas supportée, si aucune caméra n'est disponible ou si
@@ -64,14 +69,20 @@ class ExamCameraGuard {
       // Délai maximal : un canal caméra natif absent ou bloqué (permission
       // jamais accordée ni refusée, plateforme de test sans implémentation)
       // ne doit jamais laisser l'épreuve en attente indéfiniment.
-      final cameras = await availableCameras().timeout(const Duration(seconds: 6));
+      final cameras = await availableCameras().timeout(
+        const Duration(seconds: 6),
+      );
       if (cameras.isEmpty) return false;
 
       final front = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
       );
-      final controller = CameraController(front, ResolutionPreset.low, enableAudio: false);
+      final controller = CameraController(
+        front,
+        ResolutionPreset.low,
+        enableAudio: false,
+      );
       await controller.initialize().timeout(const Duration(seconds: 6));
       _controller = controller;
       _timer = Timer.periodic(_sampleInterval, (_) => _sample());
@@ -84,7 +95,12 @@ class ExamCameraGuard {
 
   Future<void> _sample() async {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized || _disqualified || _sampling) return;
+    if (controller == null ||
+        !controller.value.isInitialized ||
+        _disqualified ||
+        _sampling) {
+      return;
+    }
     _sampling = true;
     try {
       final file = await controller.takePicture();
@@ -92,7 +108,11 @@ class ExamCameraGuard {
       final thumbnail = await _toGrayscaleThumbnail(bytes);
       final previous = _lastThumbnail;
       _lastThumbnail = thumbnail;
-      if (previous == null || thumbnail.isEmpty || previous.length != thumbnail.length) return;
+      if (previous == null ||
+          thumbnail.isEmpty ||
+          previous.length != thumbnail.length) {
+        return;
+      }
 
       var totalDiff = 0;
       for (var i = 0; i < thumbnail.length; i++) {
@@ -124,7 +144,9 @@ class ExamCameraGuard {
       targetHeight: _thumbnailSize,
     );
     final frame = await codec.getNextFrame();
-    final byteData = await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    final byteData = await frame.image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
     frame.image.dispose();
     if (byteData == null) return Uint8List(0);
 

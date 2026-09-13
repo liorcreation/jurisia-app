@@ -16,7 +16,7 @@ class GlassContainer extends StatefulWidget {
     this.padding = const EdgeInsets.all(AppSpacing.md),
     this.margin,
     this.borderRadius = AppRadius.medium,
-    this.blurSigma = 18,
+    this.blurSigma = 20,
     this.gradient = AppGradients.glassCard,
     this.borderColor = AppColors.glassBorder,
     this.borderWidth = 0.5,
@@ -116,8 +116,8 @@ class _GlassContainerState extends State<GlassContainer> with SingleTickerProvid
       cursor: SystemMouseCursors.click,
       child: AnimatedScale(
         scale: _isPressed ? 0.98 : (_isHovered ? 1.015 : 1.0),
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
+        duration: AppMotion.quick,
+        curve: AppMotion.premium,
         child: Material(
           color: Colors.transparent,
           borderRadius: radius,

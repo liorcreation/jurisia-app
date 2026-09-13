@@ -88,8 +88,8 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
 
     Widget button = AnimatedScale(
       scale: _isPressed ? 0.97 : 1.0,
-      duration: const Duration(milliseconds: 120),
-      curve: Curves.easeOut,
+      duration: AppMotion.quick,
+      curve: AppMotion.premium,
       child: Opacity(
         opacity: _enabled ? 1 : 0.45,
         child: Container(

@@ -8,7 +8,9 @@ import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
+import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
@@ -18,6 +20,7 @@ import '../../domain/entities/legal_drafting_result.dart';
 import '../../domain/entities/professional_template.dart';
 import '../controllers/professional_documents_controller.dart';
 import '../widgets/drafting_intake_sheet.dart';
+import '../widgets/professional_service_request_wizard.dart';
 import 'drafting_result_screen.dart';
 import 'drafting_workspace_screen.dart';
 
@@ -29,14 +32,20 @@ const _templateDataSource = LocalProfessionalTemplateDataSource();
 class ProfessionalScreen extends StatelessWidget {
   const ProfessionalScreen({super.key});
 
-  void _openIntake(BuildContext context, DraftingMode mode, {ProfessionalTemplate? template}) {
+  void _openIntake(
+    BuildContext context,
+    DraftingMode mode, {
+    ProfessionalTemplate? template,
+  }) {
     final sheet = DraftingIntakeSheet(
       mode: mode,
       templates: _templateDataSource.getAll(),
       initialTemplate: template,
       onSubmit: (request) {
         Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => DraftingWorkspaceScreen(request: request)),
+          MaterialPageRoute(
+            builder: (_) => DraftingWorkspaceScreen(request: request),
+          ),
         );
       },
     );
@@ -57,15 +66,23 @@ class ProfessionalScreen extends StatelessWidget {
     }
   }
 
+  void _openServiceRequest(BuildContext context) {
+    showProfessionalServiceRequestWizard(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
       return _DesktopProfessionalView(
-        onOpenIntake: (mode, {template}) => _openIntake(context, mode, template: template),
+        onOpenIntake: (mode, {template}) =>
+            _openIntake(context, mode, template: template),
+        onOpenServiceRequest: () => _openServiceRequest(context),
       );
     }
 
-    final recent = context.watch<ProfessionalDocumentsController>().recentResults;
+    final recent = context
+        .watch<ProfessionalDocumentsController>()
+        .recentResults;
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -77,7 +94,9 @@ class ProfessionalScreen extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _AtelierAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _AtelierAmbience()),
+              ),
               SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -89,6 +108,7 @@ class ProfessionalScreen extends StatelessWidget {
                   recent: recent,
                   onOpenIntake: (mode, {template}) =>
                       _openIntake(context, mode, template: template),
+                  onOpenServiceRequest: () => _openServiceRequest(context),
                 ),
               ),
             ],
@@ -103,13 +123,17 @@ class ProfessionalScreen extends StatelessWidget {
 //  DESKTOP — « L'atelier » : ingénierie juridique assistée par IA
 // ===========================================================================
 
-typedef _OpenIntake = void Function(DraftingMode mode, {ProfessionalTemplate? template});
+typedef _OpenIntake =
+    void Function(DraftingMode mode, {ProfessionalTemplate? template});
 
 /// Palette métallique propre à chaque instrument de travail.
 ({Color tint, Gradient gradient}) _modeStyle(DraftingMode mode) {
   switch (mode) {
     case DraftingMode.redaction:
-      return (tint: AppColors.metalDeepGold, gradient: AppGradients.goldMetallic);
+      return (
+        tint: AppColors.metalDeepGold,
+        gradient: AppGradients.goldMetallic,
+      );
     case DraftingMode.audit:
       return (
         tint: AppColors.metalCobalt,
@@ -125,7 +149,11 @@ typedef _OpenIntake = void Function(DraftingMode mode, {ProfessionalTemplate? te
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF8FCBB2), AppColors.metalEmerald, Color(0xFF3C7C64)],
+          colors: [
+            Color(0xFF8FCBB2),
+            AppColors.metalEmerald,
+            Color(0xFF3C7C64),
+          ],
         ),
       );
   }
@@ -223,13 +251,19 @@ String _relativeDate(DateTime date) {
 }
 
 class _DesktopProfessionalView extends StatelessWidget {
-  const _DesktopProfessionalView({required this.onOpenIntake});
+  const _DesktopProfessionalView({
+    required this.onOpenIntake,
+    required this.onOpenServiceRequest,
+  });
 
   final _OpenIntake onOpenIntake;
+  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
-    final recent = context.watch<ProfessionalDocumentsController>().recentResults;
+    final recent = context
+        .watch<ProfessionalDocumentsController>()
+        .recentResults;
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -237,7 +271,9 @@ class _DesktopProfessionalView extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _AtelierAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _AtelierAmbience()),
+              ),
               Column(
                 children: [
                   const _DesktopProfessionalHeader(),
@@ -253,7 +289,11 @@ class _DesktopProfessionalView extends StatelessWidget {
                               AppSpacing.xl,
                               AppSpacing.xxl,
                             ),
-                            child: _AtelierBody(recent: recent, onOpenIntake: onOpenIntake),
+                            child: _AtelierBody(
+                              recent: recent,
+                              onOpenIntake: onOpenIntake,
+                              onOpenServiceRequest: onOpenServiceRequest,
+                            ),
                           ),
                         ),
                       ),
@@ -280,13 +320,25 @@ class _DesktopProfessionalHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
-          const Icon(Icons.design_services_rounded, size: 18, color: AppColors.gold),
+          const Icon(
+            Icons.design_services_rounded,
+            size: 18,
+            color: AppColors.gold,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -299,7 +351,9 @@ class _DesktopProfessionalHeader extends StatelessWidget {
                   'Atelier d\'ingénierie juridique — actes, audits et notes de synthèse',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -322,10 +376,16 @@ class _CommandHint extends StatelessWidget {
     return Tooltip(
       message: 'Palette de commandes',
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 6,
+        ),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.small),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.25), width: 0.7),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.25),
+            width: 0.7,
+          ),
           color: AppColors.legalBlueDark.withValues(alpha: 0.5),
         ),
         child: Row(
@@ -348,10 +408,15 @@ class _CommandHint extends StatelessWidget {
 }
 
 class _AtelierBody extends StatelessWidget {
-  const _AtelierBody({required this.recent, required this.onOpenIntake});
+  const _AtelierBody({
+    required this.recent,
+    required this.onOpenIntake,
+    required this.onOpenServiceRequest,
+  });
 
   final List<LegalDraftingResult> recent;
   final _OpenIntake onOpenIntake;
+  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -379,7 +444,9 @@ class _AtelierBody extends StatelessWidget {
             children: [
               for (var i = 0; i < cards.length; i++)
                 Padding(
-                  padding: EdgeInsets.only(bottom: i == cards.length - 1 ? 0 : AppSpacing.md),
+                  padding: EdgeInsets.only(
+                    bottom: i == cards.length - 1 ? 0 : AppSpacing.md,
+                  ),
                   child: IntrinsicHeight(child: cards[i]),
                 ),
             ],
@@ -430,7 +497,9 @@ class _AtelierBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Votre atelier de rédaction',
-          style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+          style: textTheme.displaySmall?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         ConstrainedBox(
@@ -439,7 +508,76 @@ class _AtelierBody extends StatelessWidget {
             'Trois instruments pour produire un travail abouti — un acte sur mesure, '
             'l\'audit d\'un contrat, ou une note de synthèse — chacun nourri par les '
             'textes de la bibliothèque juridique.',
-            style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+            style: textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PremiumSurface(
+          tone: PremiumSurfaceTone.cobalt,
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final copy = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PremiumStatusPill(
+                    label: 'Réseau de professionnels',
+                    tone: PremiumStatusTone.gold,
+                    icon: Icons.verified_user_rounded,
+                    compact: true,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Besoin d’un acte signé ou d’un regard expert ?',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontFamily: 'Libre Caslon Display',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Décrivez votre dossier : nous préparons l’orientation, le devis et le prochain créneau.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              );
+              final action = constraints.maxWidth < 620
+                  ? LuxuryElevatedButton(
+                      onPressed: onOpenServiceRequest,
+                      icon: Icons.arrow_forward_rounded,
+                      child: const Text('Démarrer une demande'),
+                    )
+                  : SizedBox(
+                      width: 220,
+                      child: LuxuryElevatedButton(
+                        onPressed: onOpenServiceRequest,
+                        icon: Icons.arrow_forward_rounded,
+                        child: const Text('Démarrer une demande'),
+                      ),
+                    );
+              if (constraints.maxWidth < 620) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    copy,
+                    const SizedBox(height: AppSpacing.md),
+                    action,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: copy),
+                  const SizedBox(width: AppSpacing.lg),
+                  action,
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
@@ -498,7 +636,10 @@ class _InstrumentCardState extends State<_InstrumentCard> {
     if (_hovered) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: ShimmerSweep(duration: const Duration(milliseconds: 1600), child: badge),
+        child: ShimmerSweep(
+          duration: const Duration(milliseconds: 1600),
+          child: badge,
+        ),
       );
     }
 
@@ -522,12 +663,18 @@ class _InstrumentCardState extends State<_InstrumentCard> {
               const SizedBox(height: AppSpacing.md),
               Text(
                 _modeTitle(widget.mode),
-                style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display', height: 1.15),
+                style: textTheme.titleLarge?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                  height: 1.15,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 _modeDescription(widget.mode),
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               for (final line in _modeDeliverables(widget.mode))
@@ -538,7 +685,11 @@ class _InstrumentCardState extends State<_InstrumentCard> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
-                        child: Icon(Icons.check_rounded, size: 13, color: style.tint),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 13,
+                          color: style.tint,
+                        ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
@@ -567,7 +718,11 @@ class _InstrumentCardState extends State<_InstrumentCard> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.goldLight),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: AppColors.goldLight,
+                  ),
                 ],
               ),
             ],
@@ -604,7 +759,10 @@ class _TemplateGrid extends StatelessWidget {
                   index: i,
                   child: _TemplateCard(
                     template: templates[i],
-                    onOpen: () => onOpenIntake(DraftingMode.redaction, template: templates[i]),
+                    onOpen: () => onOpenIntake(
+                      DraftingMode.redaction,
+                      template: templates[i],
+                    ),
                   ),
                 ),
               ),
@@ -634,7 +792,10 @@ class _TemplateCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GradientIconBadge(icon: _domainIconPro(template.domain), size: 40),
+              GradientIconBadge(
+                icon: _domainIconPro(template.domain),
+                size: 40,
+              ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -650,7 +811,9 @@ class _TemplateCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       template.domain.label,
-                      style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -662,19 +825,28 @@ class _TemplateCard extends StatelessWidget {
             template.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Icon(Icons.tune_rounded, size: 13, color: AppColors.textSecondary),
+              Icon(
+                Icons.tune_rounded,
+                size: 13,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 5),
               Expanded(
                 child: Text(
                   '${template.requiredFields.length} informations',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -685,7 +857,11 @@ class _TemplateCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.goldLight),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                size: 14,
+                color: AppColors.goldLight,
+              ),
             ],
           ),
         ],
@@ -714,18 +890,27 @@ class _RecentPanel extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.folder_open_rounded, size: 22, color: AppColors.gold.withValues(alpha: 0.6)),
+                Icon(
+                  Icons.folder_open_rounded,
+                  size: 22,
+                  color: AppColors.gold.withValues(alpha: 0.6),
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Vos actes, audits et notes générés apparaîtront ici, prêts à rouvrir.',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
               ],
             )
           else
             for (var i = 0; i < recent.length && i < 6; i++)
               Padding(
-                padding: EdgeInsets.only(bottom: i == recent.length - 1 || i == 5 ? 0 : AppSpacing.sm),
+                padding: EdgeInsets.only(
+                  bottom: i == recent.length - 1 || i == 5 ? 0 : AppSpacing.sm,
+                ),
                 child: _RecentTile(result: recent[i]),
               ),
         ],
@@ -749,7 +934,9 @@ class _RecentTile extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.small),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => DraftingResultScreen(result: result)),
+          MaterialPageRoute(
+            builder: (_) => DraftingResultScreen(result: result),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -765,11 +952,15 @@ class _RecentTile extends StatelessWidget {
                       result.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style: textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       '${_modeShort(result.mode)} · ${_relativeDate(result.generatedAt)}',
-                      style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -789,7 +980,10 @@ class _HowItWorks extends StatelessWidget {
 
   static const _steps = <(IconData, String)>[
     (Icons.tune_rounded, 'Choisissez un instrument et renseignez le contexte'),
-    (Icons.auto_awesome_rounded, 'L\'IA rédige au fil de l\'eau, sources à l\'appui'),
+    (
+      Icons.auto_awesome_rounded,
+      'L\'IA rédige au fil de l\'eau, sources à l\'appui',
+    ),
     (Icons.done_all_rounded, 'Ajustez en un clic, copiez ou exportez'),
   ];
 
@@ -806,7 +1000,9 @@ class _HowItWorks extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           for (var i = 0; i < _steps.length; i++)
             Padding(
-              padding: EdgeInsets.only(bottom: i == _steps.length - 1 ? 0 : AppSpacing.sm),
+              padding: EdgeInsets.only(
+                bottom: i == _steps.length - 1 ? 0 : AppSpacing.sm,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -849,16 +1045,20 @@ class _Eyebrow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 16, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+        Container(
+          width: 16,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.goldLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.goldLight,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -875,9 +1075,12 @@ class _AtelierAmbience extends StatefulWidget {
   State<_AtelierAmbience> createState() => _AtelierAmbienceState();
 }
 
-class _AtelierAmbienceState extends State<_AtelierAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 36))..repeat();
+class _AtelierAmbienceState extends State<_AtelierAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 36),
+  )..repeat();
 
   @override
   void dispose() {
@@ -889,7 +1092,8 @@ class _AtelierAmbienceState extends State<_AtelierAmbience> with SingleTickerPro
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _AtelierAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _AtelierAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -910,12 +1114,14 @@ class _AtelierAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.8 + (i % 3) * 0.7;
-      final opacity = 0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _AtelierAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _AtelierAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }

@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
+import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
@@ -51,7 +52,11 @@ class _LibraryViewState extends State<_LibraryView> {
     super.dispose();
   }
 
-  void _openDetail(BuildContext context, LibraryController controller, String documentId) {
+  void _openDetail(
+    BuildContext context,
+    LibraryController controller,
+    String documentId,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider<LibraryController>.value(
@@ -127,7 +132,9 @@ class _MobileLibrary extends StatelessWidget {
                   ? 'Afficher tous les documents'
                   : 'Afficher les favoris',
               icon: Icon(
-                controller.favoritesOnly ? Icons.star_rounded : Icons.star_border_rounded,
+                controller.favoritesOnly
+                    ? Icons.star_rounded
+                    : Icons.star_border_rounded,
                 color: AppColors.gold,
               ),
               onPressed: controller.toggleFavoritesOnly,
@@ -136,12 +143,30 @@ class _MobileLibrary extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            const Positioned.fill(child: IgnorePointer(child: _LibraryAmbience())),
+            const Positioned.fill(
+              child: IgnorePointer(child: _LibraryAmbience()),
+            ),
             SafeArea(
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: _CorpusIntro(
+                      searching: controller.isSearchingCorpus,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      0,
+                    ),
                     child: _RadiantSearchField(
                       controller: searchController,
                       onChanged: controller.updateKeyword,
@@ -156,7 +181,9 @@ class _MobileLibrary extends StatelessWidget {
                     height: 40,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
                       children: [
                         _MobileFacet(
                           gradient: AppGradients.goldMetallic,
@@ -183,11 +210,15 @@ class _MobileLibrary extends StatelessWidget {
                     height: 36,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
                       children: [
                         for (final domain in LegalDomain.values)
                           Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              right: AppSpacing.sm,
+                            ),
                             child: _FilterChip(
                               label: domain.label,
                               selected: controller.selectedDomain == domain,
@@ -199,7 +230,12 @@ class _MobileLibrary extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      0,
+                    ),
                     child: _ResultsBar(
                       count: results.length,
                       hasFilters: controller.hasActiveFilters,
@@ -220,7 +256,8 @@ class _MobileLibrary extends StatelessWidget {
                               // bas) : sans quoi deux cartes calculées sur la
                               // largeur pleine débordent du couloir réel et le
                               // Wrap n'en tient plus qu'une par ligne.
-                              final available = constraints.maxWidth - AppSpacing.md * 2;
+                              final available =
+                                  constraints.maxWidth - AppSpacing.md * 2;
                               final cols = available >= 640 ? 2 : 1;
                               final cardWidth = cols == 1
                                   ? available
@@ -236,16 +273,23 @@ class _MobileLibrary extends StatelessWidget {
                                   spacing: AppSpacing.sm,
                                   runSpacing: AppSpacing.sm,
                                   children: [
-                                    for (var index = 0; index < results.length; index++)
+                                    for (
+                                      var index = 0;
+                                      index < results.length;
+                                      index++
+                                    )
                                       SizedBox(
                                         width: cardWidth,
                                         child: EntranceFadeSlide(
                                           index: index,
                                           child: _LibraryDocCard(
                                             document: results[index],
-                                            onOpen: () => onOpenDetail(results[index].id),
+                                            onOpen: () =>
+                                                onOpenDetail(results[index].id),
                                             onToggleFavorite: () =>
-                                                controller.toggleBookmark(results[index].id),
+                                                controller.toggleBookmark(
+                                                  results[index].id,
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -325,7 +369,9 @@ class _MobileFacet extends StatelessWidget {
                   Text(
                     label,
                     style: textTheme.labelMedium?.copyWith(
-                      color: selected ? AppColors.textPrimary : AppColors.textSecondary,
+                      color: selected
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
@@ -333,7 +379,9 @@ class _MobileFacet extends StatelessWidget {
                   Text(
                     '$count',
                     style: textTheme.labelSmall?.copyWith(
-                      color: selected ? AppColors.goldLight : AppColors.textDisabled,
+                      color: selected
+                          ? AppColors.goldLight
+                          : AppColors.textDisabled,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -343,6 +391,35 @@ class _MobileFacet extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CorpusIntro extends StatelessWidget {
+  const _CorpusIntro({required this.searching});
+
+  final bool searching;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumSectionHeader(
+      eyebrow: 'Veille & recherche',
+      title: 'Corpus juridique',
+      subtitle:
+          'Recherchez une loi, un article, une référence ou une décision dans le fonds JurisIA.',
+      action: searching
+          ? const PremiumStatusPill(
+              label: 'Recherche plein texte…',
+              tone: PremiumStatusTone.info,
+              icon: Icons.manage_search_rounded,
+              compact: true,
+            )
+          : const PremiumStatusPill(
+              label: 'Sources officielles',
+              tone: PremiumStatusTone.gold,
+              icon: Icons.verified_rounded,
+              compact: true,
+            ),
     );
   }
 }
@@ -375,7 +452,9 @@ class _DesktopLibrary extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _LibraryAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _LibraryAmbience()),
+              ),
               Column(
                 children: [
                   _LibraryHeader(
@@ -398,6 +477,10 @@ class _DesktopLibrary extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                _CorpusIntro(
+                                  searching: controller.isSearchingCorpus,
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
                                 _RadiantSearchField(
                                   controller: searchController,
                                   onChanged: controller.updateKeyword,
@@ -468,13 +551,25 @@ class _LibraryHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
-          const Icon(Icons.local_library_rounded, size: 18, color: AppColors.gold),
+          const Icon(
+            Icons.local_library_rounded,
+            size: 18,
+            color: AppColors.gold,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -492,7 +587,9 @@ class _LibraryHeader extends StatelessWidget {
                   "$total textes officiels, codes, décisions et modèles d'actes",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -522,13 +619,20 @@ class _FavoritesToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.pill),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 8,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
               gradient: active ? AppGradients.goldMetallic : null,
-              color: active ? null : AppColors.legalBlueDark.withValues(alpha: 0.5),
+              color: active
+                  ? null
+                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
               border: Border.all(
-                color: active ? Colors.transparent : AppColors.gold.withValues(alpha: 0.4),
+                color: active
+                    ? Colors.transparent
+                    : AppColors.gold.withValues(alpha: 0.4),
                 width: 0.8,
               ),
             ),
@@ -544,9 +648,11 @@ class _FavoritesToggle extends StatelessWidget {
                 Text(
                   'Favoris',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: active ? AppColors.nightBlueDeep : AppColors.goldLight,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: active
+                        ? AppColors.nightBlueDeep
+                        : AppColors.goldLight,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -577,8 +683,10 @@ class _RadiantSearchField extends StatefulWidget {
 
 class _RadiantSearchFieldState extends State<_RadiantSearchField>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _sweep =
-      AnimationController(vsync: this, duration: const Duration(seconds: 7))..repeat();
+  late final AnimationController _sweep = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 7),
+  )..repeat();
   final FocusNode _focusNode = FocusNode();
   bool _focused = false;
   bool _hasText = false;
@@ -614,7 +722,10 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
       animation: _sweep,
       builder: (context, child) {
         return CustomPaint(
-          painter: _RadiantBorderPainter(rotation: _sweep.value * 2 * math.pi, focused: _focused),
+          painter: _RadiantBorderPainter(
+            rotation: _sweep.value * 2 * math.pi,
+            focused: _focused,
+          ),
           child: child,
         );
       },
@@ -648,21 +759,28 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
                   focusNode: _focusNode,
                   onChanged: widget.onChanged,
                   cursorColor: AppColors.cobalt,
-                  style: textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
                   decoration: const InputDecoration(
                     filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 16),
-                    hintText: 'Rechercher un texte, un article, une branche du droit…',
+                    hintText:
+                        'Rechercher un texte, un article, une branche du droit…',
                   ),
                 ),
               ),
               if (_hasText)
                 IconButton(
                   tooltip: 'Effacer',
-                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
                   onPressed: widget.onClear,
                 ),
             ],
@@ -818,7 +936,10 @@ class _FacetState extends State<_Facet> {
     if (widget.selected) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.small),
-        child: ShimmerSweep(duration: const Duration(milliseconds: 3400), child: badge),
+        child: ShimmerSweep(
+          duration: const Duration(milliseconds: 3400),
+          child: badge,
+        ),
       );
     }
 
@@ -840,8 +961,8 @@ class _FacetState extends State<_Facet> {
                 color: widget.selected
                     ? AppColors.gold.withValues(alpha: 0.14)
                     : _hovered
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : AppColors.legalBlueDark.withValues(alpha: 0.4),
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : AppColors.legalBlueDark.withValues(alpha: 0.4),
                 border: Border.all(
                   color: widget.selected
                       ? AppColors.gold.withValues(alpha: 0.5)
@@ -865,7 +986,9 @@ class _FacetState extends State<_Facet> {
                           style: textTheme.labelMedium?.copyWith(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
-                            color: widget.selected ? AppColors.gold : AppColors.textPrimary,
+                            color: widget.selected
+                                ? AppColors.gold
+                                : AppColors.textPrimary,
                           ),
                         ),
                         Text(
@@ -919,7 +1042,11 @@ class _DomainFilterBar extends StatelessWidget {
 }
 
 class _DomainPill extends StatefulWidget {
-  const _DomainPill({required this.label, required this.selected, required this.onTap});
+  const _DomainPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -950,8 +1077,8 @@ class _DomainPillState extends State<_DomainPill> {
               color: widget.selected
                   ? AppColors.gold.withValues(alpha: 0.18)
                   : _hovered
-                      ? Colors.white.withValues(alpha: 0.05)
-                      : AppColors.legalBlueDark.withValues(alpha: 0.5),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
               border: Border.all(
                 color: widget.selected
                     ? AppColors.gold.withValues(alpha: 0.55)
@@ -962,9 +1089,11 @@ class _DomainPillState extends State<_DomainPill> {
             child: Text(
               widget.label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: widget.selected ? AppColors.gold : AppColors.textSecondary,
-                    fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                color: widget.selected
+                    ? AppColors.gold
+                    : AppColors.textSecondary,
+                fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -974,7 +1103,11 @@ class _DomainPillState extends State<_DomainPill> {
 }
 
 class _ResultsBar extends StatelessWidget {
-  const _ResultsBar({required this.count, required this.hasFilters, required this.onClear});
+  const _ResultsBar({
+    required this.count,
+    required this.hasFilters,
+    required this.onClear,
+  });
 
   final int count;
   final bool hasFilters;
@@ -998,7 +1131,10 @@ class _ResultsBar extends StatelessWidget {
             style: TextButton.styleFrom(
               foregroundColor: AppColors.textSecondary,
               textStyle: textTheme.labelMedium,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 4,
+              ),
             ),
           ),
         ],
@@ -1076,7 +1212,10 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
     if (_hovered) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.small),
-        child: ShimmerSweep(duration: const Duration(milliseconds: 1500), child: badge),
+        child: ShimmerSweep(
+          duration: const Duration(milliseconds: 1500),
+          child: badge,
+        ),
       );
     }
 
@@ -1085,7 +1224,9 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: GlassContainer(
         onTap: widget.onOpen,
-        borderColor: _hovered ? AppColors.gold.withValues(alpha: 0.55) : AppColors.glassBorder,
+        borderColor: _hovered
+            ? AppColors.gold.withValues(alpha: 0.55)
+            : AppColors.glassBorder,
         borderWidth: _hovered ? 0.9 : 0.5,
         padding: const EdgeInsets.all(14),
         child: Stack(
@@ -1145,7 +1286,10 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
             Positioned(
               top: -4,
               right: -4,
-              child: _FavStar(active: doc.isFavorite, onTap: widget.onToggleFavorite),
+              child: _FavStar(
+                active: doc.isFavorite,
+                onTap: widget.onToggleFavorite,
+              ),
             ),
           ],
         ),
@@ -1204,11 +1348,17 @@ class _EmptyResults extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.search_off_rounded, size: 40, color: AppColors.textDisabled),
+            const Icon(
+              Icons.search_off_rounded,
+              size: 40,
+              color: AppColors.textDisabled,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               'Aucun texte ne correspond à ces critères.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(
@@ -1244,11 +1394,11 @@ class _SectionLabel extends StatelessWidget {
         Text(
           text.toUpperCase(),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.textDisabled,
-                fontWeight: FontWeight.w700,
-                letterSpacing: AppLetterSpacing.caps,
-                fontSize: 10.5,
-              ),
+            color: AppColors.textDisabled,
+            fontWeight: FontWeight.w700,
+            letterSpacing: AppLetterSpacing.caps,
+            fontSize: 10.5,
+          ),
         ),
       ],
     );
@@ -1266,8 +1416,10 @@ class _LibraryAmbience extends StatefulWidget {
 
 class _LibraryAmbienceState extends State<_LibraryAmbience>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 30))..repeat();
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 30),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1279,7 +1431,8 @@ class _LibraryAmbienceState extends State<_LibraryAmbience>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _AmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _AmbiencePainter(_controller.value)),
     );
   }
 }
@@ -1307,7 +1460,9 @@ class _AmbiencePainter extends CustomPainter {
     for (final mote in _motes) {
       final progress = (mote.phase + t * mote.speed) % 1.0;
       final y = size.height * (1.05 - progress * 1.12);
-      final x = size.width * mote.x + math.sin(progress * math.pi * 2 + mote.drift) * 14;
+      final x =
+          size.width * mote.x +
+          math.sin(progress * math.pi * 2 + mote.drift) * 14;
       final alpha = math.sin(progress * math.pi) * 0.1;
       if (alpha <= 0) continue;
       paint.color = AppColors.goldLight.withValues(alpha: alpha);
@@ -1316,7 +1471,8 @@ class _AmbiencePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _AmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _AmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 class _Mote {
@@ -1360,15 +1516,20 @@ class _FilterChip extends StatelessWidget {
       onSelected: (_) => onSelected(),
       selectedColor: AppColors.gold.withValues(alpha: 0.22),
       backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
-      labelStyle: (compact ? Theme.of(context).textTheme.labelSmall : Theme.of(context).textTheme.labelMedium)
-          ?.copyWith(
-        color: selected ? AppColors.gold : AppColors.textSecondary,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-      ),
+      labelStyle:
+          (compact
+                  ? Theme.of(context).textTheme.labelSmall
+                  : Theme.of(context).textTheme.labelMedium)
+              ?.copyWith(
+                color: selected ? AppColors.gold : AppColors.textSecondary,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        side: BorderSide(color: selected ? AppColors.gold : AppColors.glassBorder),
+        side: BorderSide(
+          color: selected ? AppColors.gold : AppColors.glassBorder,
+        ),
       ),
     );
   }

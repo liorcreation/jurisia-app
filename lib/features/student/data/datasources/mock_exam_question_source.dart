@@ -8,7 +8,10 @@ import 'evaluation_question_bank.dart';
 /// Jeu de questions généré pour une tentative d'examen blanc, accompagné du
 /// signalement honnête d'un repli réduit (voir [isReducedFallback]).
 class MockExamQuestionSet {
-  const MockExamQuestionSet({required this.questions, required this.isReducedFallback});
+  const MockExamQuestionSet({
+    required this.questions,
+    required this.isReducedFallback,
+  });
 
   final List<EvaluationQuestion> questions;
   final bool isReducedFallback;
@@ -36,13 +39,30 @@ class MockExamQuestionSource {
   /// pas exténuant.
   static const int questionCount = 14;
 
-  Future<MockExamQuestionSet> generate({required List<CourseModule> levelModules}) async {
+  Future<MockExamQuestionSet> generate({
+    required List<CourseModule> levelModules,
+  }) async {
     List<EvaluationQuestion> questions;
     var isReducedFallback = false;
 
     if (aiGenerator != null) {
       try {
-        questions = await aiGenerator!.generateForLevel(modules: levelModules, questionCount: questionCount);
+        final generated = await aiGenerator!.generateForLevel(
+          modules: levelModules,
+          questionCount: questionCount,
+        );
+        // Le mode Voice est un contrat de domaine : aucune question QCM ne
+        // doit atteindre l'écran vocal, même si le modèle répond imparfaitement
+        // au prompt. On préfère un repli explicite à un examen hybride.
+        questions = generated
+            .where((q) => q.type == QuestionType.casPratique)
+            .take(questionCount)
+            .toList();
+        if (questions.length != questionCount) {
+          throw const FormatException(
+            'Le jeu vocal généré ne contient pas 14 questions ouvertes.',
+          );
+        }
       } catch (_) {
         (questions, isReducedFallback) = _localFallback(levelModules);
       }
@@ -55,16 +75,25 @@ class MockExamQuestionSource {
     // le repli local utilise un barème fixe de 5 points pensé pour le quiz
     // de module (4 questions), pas pour un examen de 14 questions.
     final perQuestion = questions.isEmpty ? 0.0 : 20 / questions.length;
-    final rescaled = questions.map((q) => q.copyWith(points: perQuestion)).toList();
+    final rescaled = questions
+        .map((q) => q.copyWith(points: perQuestion))
+        .toList();
 
-    return MockExamQuestionSet(questions: rescaled, isReducedFallback: isReducedFallback);
+    return MockExamQuestionSet(
+      questions: rescaled,
+      isReducedFallback: isReducedFallback,
+    );
   }
 
-  (List<EvaluationQuestion>, bool) _localFallback(List<CourseModule> levelModules) {
+  (List<EvaluationQuestion>, bool) _localFallback(
+    List<CourseModule> levelModules,
+  ) {
     final candidates = <EvaluationQuestion>[];
     for (final module in levelModules) {
       candidates.addAll(
-        questionBank.candidatesFor(module.id).where((q) => q.type == QuestionType.casPratique),
+        questionBank
+            .candidatesFor(module.id)
+            .where((q) => q.type == QuestionType.casPratique),
       );
     }
     candidates.shuffle(_random);

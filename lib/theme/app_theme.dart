@@ -1,47 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Palette officielle de la charte graphique JurisIA — « Glassmorphism
-/// sombre juridique ». Trois couleurs porteuses : le Bleu Nuit en fond, le
-/// Bleu Juridique pour les surfaces de verre, et l'Or Élégant réservé aux
-/// accents, utilisé avec parcimonie. Le Bleu Cobalt est l'unique accent
-/// secondaire, réservé au focus et au curseur de saisie.
+/// Palette officielle de la charte graphique JurisIA — « Royal Legal Dark ».
+/// Le Deep Slate pose le fond, le Cobalt Métallique structure les surfaces et
+/// les états de focus, l'Or Sablé signe les actions à forte valeur, et le
+/// Blanc Titane porte la hiérarchie de lecture.
 class AppColors {
   const AppColors._();
 
-  static const Color nightBlue = Color(0xFF0B1F3A);
-  static const Color nightBlueDeep = Color(0xFF071527);
-  static const Color legalBlue = Color(0xFF163B68);
-  static const Color legalBlueLight = Color(0xFF1F4C82);
-  static const Color legalBlueDark = Color(0xFF0F2C4E);
+  /// Palette de référence « Royal Legal Dark ».
+  ///
+  /// Les alias historiques ([nightBlue], [legalBlue], etc.) sont conservés
+  /// pour permettre une migration progressive des features existantes sans
+  /// multiplier les régressions visuelles lors de la refonte.
+  static const Color deepSlate = Color(0xFF0B0F19);
+  static const Color deepSlateDeep = Color(0xFF070A12);
+  static const Color deepSlateElevated = Color(0xFF111827);
 
-  static const Color gold = Color(0xFFC9A227);
-  static const Color goldLight = Color(0xFFE9D48A);
-  static const Color goldDark = Color(0xFF8A6A15);
+  static const Color cobalt = Color(0xFF1E56A0);
+  static const Color cobaltLight = Color(0xFF4F88D4);
+  static const Color cobaltDeep = Color(0xFF102E55);
+
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color goldLight = Color(0xFFFFD978);
+  static const Color goldDark = Color(0xFF9A7A1E);
   static const Color roseGold = Color(0xFFD9A98A);
   static const Color agedGold = Color(0xFF7C6122);
 
-  /// Bleu cobalt vif : unique accent secondaire, réservé au focus de
-  /// saisie et au curseur, pour une touche de précision sans diluer l'or.
-  static const Color cobalt = Color(0xFF2E6FF2);
+  // Compatibilité avec les composants déjà livrés.
+  static const Color nightBlue = deepSlate;
+  static const Color nightBlueDeep = deepSlateDeep;
+  static const Color legalBlue = deepSlateElevated;
+  static const Color legalBlueLight = cobalt;
+  static const Color legalBlueDark = cobaltDeep;
 
-  static const Color textPrimary = Color(0xFFF4F1E9);
-  static const Color textSecondary = Color(0xFFB7C3D6);
-  static const Color textDisabled = Color(0xFF6C7A91);
+  static const Color textPrimary = Color(0xFFF8FAFC);
+  static const Color textSecondary = Color(0xFFAAB8CC);
+  static const Color textDisabled = Color(0xFF718096);
 
-  static const Color glassFill = Color(0x33163B68);
-  static const Color glassBorder = Color(0x33C9A227);
+  /// Verre à 10 % : suffisamment présent pour séparer les surfaces, sans
+  /// transformer l'interface en succession de panneaux opaques.
+  static const Color glassFill = Color(0x1A1E56A0);
+  static const Color glassBorder = Color(0x29F8FAFC);
   static const Color glassHighlight = Color(0x1AFFFFFF);
 
   /// Surface « verre fumé » des barres de navigation.
-  static const Color smokedGlass = Color(0xCC071527);
+  static const Color smokedGlass = Color(0xE60B0F19);
 
   static const Color divider = Color(0x33B7C3D6);
 
   static const Color success = Color(0xFF3FA772);
   static const Color warning = Color(0xFFE0A93E);
   static const Color error = Color(0xFFC85450);
-  static const Color info = Color(0xFF4C8BC9);
+  static const Color info = Color(0xFF6FA6E5);
 
   // Palette métallique des badges de catégorie de documents : chaque
   // branche/type reçoit un ton métallique distinct plutôt qu'une déclinaison
@@ -53,7 +64,7 @@ class AppColors {
   static const Color metalGunmetal = Color(0xFF8B98AC);
   static const Color metalEmerald = Color(0xFF5FA98A);
   static const Color metalRoseGold = Color(0xFFD6A79E);
-  static const Color metalDeepGold = Color(0xFFC9A227);
+  static const Color metalDeepGold = gold;
 }
 
 /// Dégradés métalliques et d'ambiance utilisés dans toute l'application.
@@ -63,7 +74,7 @@ class AppGradients {
   static const LinearGradient background = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [AppColors.nightBlueDeep, AppColors.nightBlue],
+    colors: [AppColors.deepSlateDeep, AppColors.deepSlate],
   );
 
   /// Or brossé : dégradé à bandes multiples simulant le passage de la
@@ -104,20 +115,20 @@ class AppGradients {
   static const LinearGradient glassCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0x40244B7D), Color(0x22163B68)],
+    colors: [Color(0x241E56A0), Color(0x12111827)],
   );
 
   static const LinearGradient heroCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [AppColors.legalBlueLight, AppColors.legalBlueDark],
+    colors: [AppColors.cobalt, AppColors.cobaltDeep],
   );
 
   /// Surface de verre fumé des barres de navigation.
   static const LinearGradient smokedGlass = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xE60F2C4E), Color(0xF2071527)],
+    colors: [Color(0xF20F1A2C), Color(0xF70B0F19)],
   );
 }
 
@@ -156,6 +167,30 @@ class AppLetterSpacing {
 
   /// Espacement large pour un libellé entièrement en capitales.
   static const double caps = 2.2;
+}
+
+/// Rythme d'animation partagé. Les interactions majeures utilisent 300 ms
+/// et une courbe de décélération nette, afin que les écrans mobiles et
+/// desktop donnent la même impression de continuité.
+class AppMotion {
+  const AppMotion._();
+
+  static const Duration standard = Duration(milliseconds: 300);
+  static const Duration quick = Duration(milliseconds: 180);
+  static const Duration slow = Duration(milliseconds: 520);
+  static const Curve premium = Cubic(0.22, 1.0, 0.36, 1.0);
+}
+
+/// Seuils de mise en page utilisés par les composants réutilisables. Les
+/// features restent libres de définir leurs propres seuils lorsqu'un écran
+/// demande une composition particulière.
+class AppBreakpoints {
+  const AppBreakpoints._();
+
+  static const double compact = 600;
+  static const double medium = 1024;
+  static const double wide = 1440;
+  static const double contentMaxWidth = 1200;
 }
 
 /// Ombres portées cohérentes avec l'ambiance nocturne et dorée.
@@ -237,8 +272,8 @@ class AppTheme {
 
     return base.copyWith(
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.nightBlue,
-      canvasColor: AppColors.nightBlue,
+      scaffoldBackgroundColor: AppColors.deepSlate,
+      canvasColor: AppColors.deepSlate,
       primaryColor: AppColors.gold,
       splashColor: AppColors.gold.withValues(alpha: 0.10),
       highlightColor: AppColors.gold.withValues(alpha: 0.06),
@@ -262,16 +297,16 @@ class AppTheme {
       colorScheme: const ColorScheme.dark(
         brightness: Brightness.dark,
         primary: AppColors.gold,
-        onPrimary: AppColors.nightBlueDeep,
+        onPrimary: AppColors.deepSlateDeep,
         primaryContainer: AppColors.goldDark,
         onPrimaryContainer: AppColors.textPrimary,
         secondary: AppColors.cobalt,
         onSecondary: AppColors.textPrimary,
-        secondaryContainer: AppColors.legalBlue,
+        secondaryContainer: AppColors.cobaltDeep,
         onSecondaryContainer: AppColors.textPrimary,
-        surface: AppColors.legalBlue,
+        surface: AppColors.deepSlateElevated,
         onSurface: AppColors.textPrimary,
-        surfaceContainerHighest: AppColors.legalBlueDark,
+        surfaceContainerHighest: AppColors.cobaltDeep,
         error: AppColors.error,
         onError: AppColors.textPrimary,
         outline: AppColors.divider,
@@ -291,12 +326,12 @@ class AppTheme {
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.legalBlue.withValues(alpha: 0.42),
+        color: AppColors.deepSlateElevated.withValues(alpha: 0.72),
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.35), width: 0.5),
+          side: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -308,7 +343,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.nightBlueDeep,
+          foregroundColor: AppColors.deepSlateDeep,
           disabledBackgroundColor: AppColors.goldDark.withValues(alpha: 0.3),
           disabledForegroundColor: AppColors.textDisabled,
           elevation: 0,
@@ -347,7 +382,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.legalBlueDark.withValues(alpha: 0.5),
+        fillColor: AppColors.deepSlateElevated.withValues(alpha: 0.78),
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textDisabled),
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         contentPadding: const EdgeInsets.symmetric(
@@ -406,7 +441,7 @@ class AppTheme {
         useIndicator: true,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
+        backgroundColor: AppColors.deepSlateElevated.withValues(alpha: 0.82),
         selectedColor: AppColors.gold.withValues(alpha: 0.2),
         labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
         secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.gold),
@@ -417,7 +452,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.legalBlue,
+        backgroundColor: AppColors.deepSlateElevated,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.large),
@@ -557,7 +592,7 @@ class _LuxuryFadeThroughTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.fastOutSlowIn);
+    final curved = CurvedAnimation(parent: animation, curve: AppMotion.premium);
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
