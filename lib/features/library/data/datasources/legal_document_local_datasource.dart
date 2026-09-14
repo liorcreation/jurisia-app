@@ -28,7 +28,8 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
 const _legiburkina = 'https://www.legiburkina.bf';
 const _droitAfrique = 'https://www.droit-afrique.com/pays/burkina/';
 const _ohadaTextes = 'https://www.ohada.org/index.php/fr/actes-uniformes';
-const _jofb = 'https://www.legiburkina.bf'; // Journal Officiel diffusé via Légiburkina
+const _jofb =
+    'https://www.legiburkina.bf'; // Journal Officiel diffusé via Légiburkina
 
 /// Fabrique un code / grand texte national burkinabè.
 LegalDocument _code({
@@ -109,7 +110,8 @@ final List<LegalDocument> _documents = [
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
     summaryOnly: true,
-    summary: 'Loi fondamentale : forme de l\'État, droits et devoirs, organisation des pouvoirs.',
+    summary:
+        'Loi fondamentale : forme de l\'État, droits et devoirs, organisation des pouvoirs.',
     fullContent:
         'La Constitution est la norme suprême de l\'ordre juridique burkinabè. Elle proclame '
         'l\'attachement du peuple aux principes de la démocratie pluraliste, aux droits humains '
@@ -138,7 +140,11 @@ final List<LegalDocument> _documents = [
       'Titre X — Des collectivités territoriales',
       'Titre XI — De la révision',
     ],
-    tags: const ['institutions', 'droits fondamentaux', 'séparation des pouvoirs'],
+    tags: const [
+      'institutions',
+      'droits fondamentaux',
+      'séparation des pouvoirs',
+    ],
   ),
 
   // ======================================================================
@@ -146,29 +152,73 @@ final List<LegalDocument> _documents = [
   // ======================================================================
   _code(
     id: 'doc-code-personnes-famille',
-    title: 'Code des personnes et de la famille',
+    title: 'Code des personnes et de la famille du Burkina Faso',
     domain: LegalDomain.famille,
-    reference: 'Zatu n° AN VII-13 du 16 novembre 1989',
-    date: DateTime(1989, 11, 16),
-    status: LegalDocumentStatus.modifie,
-    summary: 'État civil, mariage, filiation, autorité parentale, régimes matrimoniaux, successions.',
+    reference:
+        'Loi n° 012-2025/ALT du 1er septembre 2025, promulguée par le décret n° 2025-1232/PF du 25 septembre 2025',
+    date: DateTime(2025, 9, 1),
+    source: _jofb,
+    sourceName: 'Journal officiel du Faso / Légiburkina',
+    summary:
+        'Texte actuellement en vigueur : personnes, état civil, famille, mariage, filiation, parentalité et successions.',
     overview:
-        'Le Code des personnes et de la famille régit l\'identité et l\'état des personnes '
-        '(nom, domicile, actes de l\'état civil, absence), le mariage et sa dissolution, les '
-        'régimes matrimoniaux, la filiation et l\'adoption, l\'autorité parentale, la tutelle, '
-        'les libéralités et les successions.\n\n'
-        'Il pose le principe du mariage monogamique comme régime de droit commun, tout en '
-        'admettant la polygamie sur option exprimée à la célébration. Il fixe l\'âge nubile, les '
-        'empêchements à mariage, et organise le divorce (par consentement mutuel, pour faute ou '
-        'pour rupture de la vie commune) ainsi que ses effets patrimoniaux et à l\'égard des '
-        'enfants.',
+        'La loi n° 012-2025/ALT du 1er septembre 2025 organise le droit des personnes et de '
+        'la famille au Burkina Faso. Elle encadre notamment la jouissance des droits civils, '
+        'l\'identification et l\'état civil, le mariage, la filiation, l\'autorité parentale, '
+        'la protection des personnes vulnérables et les successions.\n\n'
+        'La fiche JurisIA renvoie au texte publié au Journal officiel. Elle remplace la fiche '
+        'du Code de 1989 : celui-ci est conservé séparément comme archive historique, car '
+        'l\'article 322-3 du Code de 2025 l\'abroge expressément.',
     outline: const [
-      'Livre I — Des personnes',
-      'Livre II — De la famille',
-      'Livre III — Des successions, libéralités et régimes matrimoniaux',
+      'Première partie — Des personnes',
+      'Personnes physiques, droits civils, absence et disparition',
+      'Identification et état civil',
+      'Droit de la famille : mariage, filiation et parentalité',
+      'Régimes patrimoniaux, libéralités et successions',
+      'Dispositions transitoires et abrogatoires',
     ],
-    tags: const ['famille', 'mariage', 'succession', 'état civil'],
+    tags: const [
+      'famille',
+      'mariage',
+      'succession',
+      'état civil',
+      'droit positif',
+      'Burkina Faso',
+    ],
     related: const ['doc-constitution'],
+  ),
+  LegalDocument(
+    id: 'doc-code-personnes-famille-1989',
+    title: 'Code des personnes et de la famille — archive 1989',
+    type: LegalDocumentType.code,
+    domain: LegalDomain.famille,
+    reference: 'Zatu n° AN VII-0013/FP/PRES du 16 novembre 1989',
+    datePublication: DateTime(1989, 11, 16),
+    status: LegalDocumentStatus.abroge,
+    summary:
+        'Archive historique : le Code de 1989 a été expressément abrogé par l\'article 322-3 de la loi n° 012-2025/ALT.',
+    fullContent:
+        'Cette fiche conserve un repère documentaire vers l\'ancien Code des personnes et de '
+        'la famille, applicable de 1989 à son remplacement par le Code de 2025. Ses règles ne '
+        'doivent pas être citées comme droit positif. Elle reste utile pour lire la doctrine, '
+        'la jurisprudence et les situations juridiques antérieures au nouveau Code.',
+    outline: const [
+      'Première partie — Des personnes',
+      'État civil et identification',
+      'Deuxième partie — De la famille',
+      'Successions, libéralités et régimes matrimoniaux',
+    ],
+    summaryOnly: true,
+    officialSourceName: 'Archive législative — texte transmis',
+    tags: const [
+      'archive',
+      'code abrogé',
+      'famille',
+      'mariage',
+      'état civil',
+      'Burkina Faso',
+    ],
+    relatedDocumentIds: const ['doc-code-personnes-famille'],
   ),
   _code(
     id: 'doc-code-civil',
@@ -177,7 +227,8 @@ final List<LegalDocument> _documents = [
     reference: 'Dispositions civiles applicables (hors droit de la famille)',
     date: DateTime(1804, 3, 21),
     status: LegalDocumentStatus.modifie,
-    summary: 'Droit des obligations, des contrats, de la responsabilité et des biens.',
+    summary:
+        'Droit des obligations, des contrats, de la responsabilité et des biens.',
     overview:
         'En matière d\'obligations, de contrats, de responsabilité civile et de biens, le droit '
         'burkinabè applique les dispositions du Code civil hérité, sous réserve des lois '
@@ -197,6 +248,190 @@ final List<LegalDocument> _documents = [
     source: _droitAfrique,
     related: const ['doc-modele-bail-habitation', 'doc-jurisprudence-vente'],
   ),
+  // ======================================================================
+  //  RÉFÉRENCES TRANSMISES — DROIT DES PERSONNES ET DE LA FAMILLE
+  // ======================================================================
+  LegalDocument(
+    id: 'doc-onu-crc-sp-50',
+    title: "Document ONU — Comité des droits de l'enfant (CRC/SP/50)",
+    type: LegalDocumentType.rapport,
+    domain: LegalDomain.famille,
+    reference: 'CRC/SP/50 — 5 juin 2018',
+    datePublication: DateTime(2018, 6, 5),
+    summary:
+        "Document institutionnel des Nations Unies relatif à l'élection de neuf membres du Comité des droits de l'enfant. Il ne constitue pas le texte intégral de la Convention.",
+    fullContent:
+        "Cette référence présente la dix-septième réunion des États parties à la Convention relative aux droits de l'enfant et la procédure d'élection de neuf membres du Comité, conformément à l'article 43. Elle rassemble la note du Secrétaire général, la liste des personnes désignées et les notices biographiques communiquées par les États parties.",
+    outline: const [
+      'Réunion des États parties — New York, 29 juin 2018',
+      "Élection de neuf membres du Comité des droits de l'enfant",
+      'Personnes désignées par les États parties',
+      'Membres continuant leur mandat',
+      'Notices biographiques des personnes désignées',
+    ],
+    summaryOnly: true,
+    officialSourceName: 'Nations Unies',
+    tags: const [
+      "droits de l'enfant",
+      'Convention relative aux droits de l’enfant',
+      'Comité des droits de l’enfant',
+      'Nations Unies',
+    ],
+    relatedDocumentIds: const ['doc-constitution'],
+  ),
+  LegalDocument(
+    id: 'doc-doctrine-mariage-senegal',
+    title: "L'organisation juridique du mariage au Sénégal",
+    type: LegalDocumentType.doctrine,
+    domain: LegalDomain.famille,
+    reference: 'Cheikh SENE — RAMReS, janvier 2020',
+    datePublication: DateTime(2020, 1),
+    summary:
+        "Étude doctrinale consacrée à la formation et à l'organisation juridique du mariage au Sénégal, entre droit codifié, formes coutumières et liberté religieuse.",
+    fullContent:
+        "L'article analyse les rapports préalables au mariage, les conditions de fond et de forme ainsi que les différentes formes d'union reconnues ou constatées par le droit sénégalais. Il met en perspective le mariage célébré, le mariage coutumier constaté et le mariage coutumier non constaté, puis examine leurs effets et les enjeux d'égalité entre les époux.",
+    outline: const [
+      'Introduction — Le Code de la famille sénégalais',
+      'Les rapports préalables à la conclusion du mariage : les fiançailles',
+      'Les conditions de fond et de forme',
+      "Le mariage célébré par l'officier d'état civil",
+      'Le mariage coutumier constaté',
+      'Le mariage coutumier non constaté',
+      'Les effets et la modernisation du mariage',
+      'Conclusion',
+    ],
+    summaryOnly: true,
+    officialSourceName: 'RAMReS — Cheikh SENE',
+    tags: const [
+      'mariage',
+      'fiançailles',
+      'droit sénégalais',
+      'coutume',
+      'égalité des époux',
+    ],
+    relatedDocumentIds: const ['doc-code-personnes-famille'],
+  ),
+  LegalDocument(
+    id: 'doc-doctrine-famille-burkina',
+    title:
+        'Droit de la famille burkinabé — Le code et ses pratiques à Ouagadougou',
+    type: LegalDocumentType.doctrine,
+    domain: LegalDomain.famille,
+    reference: "Anne-Claude Cavin — L'Harmattan, 1998, ISBN 2-7384-7397-0",
+    datePublication: DateTime(1998),
+    summary:
+        "Étude doctrinale et anthropologique des pratiques familiales et judiciaires à Ouagadougou. L'ouvrage avertit explicitement qu'il ne tient pas compte des évolutions postérieures à son enquête (1993–1995).",
+    fullContent:
+        "Cette recherche examine le droit métissé, le dualisme juridique et juridictionnel, les structures sociales fondamentales, le mariage traditionnel, la filiation, le veuvage, les filles-mères et les problèmes conjugaux à Ouagadougou. Elle doit être consultée comme une source historique et doctrinale, jamais comme une présentation à jour du droit positif burkinabè.",
+    outline: const [
+      'Partie I — Généralités : cadre historique, juridique et culturel',
+      'Le dualisme juridique et juridictionnel au Burkina Faso',
+      'Les structures sociales fondamentales : parenté, mariage, filiation',
+      'Partie II — Analyse des données de terrain',
+      'Le veuvage des femmes et la résolution des conflits',
+      'Les filles-mères et les litiges liés à la filiation',
+      'Les problèmes conjugaux',
+      'Partie III — Synthèse doctrinale et pratique',
+    ],
+    summaryOnly: true,
+    officialSourceName: "Éditions L'Harmattan — Anne-Claude Cavin",
+    tags: const [
+      'famille burkinabè',
+      'Ouagadougou',
+      'mariage traditionnel',
+      'filiation',
+      'veuvage',
+      'source historique',
+    ],
+    relatedDocumentIds: const [
+      'doc-code-personnes-famille-1989',
+      'doc-code-personnes-famille',
+    ],
+  ),
+  LegalDocument(
+    id: 'doc-these-egalite-mariage-afrique',
+    title: "L'égalité de l'homme et de la femme dans le mariage en Afrique noire francophone",
+    type: LegalDocumentType.doctrine,
+    domain: LegalDomain.famille,
+    reference:
+        'Aïssata Dabo — Thèse de doctorat en cotutelle, Universités de Bordeaux et d’Abomey-Calavi, 15 décembre 2017',
+    datePublication: DateTime(2017, 12, 15),
+    summary:
+        'Étude comparée des droits du Bénin, du Burkina Faso et du Mali sur l\'égalité dans le mariage, le pluralisme juridique et l\'effectivité des droits des femmes.',
+    fullContent:
+        'La thèse étudie les écarts entre les réformes des droits de la famille et leur '
+        'effectivité, en particulier dans la formation, l\'exécution et la dissolution du '
+        'mariage. Elle analyse notamment la polygynie, les violences conjugales et les droits '
+        'professionnels et reproductifs. Soutenue en 2017, elle constitue une ressource '
+        'doctrinale et comparative : ses références au droit burkinabè antérieur au Code de '
+        '2025 doivent être recontextualisées avant toute application pratique.',
+    outline: const [
+      'Introduction — Réformes du droit de la famille et pluralisme juridique',
+      'Partie I — Faiblesse des droits de la femme dans le mariage',
+      'Formation, vie et dissolution du mariage',
+      'Partie II — Négation des droits de la femme dans le mariage',
+      'Polygynie, mutilations génitales féminines, violences et droits de santé',
+      'Conclusion générale',
+    ],
+    summaryOnly: true,
+    officialSourceName:
+        'Aïssata Dabo — Universités de Bordeaux et d’Abomey-Calavi',
+    tags: const [
+      'égalité femmes-hommes',
+      'mariage',
+      'droit comparé',
+      'Bénin',
+      'Burkina Faso',
+      'Mali',
+      'doctrine',
+    ],
+    relatedDocumentIds: const [
+      'doc-code-personnes-famille',
+      'doc-code-personnes-famille-1989',
+    ],
+  ),
+  LegalDocument(
+    id: 'doc-these-pluralisme-justice-mossi',
+    title: 'Le pluralisme des systèmes juridiques et les perceptions de la justice',
+    type: LegalDocumentType.doctrine,
+    domain: LegalDomain.famille,
+    reference:
+        'Marie-Eve Paré — Thèse de doctorat en anthropologie, Université de Montréal, 22 décembre 2016',
+    datePublication: DateTime(2016, 12, 22),
+    summary:
+        'Ethnographie des conflits matrimoniaux chez les Mossi de Koudougou, centrée sur le pluralisme juridique, les stratégies de résolution et les perceptions de la justice.',
+    fullContent:
+        'Cette recherche analyse les interactions entre référents coutumiers, religieux et '
+        'étatiques dans les conflits matrimoniaux à Koudougou. Elle étudie la parenté, les '
+        'formes de mariage, les sources de conflit et le « forum shopping » des justiciables. '
+        'Il s\'agit d\'une étude anthropologique de terrain datée de 2016 : elle éclaire les '
+        'pratiques et représentations sociales sans se substituer au droit positif actuellement '
+        'en vigueur.',
+    outline: const [
+      'Introduction — Pluralisme juridique et perception de la justice',
+      'Approche théorique et méthodologie ethnographique',
+      'Parenté et organisation du mariage chez les Mossi',
+      'Conjugalité et sources des conflits matrimoniaux',
+      'Mariages forcés, polygynie, filiation et conflits successoraux',
+      'Résolution coutumière, action sociale, tribunal et forum shopping',
+      'Conclusion',
+    ],
+    summaryOnly: true,
+    officialSourceName: 'Marie-Eve Paré — Université de Montréal',
+    tags: const [
+      'pluralisme juridique',
+      'Mossi',
+      'Koudougou',
+      'mariage',
+      'justice coutumière',
+      'anthropologie juridique',
+      'doctrine',
+    ],
+    relatedDocumentIds: const [
+      'doc-code-personnes-famille',
+      'doc-code-personnes-famille-1989',
+    ],
+  ),
   _code(
     id: 'doc-code-travail',
     title: 'Code du travail',
@@ -204,7 +439,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 028-2008/AN du 13 mai 2008',
     date: DateTime(2008, 5, 13),
     status: LegalDocumentStatus.modifie,
-    summary: 'Relations individuelles et collectives de travail, durée, salaire, rupture, syndicats.',
+    summary:
+        'Relations individuelles et collectives de travail, durée, salaire, rupture, syndicats.',
     overview:
         'Le Code du travail s\'applique aux relations entre employeurs et travailleurs exerçant '
         'une activité professionnelle sous l\'autorité et moyennant rémunération. Il définit le '
@@ -227,7 +463,12 @@ final List<LegalDocument> _documents = [
       'Titre VIII — De l\'administration et du contrôle du travail',
     ],
     tags: const ['contrat de travail', 'licenciement', 'SMIG', 'syndicats'],
-    related: const ['doc-jurisprudence-licenciement', 'doc-modele-cdd', 'doc-decret-application-travail', 'doc-code-securite-sociale'],
+    related: const [
+      'doc-jurisprudence-licenciement',
+      'doc-modele-cdd',
+      'doc-decret-application-travail',
+      'doc-code-securite-sociale',
+    ],
   ),
   _code(
     id: 'doc-code-penal',
@@ -267,7 +508,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 040-2019/AN du 29 mai 2019',
     date: DateTime(2019, 5, 29),
     status: LegalDocumentStatus.modifie,
-    summary: 'Enquête, poursuite, instruction, jugement, voies de recours et exécution des peines.',
+    summary:
+        'Enquête, poursuite, instruction, jugement, voies de recours et exécution des peines.',
     overview:
         'Le Code de procédure pénale organise le déroulement du procès pénal : constatation des '
         'infractions et enquête (police judiciaire, garde à vue, perquisitions), exercice de '
@@ -297,7 +539,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 22-99/AN du 18 mai 1999, modifiée',
     date: DateTime(1999, 5, 18),
     status: LegalDocumentStatus.modifie,
-    summary: 'Compétence des juridictions civiles, déroulement de l\'instance, jugements et recours.',
+    summary:
+        'Compétence des juridictions civiles, déroulement de l\'instance, jugements et recours.',
     overview:
         'Le Code de procédure civile régit le procès civil, commercial et social : compétence '
         'territoriale et d\'attribution des juridictions, saisine, représentation, mise en état, '
@@ -324,7 +567,8 @@ final List<LegalDocument> _documents = [
     domain: LegalDomain.commercial,
     reference: 'Dispositions nationales + Actes uniformes OHADA',
     date: DateTime(2010, 12, 15),
-    summary: 'Statut du commerçant, sociétés, fonds de commerce, ventes commerciales — largement OHADA.',
+    summary:
+        'Statut du commerçant, sociétés, fonds de commerce, ventes commerciales — largement OHADA.',
     overview:
         'Au Burkina Faso, le droit commercial est pour l\'essentiel régi par les Actes uniformes '
         'de l\'OHADA, directement applicables et primant sur les dispositions nationales '
@@ -343,16 +587,22 @@ final List<LegalDocument> _documents = [
     tags: const ['commerçant', 'sociétés', 'concurrence'],
     source: _ohadaTextes,
     sourceName: 'OHADA',
-    related: const ['doc-ohada-audcg', 'doc-ohada-auscgie', 'doc-code-investissements'],
+    related: const [
+      'doc-ohada-audcg',
+      'doc-ohada-auscgie',
+      'doc-code-investissements',
+    ],
   ),
   _code(
     id: 'doc-code-impots',
     title: 'Code général des impôts',
     domain: LegalDomain.fiscal,
-    reference: 'Loi n° 058-2017/AN du 20 décembre 2017, modifiée par les lois de finances',
+    reference:
+        'Loi n° 058-2017/AN du 20 décembre 2017, modifiée par les lois de finances',
     date: DateTime(2017, 12, 20),
     status: LegalDocumentStatus.modifie,
-    summary: 'Impôts d\'État : sur les bénéfices, sur les revenus, TVA, droits d\'enregistrement, procédures.',
+    summary:
+        'Impôts d\'État : sur les bénéfices, sur les revenus, TVA, droits d\'enregistrement, procédures.',
     overview:
         'Le Code général des impôts regroupe les impôts, taxes et droits perçus au profit du '
         'budget de l\'État : impôt sur les sociétés et sur les bénéfices industriels, commerciaux '
@@ -368,7 +618,12 @@ final List<LegalDocument> _documents = [
       'Livre III — Droits d\'enregistrement, de timbre et taxes assimilées',
       'Livre IV — Procédures fiscales (contrôle, recouvrement, contentieux)',
     ],
-    tags: const ['fiscalité', 'TVA', 'impôt sur les sociétés', 'contrôle fiscal'],
+    tags: const [
+      'fiscalité',
+      'TVA',
+      'impôt sur les sociétés',
+      'contrôle fiscal',
+    ],
     source: _legiburkina,
     sourceName: 'Légiburkina',
   ),
@@ -379,7 +634,8 @@ final List<LegalDocument> _documents = [
     reference: 'Code des douanes en vigueur (Loi n° 03-92/ADP, modifiée)',
     date: DateTime(1992, 1, 6),
     status: LegalDocumentStatus.modifie,
-    summary: 'Régime des marchandises à l\'importation et à l\'exportation, contentieux douanier.',
+    summary:
+        'Régime des marchandises à l\'importation et à l\'exportation, contentieux douanier.',
     overview:
         'Le Code des douanes fixe le cadre de l\'action de l\'administration des douanes : '
         'territoire douanier, régimes douaniers (mise à la consommation, entrepôt, admission '
@@ -407,7 +663,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 006-2013/AN du 2 avril 2013',
     date: DateTime(2013, 4, 2),
     status: LegalDocumentStatus.modifie,
-    summary: 'Gestion de l\'environnement, évaluations environnementales, pollutions et nuisances.',
+    summary:
+        'Gestion de l\'environnement, évaluations environnementales, pollutions et nuisances.',
     overview:
         'Le Code de l\'environnement pose les principes de précaution, de prévention, du '
         'pollueur-payeur et de participation du public. Il soumet les projets susceptibles '
@@ -425,7 +682,12 @@ final List<LegalDocument> _documents = [
       'Titre V — Des installations classées et des substances chimiques',
       'Titre VI — Des infractions et sanctions',
     ],
-    tags: const ['environnement', 'étude d\'impact', 'pollution', 'installations classées'],
+    tags: const [
+      'environnement',
+      'étude d\'impact',
+      'pollution',
+      'installations classées',
+    ],
     source: _legiburkina,
     sourceName: 'Légiburkina',
   ),
@@ -436,7 +698,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 036-2015/CNT du 26 juin 2015',
     date: DateTime(2015, 6, 26),
     status: LegalDocumentStatus.modifie,
-    summary: 'Titres miniers, régime des substances, obligations des sociétés minières, fonds miniers.',
+    summary:
+        'Titres miniers, régime des substances, obligations des sociétés minières, fonds miniers.',
     overview:
         'Le Code minier fixe le régime de la prospection, de la recherche et de l\'exploitation '
         'des substances minérales, propriété de l\'État. Il organise les titres et autorisations '
@@ -465,7 +728,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 014-2001/AN du 3 juillet 2001, modifiée',
     date: DateTime(2001, 7, 3),
     status: LegalDocumentStatus.modifie,
-    summary: 'Corps électoral, opérations de vote, candidatures, contentieux et financement.',
+    summary:
+        'Corps électoral, opérations de vote, candidatures, contentieux et financement.',
     overview:
         'Le Code électoral détermine les conditions de l\'électorat et de l\'éligibilité, la '
         'confection et la révision des listes électorales, la circonscription et le découpage, '
@@ -494,7 +758,8 @@ final List<LegalDocument> _documents = [
     date: DateTime(2009, 6, 16),
     type: LegalDocumentType.loi,
     status: LegalDocumentStatus.modifie,
-    summary: 'Sécurisation des terres rurales : domaine, possession, chartes foncières locales.',
+    summary:
+        'Sécurisation des terres rurales : domaine, possession, chartes foncières locales.',
     overview:
         'La loi sur le foncier rural vise à sécuriser les droits fonciers de l\'ensemble des '
         'acteurs ruraux. Elle distingue le domaine foncier rural de l\'État, celui des '
@@ -512,7 +777,12 @@ final List<LegalDocument> _documents = [
       'Titre IV — De la constatation et de la sécurisation des droits',
       'Titre V — Du règlement des conflits fonciers ruraux',
     ],
-    tags: const ['foncier rural', 'possession coutumière', 'APFR', 'charte foncière'],
+    tags: const [
+      'foncier rural',
+      'possession coutumière',
+      'APFR',
+      'charte foncière',
+    ],
     source: _legiburkina,
     sourceName: 'Légiburkina',
     related: const ['doc-loi-raf'],
@@ -525,7 +795,8 @@ final List<LegalDocument> _documents = [
     date: DateTime(2012, 7, 2),
     type: LegalDocumentType.loi,
     status: LegalDocumentStatus.modifie,
-    summary: 'Domaine foncier national, titres de jouissance et de propriété, aménagement du territoire.',
+    summary:
+        'Domaine foncier national, titres de jouissance et de propriété, aménagement du territoire.',
     overview:
         'La RAF définit le domaine foncier national, composé du domaine de l\'État, du domaine '
         'des collectivités territoriales et du patrimoine foncier des particuliers. Elle fixe les '
@@ -554,7 +825,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 015-2006/AN du 11 mai 2006',
     date: DateTime(2006, 5, 11),
     status: LegalDocumentStatus.modifie,
-    summary: 'Régime des travailleurs salariés : prestations familiales, risques professionnels, pensions.',
+    summary:
+        'Régime des travailleurs salariés : prestations familiales, risques professionnels, pensions.',
     overview:
         'Le Code de la sécurité sociale institue, au bénéfice des travailleurs salariés et '
         'assimilés, une protection contre les principaux risques sociaux, gérée par la Caisse '
@@ -573,7 +845,12 @@ final List<LegalDocument> _documents = [
       'Titre V — Des ressources et du recouvrement',
       'Titre VI — Du contentieux et des sanctions',
     ],
-    tags: const ['CNSS', 'retraite', 'accident du travail', 'prestations familiales'],
+    tags: const [
+      'CNSS',
+      'retraite',
+      'accident du travail',
+      'prestations familiales',
+    ],
     source: _legiburkina,
     sourceName: 'Légiburkina',
     related: const ['doc-code-travail'],
@@ -586,7 +863,8 @@ final List<LegalDocument> _documents = [
     date: DateTime(2018, 10, 30),
     type: LegalDocumentType.loi,
     status: LegalDocumentStatus.modifie,
-    summary: 'Garanties et avantages accordés aux investissements réalisés au Burkina Faso.',
+    summary:
+        'Garanties et avantages accordés aux investissements réalisés au Burkina Faso.',
     overview:
         'Le Code des investissements fixe les conditions générales d\'investissement et les '
         'garanties accordées aux investisseurs : liberté d\'entreprendre, égalité de traitement, '
@@ -614,7 +892,8 @@ final List<LegalDocument> _documents = [
     reference: 'Loi n° 055-2004/AN du 21 décembre 2004, modifiée',
     date: DateTime(2004, 12, 21),
     status: LegalDocumentStatus.modifie,
-    summary: 'Régions et communes : organisation, compétences, finances locales et tutelle.',
+    summary:
+        'Régions et communes : organisation, compétences, finances locales et tutelle.',
     overview:
         'Le Code général des collectivités territoriales met en œuvre la décentralisation. Il '
         'érige la région et la commune (urbaine ou rurale) en collectivités territoriales dotées '
@@ -644,7 +923,8 @@ final List<LegalDocument> _documents = [
     date: DateTime(2015, 9, 4),
     type: LegalDocumentType.loi,
     status: LegalDocumentStatus.modifie,
-    summary: 'Liberté de la presse écrite, entreprises de presse, responsabilité et déontologie.',
+    summary:
+        'Liberté de la presse écrite, entreprises de presse, responsabilité et déontologie.',
     overview:
         'Cette loi consacre la liberté de la presse écrite et fixe le régime des publications, '
         'des entreprises éditrices et des journalistes (carte de presse, statut, clause de '
@@ -661,7 +941,12 @@ final List<LegalDocument> _documents = [
       'Titre IV — De la responsabilité et des infractions',
       'Titre V — Du droit de réponse et de rectification',
     ],
-    tags: const ['liberté de la presse', 'diffamation', 'droit de réponse', 'journaliste'],
+    tags: const [
+      'liberté de la presse',
+      'diffamation',
+      'droit de réponse',
+      'journaliste',
+    ],
     source: _legiburkina,
     sourceName: 'Légiburkina',
   ),
@@ -674,7 +959,8 @@ final List<LegalDocument> _documents = [
     title: 'Acte uniforme relatif au droit commercial général',
     reference: 'AUDCG révisé, adopté le 15 décembre 2010 (Lomé)',
     date: DateTime(2010, 12, 15),
-    summary: 'Commerçant, entreprenant, RCCM, bail à usage professionnel, fonds de commerce, vente commerciale.',
+    summary:
+        'Commerçant, entreprenant, RCCM, bail à usage professionnel, fonds de commerce, vente commerciale.',
     overview:
         'L\'Acte uniforme relatif au droit commercial général harmonise, dans les 17 États '
         'parties, le statut du commerçant et de l\'entreprenant (personne exerçant une activité '
@@ -701,7 +987,8 @@ final List<LegalDocument> _documents = [
     title: 'Acte uniforme relatif au droit des sociétés commerciales et du GIE',
     reference: 'AUSCGIE révisé, adopté le 30 janvier 2014 (Ouagadougou)',
     date: DateTime(2014, 1, 30),
-    summary: 'Constitution, fonctionnement et dissolution des sociétés commerciales ; SA, SAS, SARL, SNC, SCS, GIE.',
+    summary:
+        'Constitution, fonctionnement et dissolution des sociétés commerciales ; SA, SAS, SARL, SNC, SCS, GIE.',
     overview:
         'L\'AUSCGIE régit toutes les sociétés commerciales et les groupements d\'intérêt '
         'économique dont le siège est situé dans un État partie : règles communes de '
@@ -726,7 +1013,8 @@ final List<LegalDocument> _documents = [
     title: 'Acte uniforme portant organisation des sûretés',
     reference: 'AUS révisé, adopté le 15 décembre 2010 (Lomé)',
     date: DateTime(2010, 12, 15),
-    summary: 'Sûretés personnelles (cautionnement, garantie autonome) et réelles (gage, nantissement, hypothèque).',
+    summary:
+        'Sûretés personnelles (cautionnement, garantie autonome) et réelles (gage, nantissement, hypothèque).',
     overview:
         'L\'Acte uniforme portant organisation des sûretés fixe le régime des garanties du '
         'crédit dans l\'espace OHADA. Il introduit l\'agent des sûretés et organise les sûretés '
@@ -748,10 +1036,12 @@ final List<LegalDocument> _documents = [
   ),
   _ohada(
     id: 'doc-ohada-aupsrve',
-    title: 'Acte uniforme sur les procédures simplifiées de recouvrement et les voies d\'exécution',
+    title:
+        'Acte uniforme sur les procédures simplifiées de recouvrement et les voies d\'exécution',
     reference: 'AUPSRVE, adopté le 10 avril 1998 (Libreville)',
     date: DateTime(1998, 4, 10),
-    summary: 'Injonction de payer, injonction de délivrer, saisies conservatoires et saisies-exécutions.',
+    summary:
+        'Injonction de payer, injonction de délivrer, saisies conservatoires et saisies-exécutions.',
     overview:
         'L\'AUPSRVE offre au créancier des procédures rapides d\'obtention d\'un titre : '
         'l\'injonction de payer pour les créances certaines, liquides et exigibles d\'origine '
@@ -770,10 +1060,12 @@ final List<LegalDocument> _documents = [
   ),
   _ohada(
     id: 'doc-ohada-aupc',
-    title: 'Acte uniforme portant organisation des procédures collectives d\'apurement du passif',
+    title:
+        'Acte uniforme portant organisation des procédures collectives d\'apurement du passif',
     reference: 'AUPC révisé, adopté le 10 septembre 2015 (Grand-Bassam)',
     date: DateTime(2015, 9, 10),
-    summary: 'Conciliation, règlement préventif, redressement judiciaire et liquidation des biens.',
+    summary:
+        'Conciliation, règlement préventif, redressement judiciaire et liquidation des biens.',
     overview:
         'L\'AUPC organise le traitement des entreprises en difficulté selon la gravité de la '
         'situation : la conciliation (confidentielle, pour un accord amiable), le règlement '
@@ -792,14 +1084,20 @@ final List<LegalDocument> _documents = [
       'Titre V — Les sanctions',
       'Titre VI — Les voies de recours et la procédure',
     ],
-    tags: const ['entreprises en difficulté', 'redressement', 'liquidation', 'concordat'],
+    tags: const [
+      'entreprises en difficulté',
+      'redressement',
+      'liquidation',
+      'concordat',
+    ],
   ),
   _ohada(
     id: 'doc-ohada-auda',
     title: 'Acte uniforme relatif au droit de l\'arbitrage',
     reference: 'AUDA révisé, adopté le 23 novembre 2017 (Conakry)',
     date: DateTime(2017, 11, 23),
-    summary: 'Convention d\'arbitrage, tribunal arbitral, instance, sentence et recours.',
+    summary:
+        'Convention d\'arbitrage, tribunal arbitral, instance, sentence et recours.',
     overview:
         'L\'AUDA constitue le droit commun de l\'arbitrage dans l\'espace OHADA. Il fixe les '
         'conditions de validité de la convention d\'arbitrage (autonomie de la clause '
@@ -823,10 +1121,12 @@ final List<LegalDocument> _documents = [
   ),
   _ohada(
     id: 'doc-ohada-audcif',
-    title: 'Acte uniforme relatif au droit comptable et à l\'information financière (SYSCOHADA)',
+    title:
+        'Acte uniforme relatif au droit comptable et à l\'information financière (SYSCOHADA)',
     reference: 'AUDCIF, adopté le 26 janvier 2017 (Brazzaville)',
     date: DateTime(2017, 1, 26),
-    summary: 'Système comptable OHADA révisé : comptes personnels et comptes consolidés / combinés.',
+    summary:
+        'Système comptable OHADA révisé : comptes personnels et comptes consolidés / combinés.',
     overview:
         'L\'AUDCIF et le SYSCOHADA révisé fixent les règles d\'établissement et de présentation '
         'des états financiers des entités du secteur privé. Ils imposent la tenue d\'une '
@@ -845,14 +1145,21 @@ final List<LegalDocument> _documents = [
       'Chapitre IV — Comptes consolidés et comptes combinés',
       'Chapitre V — Dispositions pénales',
     ],
-    tags: const ['comptabilité', 'SYSCOHADA', 'états financiers', 'consolidation'],
+    tags: const [
+      'comptabilité',
+      'SYSCOHADA',
+      'états financiers',
+      'consolidation',
+    ],
   ),
   _ohada(
     id: 'doc-ohada-auctmr',
-    title: 'Acte uniforme relatif aux contrats de transport de marchandises par route',
+    title:
+        'Acte uniforme relatif aux contrats de transport de marchandises par route',
     reference: 'AUCTMR, adopté le 22 mars 2003 (Yaoundé)',
     date: DateTime(2003, 3, 22),
-    summary: 'Contrat de transport routier de marchandises : lettre de voiture, responsabilité, litiges.',
+    summary:
+        'Contrat de transport routier de marchandises : lettre de voiture, responsabilité, litiges.',
     overview:
         'L\'AUCTMR s\'applique à tout contrat de transport de marchandises par route lorsque le '
         'lieu de prise en charge et le lieu de livraison sont situés dans deux États différents '
@@ -869,14 +1176,20 @@ final List<LegalDocument> _documents = [
       'Chapitre IV — Responsabilité du transporteur',
       'Chapitre V — Contentieux',
     ],
-    tags: const ['transport routier', 'lettre de voiture', 'responsabilité', 'avarie'],
+    tags: const [
+      'transport routier',
+      'lettre de voiture',
+      'responsabilité',
+      'avarie',
+    ],
   ),
   _ohada(
     id: 'doc-ohada-coop',
     title: 'Acte uniforme relatif au droit des sociétés coopératives',
     reference: 'AUSCOOP, adopté le 15 décembre 2010 (Lomé)',
     date: DateTime(2010, 12, 15),
-    summary: 'Société coopérative simplifiée et avec conseil d\'administration ; unions, fédérations, confédérations.',
+    summary:
+        'Société coopérative simplifiée et avec conseil d\'administration ; unions, fédérations, confédérations.',
     overview:
         'L\'Acte uniforme relatif au droit des sociétés coopératives dote l\'espace OHADA d\'un '
         'cadre commun pour les coopératives, groupements de personnes poursuivant un but '
@@ -901,7 +1214,8 @@ final List<LegalDocument> _documents = [
     title: 'Acte uniforme relatif à la médiation',
     reference: 'AUM, adopté le 23 novembre 2017 (Conakry)',
     date: DateTime(2017, 11, 23),
-    summary: 'Cadre de la médiation conventionnelle et judiciaire ; accord de médiation et son exécution.',
+    summary:
+        'Cadre de la médiation conventionnelle et judiciaire ; accord de médiation et son exécution.',
     overview:
         'L\'Acte uniforme relatif à la médiation encadre le processus par lequel les parties '
         'demandent à un tiers, le médiateur, de les aider à parvenir à un règlement amiable de '
@@ -936,7 +1250,8 @@ final List<LegalDocument> _documents = [
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
     summaryOnly: true,
-    summary: 'Encadre les rapports entre bailleurs et preneurs à usage commercial (complément à l\'AUDCG).',
+    summary:
+        'Encadre les rapports entre bailleurs et preneurs à usage commercial (complément à l\'AUDCG).',
     fullContent:
         'Cette loi complète, au plan national, le régime OHADA du bail à usage professionnel. '
         'Elle porte sur les locaux à usage commercial, industriel ou artisanal, fixe une durée '
@@ -961,7 +1276,8 @@ final List<LegalDocument> _documents = [
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
     summaryOnly: true,
-    summary: 'Encadre la collecte et le traitement des données personnelles ; rôle de la CIL.',
+    summary:
+        'Encadre la collecte et le traitement des données personnelles ; rôle de la CIL.',
     fullContent:
         'Cette loi soumet tout traitement de données à caractère personnel au respect des '
         'principes de licéité, de finalité déterminée, de proportionnalité, d\'exactitude, de '
@@ -985,7 +1301,8 @@ final List<LegalDocument> _documents = [
     officialSourceName: 'Légiburkina',
     sourceUrl: _legiburkina,
     summaryOnly: true,
-    summary: 'Modalités d\'application des dispositions du Code du travail sur la durée légale du travail.',
+    summary:
+        'Modalités d\'application des dispositions du Code du travail sur la durée légale du travail.',
     fullContent:
         'Le présent décret précise les modalités d\'application des dispositions légales '
         'relatives à la durée du travail. Il fixe la durée hebdomadaire de référence, les '
@@ -1007,7 +1324,8 @@ final List<LegalDocument> _documents = [
     officialSourceName: 'Journal Officiel du Faso',
     sourceUrl: _jofb,
     summaryOnly: true,
-    summary: 'Fixe le montant du salaire minimum interprofessionnel garanti (SMIG).',
+    summary:
+        'Fixe le montant du salaire minimum interprofessionnel garanti (SMIG).',
     fullContent:
         'Le présent arrêté fixe le montant du salaire minimum interprofessionnel garanti '
         'applicable à l\'ensemble des secteurs d\'activité, à l\'exception des régimes '
@@ -1031,7 +1349,8 @@ final List<LegalDocument> _documents = [
     reference: 'Cass. soc., n° 245/2021',
     datePublication: DateTime(2021, 9, 14),
     summaryOnly: true,
-    summary: "Critères d'appréciation du caractère abusif d'un licenciement pour motif personnel.",
+    summary:
+        "Critères d'appréciation du caractère abusif d'un licenciement pour motif personnel.",
     fullContent:
         'La Cour rappelle que le licenciement pour motif personnel doit reposer sur une cause '
         'réelle et sérieuse, objectivement vérifiable et étrangère à toute discrimination. '
@@ -1053,7 +1372,8 @@ final List<LegalDocument> _documents = [
     reference: 'Cass. civ., n° 118/2019',
     datePublication: DateTime(2019, 11, 6),
     summaryOnly: true,
-    summary: "Conditions de la résolution judiciaire d'un contrat de vente pour défaut de livraison.",
+    summary:
+        "Conditions de la résolution judiciaire d'un contrat de vente pour défaut de livraison.",
     fullContent:
         'La Cour retient que l\'inexécution d\'une obligation essentielle du contrat de vente — '
         'en l\'espèce, le défaut de livraison de la chose vendue dans le délai convenu — '
@@ -1077,7 +1397,8 @@ final List<LegalDocument> _documents = [
     domain: LegalDomain.civil,
     reference: 'Trame JurisIA — à personnaliser',
     datePublication: DateTime(2024, 1, 10),
-    summary: "Trame prête à personnaliser pour un bail d'habitation, à adapter à votre situation.",
+    summary:
+        "Trame prête à personnaliser pour un bail d'habitation, à adapter à votre situation.",
     officialSourceName: 'JurisIA',
     fullContent: '',
     outline: const ['Contrat de bail à usage d\'habitation'],
@@ -1085,7 +1406,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '1',
         heading: 'Objet du contrat',
-        text: 'Le bailleur donne à bail au preneur, qui accepte, le logement situé à [adresse '
+        text:
+            'Le bailleur donne à bail au preneur, qui accepte, le logement situé à [adresse '
             'complète], composé de [description : nombre de pièces, dépendances, équipements], à '
             'usage exclusif d\'habitation. Le preneur ne pourra changer cette destination sans '
             'l\'accord écrit du bailleur.',
@@ -1093,7 +1415,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '2',
         heading: 'Durée',
-        text: 'Le présent bail est consenti pour une durée de [durée], à compter du [date de '
+        text:
+            'Le présent bail est consenti pour une durée de [durée], à compter du [date de '
             'prise d\'effet]. Il se renouvelle ensuite par tacite reconduction pour des périodes '
             'de même durée, sauf congé donné par l\'une des parties par écrit, moyennant un '
             'préavis de [délai] et dans les formes prévues par la loi.',
@@ -1101,7 +1424,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '3',
         heading: 'Loyer et charges',
-        text: 'Le loyer mensuel est fixé à [montant en chiffres et en lettres] F CFA, payable '
+        text:
+            'Le loyer mensuel est fixé à [montant en chiffres et en lettres] F CFA, payable '
             'd\'avance au plus tard le [jour] de chaque mois, au domicile du bailleur ou par '
             'virement sur le compte [références]. À ce loyer s\'ajoutent les charges locatives '
             'récupérables énumérées en annexe. La révision du loyer, le cas échéant, intervient '
@@ -1110,7 +1434,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '4',
         heading: 'Dépôt de garantie',
-        text: 'À la signature des présentes, le preneur verse au bailleur un dépôt de garantie '
+        text:
+            'À la signature des présentes, le preneur verse au bailleur un dépôt de garantie '
             'de [montant] F CFA, non productif d\'intérêts. Ce dépôt est restitué dans le délai '
             'légal après la remise des clés et l\'établissement de l\'état des lieux de sortie, '
             'déduction faite des sommes restant dues et du coût, justifié, des réparations '
@@ -1119,14 +1444,16 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '5',
         heading: 'État des lieux',
-        text: 'Un état des lieux contradictoire est établi et signé par les parties lors de la '
+        text:
+            'Un état des lieux contradictoire est établi et signé par les parties lors de la '
             'remise des clés et lors de leur restitution. À défaut d\'état des lieux d\'entrée, '
             'le preneur est présumé avoir reçu le logement en bon état de réparations locatives.',
       ),
       LegalArticle(
         number: '6',
         heading: 'Obligations du bailleur',
-        text: 'Le bailleur s\'oblige à délivrer un logement décent et en bon état d\'usage, à '
+        text:
+            'Le bailleur s\'oblige à délivrer un logement décent et en bon état d\'usage, à '
             'assurer au preneur la jouissance paisible des lieux, à entretenir la chose louée en '
             'état de servir à l\'usage prévu et à effectuer les réparations autres que locatives, '
             'notamment celles rendues nécessaires par la vétusté ou la force majeure.',
@@ -1134,7 +1461,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '7',
         heading: 'Obligations du preneur',
-        text: 'Le preneur s\'oblige à payer le loyer et les charges aux termes convenus, à user '
+        text:
+            'Le preneur s\'oblige à payer le loyer et les charges aux termes convenus, à user '
             'paisiblement des lieux suivant leur destination, à les entretenir et à effectuer les '
             'réparations locatives, à souscrire une assurance couvrant les risques locatifs et à '
             'ne pas céder le bail ni sous-louer sans l\'accord écrit du bailleur.',
@@ -1142,7 +1470,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '8',
         heading: 'Résiliation',
-        text: 'À défaut de paiement du loyer ou des charges, ou en cas de manquement grave du '
+        text:
+            'À défaut de paiement du loyer ou des charges, ou en cas de manquement grave du '
             'preneur à ses obligations, le bailleur pourra demander la résiliation du bail et '
             'l\'expulsion du preneur, après mise en demeure restée sans effet, dans les '
             'conditions prévues par la loi et sous le contrôle du juge.',
@@ -1150,7 +1479,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '9',
         heading: 'Règlement des litiges',
-        text: 'Les parties s\'efforceront de régler à l\'amiable tout différend né du présent '
+        text:
+            'Les parties s\'efforceront de régler à l\'amiable tout différend né du présent '
             'contrat. À défaut d\'accord, le litige sera porté devant la juridiction '
             'territorialement compétente du lieu de situation de l\'immeuble.',
       ),
@@ -1165,7 +1495,8 @@ final List<LegalDocument> _documents = [
     domain: LegalDomain.travail,
     reference: 'Trame JurisIA — conforme au Code du travail',
     datePublication: DateTime(2024, 3, 2),
-    summary: 'Trame de contrat à durée déterminée, à adapter au motif de recours et à votre convention collective.',
+    summary:
+        'Trame de contrat à durée déterminée, à adapter au motif de recours et à votre convention collective.',
     officialSourceName: 'JurisIA',
     fullContent: '',
     outline: const ['Contrat de travail à durée déterminée'],
@@ -1173,7 +1504,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '1',
         heading: 'Engagement et motif du recours',
-        text: 'L\'employeur engage le salarié en contrat à durée déterminée pour le motif '
+        text:
+            'L\'employeur engage le salarié en contrat à durée déterminée pour le motif '
             'suivant : [remplacement d\'un salarié absent / accroissement temporaire d\'activité '
             '/ emploi à caractère saisonnier / exécution d\'une tâche précise et non durable]. Le '
             'contrat ne peut avoir ni pour objet ni pour effet de pourvoir durablement un emploi '
@@ -1182,7 +1514,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '2',
         heading: 'Fonctions et lieu de travail',
-        text: 'Le salarié est engagé en qualité de [intitulé du poste], classé à la catégorie '
+        text:
+            'Le salarié est engagé en qualité de [intitulé du poste], classé à la catégorie '
             '[catégorie] de la convention collective applicable. Il exerce ses fonctions à '
             '[lieu], sous l\'autorité de [supérieur hiérarchique], et s\'engage à consacrer '
             'toute son activité professionnelle à l\'entreprise pendant la durée du contrat.',
@@ -1190,7 +1523,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '3',
         heading: 'Durée et terme',
-        text: 'Le présent contrat est conclu du [date de début] au [date de fin] inclus, soit '
+        text:
+            'Le présent contrat est conclu du [date de début] au [date de fin] inclus, soit '
             'une durée de [durée]. Il pourra être renouvelé dans les limites et conditions '
             'fixées par le Code du travail. Le terme peut également être constitué par la '
             'réalisation de l\'objet pour lequel le contrat a été conclu ou par le retour du '
@@ -1199,14 +1533,16 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '4',
         heading: 'Période d\'essai',
-        text: 'Le contrat comporte une période d\'essai de [durée], pendant laquelle chacune '
+        text:
+            'Le contrat comporte une période d\'essai de [durée], pendant laquelle chacune '
             'des parties peut y mettre fin sans indemnité, sous réserve du délai de prévenance '
             'applicable.',
       ),
       LegalArticle(
         number: '5',
         heading: 'Rémunération',
-        text: 'En contrepartie de son travail, le salarié perçoit une rémunération mensuelle '
+        text:
+            'En contrepartie de son travail, le salarié perçoit une rémunération mensuelle '
             'brute de [montant] F CFA, versée à terme échu selon la périodicité en vigueur dans '
             'l\'entreprise, augmentée le cas échéant des primes et accessoires prévus par la '
             'convention collective. La rémunération ne peut être inférieure au SMIG ni à celle '
@@ -1216,21 +1552,24 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '6',
         heading: 'Durée du travail et congés',
-        text: 'Le salarié est soumis à l\'horaire collectif de travail en vigueur dans '
+        text:
+            'Le salarié est soumis à l\'horaire collectif de travail en vigueur dans '
             'l\'entreprise. Il bénéficie des congés payés au prorata de son temps de présence, '
             'ainsi que des repos et jours fériés dans les conditions légales et conventionnelles.',
       ),
       LegalArticle(
         number: '7',
         heading: 'Protection sociale',
-        text: 'Le salarié est affilié à la Caisse nationale de sécurité sociale et, le cas '
+        text:
+            'Le salarié est affilié à la Caisse nationale de sécurité sociale et, le cas '
             'échéant, aux régimes de prévoyance et de retraite complémentaire applicables dans '
             'l\'entreprise. Les cotisations sont précomptées et versées par l\'employeur.',
       ),
       LegalArticle(
         number: '8',
         heading: 'Rupture anticipée',
-        text: 'Avant l\'échéance du terme, le contrat ne peut être rompu que d\'un commun '
+        text:
+            'Avant l\'échéance du terme, le contrat ne peut être rompu que d\'un commun '
             'accord, pour faute lourde, pour force majeure, ou à l\'initiative du salarié '
             'justifiant d\'une embauche en contrat à durée indéterminée. Toute rupture anticipée '
             'irrégulière ouvre droit à des dommages-intérêts, sans préjudice, pour le salarié, '
@@ -1239,7 +1578,8 @@ final List<LegalDocument> _documents = [
       LegalArticle(
         number: '9',
         heading: 'Fin du contrat',
-        text: 'À l\'échéance du terme, le contrat prend fin de plein droit. L\'employeur remet '
+        text:
+            'À l\'échéance du terme, le contrat prend fin de plein droit. L\'employeur remet '
             'au salarié un certificat de travail, un reçu pour solde de tout compte et, le cas '
             'échéant, l\'indemnité de fin de contrat légalement ou conventionnellement due.',
       ),

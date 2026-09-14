@@ -55,6 +55,13 @@
    `migration_018_training_catalog_certificates.sql` ajoute le catalogue des
    formations certifiantes/LMD et les certificats signés électroniquement,
    avec une RPC publique de vérification par code.
+   `migration_019_family_reference_documents.sql` ajoute les premières
+   références documentaires de la collection « Droit des personnes et de la
+   famille ».
+   `migration_020_family_codes_and_doctrine.sql` actualise cette collection
+   avec le Code des personnes et de la famille de 2025, classe le Code de
+   1989 comme archive abrogée, et indexe deux thèses doctrinales sous forme
+   de synthèses bibliographiques.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la

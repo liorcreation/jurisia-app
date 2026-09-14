@@ -11,6 +11,8 @@ enum LegalDocumentType {
   arrete,
   jurisprudence,
   traite,
+  doctrine,
+  rapport,
   modeleActe,
 }
 
@@ -31,6 +33,10 @@ extension LegalDocumentTypeLabel on LegalDocumentType {
         return 'Jurisprudence';
       case LegalDocumentType.traite:
         return 'Traité';
+      case LegalDocumentType.doctrine:
+        return 'Doctrine';
+      case LegalDocumentType.rapport:
+        return 'Rapport / document institutionnel';
       case LegalDocumentType.modeleActe:
         return "Modèle d'acte";
     }
@@ -86,18 +92,20 @@ class LegalArticle extends Equatable {
   final List<String> path;
 
   Map<String, dynamic> toJson() => {
-        'number': number,
-        'heading': heading,
-        'text': text,
-        'path': path,
-      };
+    'number': number,
+    'heading': heading,
+    'text': text,
+    'path': path,
+  };
 
   factory LegalArticle.fromJson(Map<String, dynamic> json) => LegalArticle(
-        number: json['number'] as String,
-        heading: json['heading'] as String? ?? '',
-        text: json['text'] as String? ?? '',
-        path: (json['path'] as List<dynamic>? ?? const []).map((e) => e as String).toList(),
-      );
+    number: json['number'] as String,
+    heading: json['heading'] as String? ?? '',
+    text: json['text'] as String? ?? '',
+    path: (json['path'] as List<dynamic>? ?? const [])
+        .map((e) => e as String)
+        .toList(),
+  );
 
   @override
   List<Object?> get props => [number, heading, text, path];
@@ -278,15 +286,20 @@ class LegalDocument extends Equatable {
       articles: (json['articles'] as List<dynamic>? ?? const [])
           .map((e) => LegalArticle.fromJson(e as Map<String, dynamic>))
           .toList(),
-      outline: (json['outline'] as List<dynamic>? ?? const []).map((e) => e as String).toList(),
+      outline: (json['outline'] as List<dynamic>? ?? const [])
+          .map((e) => e as String)
+          .toList(),
       summaryOnly: json['summaryOnly'] as bool? ?? false,
       officialSourceName: json['officialSourceName'] as String?,
       fileUrl: json['fileUrl'] as String?,
       sourceUrl: json['sourceUrl'] as String?,
-      tags: (json['tags'] as List<dynamic>? ?? const []).map((e) => e as String).toList(),
-      relatedDocumentIds: (json['relatedDocumentIds'] as List<dynamic>? ?? const [])
+      tags: (json['tags'] as List<dynamic>? ?? const [])
           .map((e) => e as String)
           .toList(),
+      relatedDocumentIds:
+          (json['relatedDocumentIds'] as List<dynamic>? ?? const [])
+              .map((e) => e as String)
+              .toList(),
       isFavorite: json['isFavorite'] as bool? ?? false,
       viewCount: json['viewCount'] as int? ?? 0,
       downloadCount: json['downloadCount'] as int? ?? 0,
@@ -295,26 +308,26 @@ class LegalDocument extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        title,
-        type,
-        domain,
-        reference,
-        datePublication,
-        dateEntreeEnVigueur,
-        status,
-        summary,
-        fullContent,
-        articles,
-        outline,
-        summaryOnly,
-        officialSourceName,
-        fileUrl,
-        sourceUrl,
-        tags,
-        relatedDocumentIds,
-        isFavorite,
-        viewCount,
-        downloadCount,
-      ];
+    id,
+    title,
+    type,
+    domain,
+    reference,
+    datePublication,
+    dateEntreeEnVigueur,
+    status,
+    summary,
+    fullContent,
+    articles,
+    outline,
+    summaryOnly,
+    officialSourceName,
+    fileUrl,
+    sourceUrl,
+    tags,
+    relatedDocumentIds,
+    isFavorite,
+    viewCount,
+    downloadCount,
+  ];
 }

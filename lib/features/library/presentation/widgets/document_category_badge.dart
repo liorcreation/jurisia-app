@@ -24,8 +24,12 @@ LinearGradient metallicGradientForDocumentType(LegalDocumentType type) {
       return _brushed(AppColors.metalDeepGold);
     case LegalDocumentType.traite:
       return _brushed(AppColors.metalEmerald);
-    case LegalDocumentType.modeleActe:
+    case LegalDocumentType.doctrine:
       return _brushed(AppColors.metalRoseGold);
+    case LegalDocumentType.rapport:
+      return _brushed(AppColors.metalSilver);
+    case LegalDocumentType.modeleActe:
+      return _brushed(AppColors.metalDeepGold);
   }
 }
 
@@ -65,7 +69,11 @@ class DocumentCategoryBadge extends StatelessWidget {
           ),
         ],
       ),
-      child: Icon(iconForDocumentType(type), color: AppColors.nightBlueDeep, size: size * 0.5),
+      child: Icon(
+        iconForDocumentType(type),
+        color: AppColors.nightBlueDeep,
+        size: size * 0.5,
+      ),
     );
   }
 }

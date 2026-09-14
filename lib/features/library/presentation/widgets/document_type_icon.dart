@@ -19,6 +19,10 @@ IconData iconForDocumentType(LegalDocumentType type) {
       return Icons.balance_rounded;
     case LegalDocumentType.traite:
       return Icons.public_rounded;
+    case LegalDocumentType.doctrine:
+      return Icons.auto_stories_rounded;
+    case LegalDocumentType.rapport:
+      return Icons.account_balance_rounded;
     case LegalDocumentType.modeleActe:
       return Icons.draw_rounded;
   }

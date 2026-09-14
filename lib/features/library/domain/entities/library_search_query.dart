@@ -18,7 +18,7 @@ class LibrarySearchQuery {
   final String keyword;
 
   /// Catégorie de document (Constitution, Code, Loi, Décret, Arrêté,
-  /// Jurisprudence, Traité, Modèle d'acte).
+  /// Jurisprudence, Traité, Doctrine, Rapport institutionnel, Modèle d'acte).
   final LegalDocumentType? type;
 
   /// Branche du droit.

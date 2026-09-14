@@ -12,7 +12,7 @@
 create table if not exists public.legal_documents (
   id                    text primary key,
   title                 text not null,
-  type                  text not null,   -- constitution|code|loi|decret|arrete|jurisprudence|traite|modeleActe
+  type                  text not null,   -- constitution|code|loi|decret|arrete|jurisprudence|traite|doctrine|rapport|modeleActe
   domain                text not null,   -- civil|penal|commercial|travail|famille|administratif|fiscal|constitutionnel|foncier|ohada|procedureCivile|procedurePenale|autre
   reference             text not null default '',
   date_publication      date,

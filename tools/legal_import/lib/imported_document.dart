@@ -27,7 +27,8 @@ class ImportedDocument {
   final String id;
   final String title;
 
-  /// constitution | code | loi | decret | arrete | jurisprudence | traite | modeleActe
+  /// constitution | code | loi | decret | arrete | jurisprudence | traite |
+  /// doctrine | rapport | modeleActe
   final String type;
 
   /// civil | penal | commercial | travail | famille | administratif | fiscal |
@@ -119,11 +120,13 @@ class ImportedDocument {
         ],
       );
 
-  static String? _date(DateTime? d) =>
-      d == null ? null : '${d.year.toString().padLeft(4, '0')}-'
+  static String? _date(DateTime? d) => d == null
+      ? null
+      : '${d.year.toString().padLeft(4, '0')}-'
           '${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  static DateTime? _parse(Object? v) => v == null ? null : DateTime.tryParse(v as String);
+  static DateTime? _parse(Object? v) =>
+      v == null ? null : DateTime.tryParse(v as String);
 }
 
 class ImportedArticle {
