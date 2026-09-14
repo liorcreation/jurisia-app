@@ -13,10 +13,10 @@ LibraryController buildLibraryController() {
   final LibraryRepository repository = LibraryRepositoryImpl(
     dataSource: const LocalLegalDocumentDataSource(
       familyOnly: true,
-      officialOnly: true,
+      officialOnly: false,
     ),
     familyOnly: true,
-    officialOnly: true,
+    officialOnly: false,
     supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
     userId: SupabaseConfig.isReady
         ? SupabaseConfig.client.auth.currentUser?.id

@@ -8,23 +8,12 @@ void main() {
   test('le catalogue local est strictement limité au droit de la famille', () {
     final documents = const LocalLegalDocumentDataSource(
       familyOnly: true,
-      officialOnly: true,
+      officialOnly: false,
     ).getAll();
 
     expect(documents, isNotEmpty);
     expect(
       documents.every((document) => document.domain == LegalDomain.famille),
-      isTrue,
-    );
-    expect(
-      documents.every(
-        (document) =>
-            document.type == LegalDocumentType.code ||
-            document.type == LegalDocumentType.loi ||
-            document.type == LegalDocumentType.decret ||
-            document.type == LegalDocumentType.arrete ||
-            document.type == LegalDocumentType.jurisprudence,
-      ),
       isTrue,
     );
     expect(
@@ -36,22 +25,14 @@ void main() {
   test('les références transmises sont classées dans personnes et famille', () {
     final documents = const LocalLegalDocumentDataSource(
       familyOnly: true,
-      officialOnly: true,
+      officialOnly: false,
     ).getAll();
     expect(
       documents.every((document) => document.domain == LegalDomain.famille),
       isTrue,
     );
-    expect(
-      documents.where(
-        (document) => document.type == LegalDocumentType.doctrine,
-      ),
-      isEmpty,
-    );
-    expect(
-      documents.where((document) => document.type == LegalDocumentType.rapport),
-      isEmpty,
-    );
+    expect(documents.where((document) => document.type == LegalDocumentType.doctrine), isNotEmpty);
+    expect(documents.where((document) => document.type == LegalDocumentType.rapport), isNotEmpty);
   });
 
   test(
@@ -59,7 +40,7 @@ void main() {
     () {
       final documents = const LocalLegalDocumentDataSource(
         familyOnly: true,
-        officialOnly: true,
+        officialOnly: false,
       ).getAll();
       final currentCode = documents.singleWhere(
         (document) => document.id == 'doc-code-personnes-famille',
@@ -76,25 +57,22 @@ void main() {
     },
   );
 
-  test(
-    'les références non normatives ne sont pas exposées au référentiel officiel',
-    () {
+  test('les sept PDF transmis sont présents dans le périmètre famille', () {
       final documents = const LocalLegalDocumentDataSource(
         familyOnly: true,
-        officialOnly: true,
+        officialOnly: false,
       ).getAll();
-
       expect(
-        documents.any(
-          (document) =>
-              document.id == 'doc-these-egalite-mariage-afrique' ||
-              document.id == 'doc-these-pluralisme-justice-mossi' ||
-              document.id == 'doc-doctrine-mariage-senegal' ||
-              document.id == 'doc-doctrine-famille-burkina' ||
-              document.id == 'doc-onu-crc-sp-50',
-        ),
-        isFalse,
+        documents.map((document) => document.id),
+        containsAll(<String>[
+          'doc-code-personnes-famille',
+          'doc-code-personnes-famille-1989',
+          'doc-onu-crc-sp-50',
+          'doc-doctrine-mariage-senegal',
+          'doc-doctrine-famille-burkina',
+          'doc-these-egalite-mariage-afrique',
+          'doc-these-pluralisme-justice-mossi',
+        ]),
       );
-    },
-  );
+    });
 }

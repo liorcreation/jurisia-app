@@ -401,7 +401,7 @@ class _CorpusIntro extends StatelessWidget {
       eyebrow: 'Veille & recherche',
       title: 'Droit des personnes et de la famille',
       subtitle:
-          'Référentiel officiel burkinabè : recherchez une loi, un article ou une référence.',
+          'Corpus vérifié : recherchez une loi, un article, une étude ou une référence.',
       action: searching
           ? const PremiumStatusPill(
               label: 'Recherche plein texte…',
@@ -410,7 +410,7 @@ class _CorpusIntro extends StatelessWidget {
               compact: true,
             )
           : const PremiumStatusPill(
-              label: 'Sources officielles',
+              label: 'Corpus vérifié',
               tone: PremiumStatusTone.gold,
               icon: Icons.verified_rounded,
               compact: true,
@@ -1020,7 +1020,7 @@ class _FamilyScopeBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Périmètre actif : droit des personnes et de la famille — sources officielles uniquement.',
+              'Périmètre actif : droit des personnes et de la famille — textes et références vérifiés.',
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
