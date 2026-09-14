@@ -25,7 +25,7 @@ List<ImportedArticle> parseArticles(String plainText) {
   );
   // « Article 12 », « Art. 12 », « ARTICLE 12 bis », « Article L. 122-4 »
   final articleRe = RegExp(
-    r'^(?:ARTICLE|Article|Art\.?)\s+([LRD]?\.?\s?[0-9]+(?:[-.–][0-9]+)*(?:\s*(?:bis|ter|quater))?)\s*[:\.—\-–]?\s*(.*)$',
+    r'^(?:ARTICLE|Article|Art\.?)\s+([LRD]?\.?\s?[0-9]+(?:[-.–][0-9]+)*(?:\s*(?:er|bis|ter|quater))?)\s*[:\.—\-–]?\s*(.*)$',
   );
 
   ImportedArticle? current;
@@ -43,7 +43,17 @@ List<ImportedArticle> parseArticles(String plainText) {
     current = null;
   }
 
-  for (final line in lines) {
+  for (final rawLine in lines) {
+    // Certaines extractions OCR séparent le dernier chiffre d'un numéro
+    // d'article (ex. « Art. 7 02. » pour « Art. 702. »). On recolle cette
+    // anomalie uniquement lorsqu'elle est placée juste avant la ponctuation
+    // d'ouverture du texte, sans altérer les références présentes dans le
+    // corps des articles.
+    final line = rawLine.replaceFirstMapped(
+      RegExp(r'^(Art\.?|Article)\s+(\d+)\s+(\d+)(?=\s*[\.:—-])',
+          caseSensitive: false),
+      (match) => '${match.group(1)} ${match.group(2)}${match.group(3)}',
+    );
     if (line.isEmpty) {
       if (buffer.isNotEmpty) buffer.write('\n\n');
       continue;
@@ -83,13 +93,15 @@ List<ImportedArticle> parseArticles(String plainText) {
         heading = m.group(1)!.trim();
         body = m.group(2)!.trim();
       }
-      current = ImportedArticle(number: number, heading: heading, body: '', path: List.of(path));
+      current = ImportedArticle(
+          number: number, heading: heading, body: '', path: List.of(path));
       if (body.isNotEmpty) buffer.write(body);
       continue;
     }
 
     if (current != null) {
-      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) buffer.write(' ');
+      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n'))
+        buffer.write(' ');
       buffer.write(line);
     }
   }

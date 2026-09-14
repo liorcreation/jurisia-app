@@ -12,7 +12,6 @@ import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
-import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
 import '../widgets/document_category_badge.dart';
@@ -21,10 +20,9 @@ import '../widgets/document_type_icon.dart';
 import '../widgets/summary_only_badge.dart';
 import 'document_detail_screen.dart';
 
-/// Section 2 — Bibliothèque juridique : moteur de recherche intelligent sur
-/// l'ensemble des textes et décisions (Constitution, codes, lois, décrets,
-/// arrêtés, jurisprudence, traités, modèles d'actes). Le [LibraryController]
-/// est fourni par la coquille applicative ([AppShell]).
+/// Bibliothèque de référence du droit burkinabè des personnes et de la famille.
+/// Le périmètre est volontairement fermé pendant la phase de constitution du
+/// corpus officiel. Le [LibraryController] est fourni par [AppShell].
 ///
 /// Deux mises en page : « la grande bibliothèque » sur desktop (recherche
 /// radiante, navigation par catégories métalliques, résultats en grille
@@ -214,18 +212,15 @@ class _MobileLibrary extends StatelessWidget {
                         horizontal: AppSpacing.md,
                       ),
                       children: [
-                        for (final domain in LegalDomain.values)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              right: AppSpacing.sm,
-                            ),
-                            child: _FilterChip(
-                              label: domain.label,
-                              selected: controller.selectedDomain == domain,
-                              onSelected: () => controller.selectDomain(domain),
-                              compact: true,
-                            ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.sm),
+                          child: _FilterChip(
+                            label: 'Droit des personnes et de la famille',
+                            selected: true,
+                            onSelected: () {},
+                            compact: true,
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -404,9 +399,9 @@ class _CorpusIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     return PremiumSectionHeader(
       eyebrow: 'Veille & recherche',
-      title: 'Corpus juridique',
+      title: 'Droit des personnes et de la famille',
       subtitle:
-          'Recherchez une loi, un article, une référence ou une décision dans le fonds JurisIA.',
+          'Référentiel officiel burkinabè : recherchez une loi, un article ou une référence.',
       action: searching
           ? const PremiumStatusPill(
               label: 'Recherche plein texte…',
@@ -496,10 +491,7 @@ class _DesktopLibrary extends StatelessWidget {
                                   onSelect: controller.selectType,
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
-                                _DomainFilterBar(
-                                  selected: controller.selectedDomain,
-                                  onSelect: controller.selectDomain,
-                                ),
+                                const _FamilyScopeBanner(),
                                 const SizedBox(height: AppSpacing.lg),
                                 _ResultsBar(
                                   count: results.length,
@@ -584,7 +576,7 @@ class _LibraryHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  "$total textes officiels, codes, décisions et modèles d'actes",
+                  '$total références officielles — personnes et famille',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
@@ -1011,92 +1003,30 @@ class _FacetState extends State<_Facet> {
   }
 }
 
-class _DomainFilterBar extends StatelessWidget {
-  const _DomainFilterBar({required this.selected, required this.onSelect});
-
-  final LegalDomain? selected;
-  final ValueChanged<LegalDomain?> onSelect;
+class _FamilyScopeBanner extends StatelessWidget {
+  const _FamilyScopeBanner();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionLabel('Filtrer par branche du droit'),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final domain in LegalDomain.values)
-              _DomainPill(
-                label: domain.label,
-                selected: selected == domain,
-                onTap: () => onSelect(domain),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DomainPill extends StatefulWidget {
-  const _DomainPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  State<_DomainPill> createState() => _DomainPillState();
-}
-
-class _DomainPillState extends State<_DomainPill> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              color: widget.selected
-                  ? AppColors.gold.withValues(alpha: 0.18)
-                  : _hovered
-                  ? Colors.white.withValues(alpha: 0.05)
-                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
-              border: Border.all(
-                color: widget.selected
-                    ? AppColors.gold.withValues(alpha: 0.55)
-                    : AppColors.glassBorder,
-                width: 0.7,
-              ),
-            ),
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      borderRadius: AppRadius.medium,
+      child: Row(
+        children: [
+          const Icon(Icons.verified_rounded, size: 17, color: AppColors.gold),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
             child: Text(
-              widget.label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: widget.selected
-                    ? AppColors.gold
-                    : AppColors.textSecondary,
-                fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w500,
-              ),
+              'Périmètre actif : droit des personnes et de la famille — sources officielles uniquement.',
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -11,9 +11,16 @@ import 'controllers/library_controller.dart';
 /// Bibliothèque partagent le même état.
 LibraryController buildLibraryController() {
   final LibraryRepository repository = LibraryRepositoryImpl(
-    dataSource: const LocalLegalDocumentDataSource(),
+    dataSource: const LocalLegalDocumentDataSource(
+      familyOnly: true,
+      officialOnly: true,
+    ),
+    familyOnly: true,
+    officialOnly: true,
     supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
-    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
+    userId: SupabaseConfig.isReady
+        ? SupabaseConfig.client.auth.currentUser?.id
+        : null,
   );
   return LibraryController(
     searchUseCase: SearchLegalDocumentsUseCase(repository: repository),

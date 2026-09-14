@@ -9,9 +9,9 @@ abstract class LegalDocumentDataSource {
   List<LegalDocument> getAll();
 }
 
-/// Catalogue local du droit burkinabè et de l'espace OHADA : Constitution,
-/// principaux codes nationaux, Actes uniformes OHADA, lois, décrets,
-/// arrêtés, jurisprudence de référence et modèles d'actes.
+/// Catalogue local complet. Le parcours public peut demander une vue filtrée
+/// via [familyOnly] et [officialOnly] sans priver les modules internes de
+/// leurs sources de travail.
 ///
 /// Chaque entrée porte des **métadonnées exactes** (intitulé, référence,
 /// date, source faisant autorité) et un lien vers le texte officiel. Le
@@ -19,10 +19,39 @@ abstract class LegalDocumentDataSource {
 /// pipeline d'import (voir `tools/legal_import/RUNBOOK.md`) ; en attendant,
 /// la fiche renvoie à la source officielle.
 class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
-  const LocalLegalDocumentDataSource();
+  const LocalLegalDocumentDataSource({
+    this.familyOnly = false,
+    this.officialOnly = false,
+  });
+
+  final bool familyOnly;
+  final bool officialOnly;
 
   @override
-  List<LegalDocument> getAll() => _documents;
+  List<LegalDocument> getAll() => _documents
+      .where(
+        (document) =>
+            (!familyOnly || document.domain == LegalDomain.famille) &&
+            (!officialOnly || _isOfficialLibraryDocument(document)),
+      )
+      .toList(growable: false);
+}
+
+bool _isOfficialLibraryDocument(LegalDocument document) {
+  switch (document.type) {
+    case LegalDocumentType.constitution:
+    case LegalDocumentType.code:
+    case LegalDocumentType.loi:
+    case LegalDocumentType.decret:
+    case LegalDocumentType.arrete:
+    case LegalDocumentType.jurisprudence:
+      return true;
+    case LegalDocumentType.traite:
+    case LegalDocumentType.doctrine:
+    case LegalDocumentType.rapport:
+    case LegalDocumentType.modeleActe:
+      return false;
+  }
 }
 
 const _legiburkina = 'https://www.legiburkina.bf';
@@ -350,7 +379,8 @@ final List<LegalDocument> _documents = [
   ),
   LegalDocument(
     id: 'doc-these-egalite-mariage-afrique',
-    title: "L'égalité de l'homme et de la femme dans le mariage en Afrique noire francophone",
+    title:
+        "L'égalité de l'homme et de la femme dans le mariage en Afrique noire francophone",
     type: LegalDocumentType.doctrine,
     domain: LegalDomain.famille,
     reference:
@@ -392,7 +422,8 @@ final List<LegalDocument> _documents = [
   ),
   LegalDocument(
     id: 'doc-these-pluralisme-justice-mossi',
-    title: 'Le pluralisme des systèmes juridiques et les perceptions de la justice',
+    title:
+        'Le pluralisme des systèmes juridiques et les perceptions de la justice',
     type: LegalDocumentType.doctrine,
     domain: LegalDomain.famille,
     reference:

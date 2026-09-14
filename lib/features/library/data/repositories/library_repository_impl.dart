@@ -17,11 +17,15 @@ class LibraryRepositoryImpl implements LibraryRepository {
     required this.dataSource,
     this.supabaseClient,
     this.userId,
+    this.familyOnly = false,
+    this.officialOnly = false,
   }) : _documents = List.of(dataSource.getAll());
 
   final LegalDocumentDataSource dataSource;
   final SupabaseClient? supabaseClient;
   final String? userId;
+  final bool familyOnly;
+  final bool officialOnly;
   final List<LegalDocument> _documents;
 
   bool get _persistenceEnabled => supabaseClient != null && userId != null;
@@ -142,18 +146,45 @@ class LibraryRepositoryImpl implements LibraryRepository {
           ),
       ];
 
-      final serverIds = serverDocs.map((d) => d.id).toSet();
+      // La Bibliothèque publique peut activer un périmètre éditorial fermé,
+      // tandis que les modules professionnels gardent accès au catalogue
+      // complet pour leurs recherches internes.
+      final familyDocs = serverDocs
+          .where(
+            (document) =>
+                (!familyOnly || document.domain == LegalDomain.famille) &&
+                (!officialOnly || _isOfficialLibraryDocument(document)),
+          )
+          .toList(growable: false);
+      final serverIds = familyDocs.map((d) => d.id).toSet();
       final localOnly = _documents
           .where((d) => !serverIds.contains(d.id))
           .toList();
       _documents
         ..clear()
-        ..addAll(serverDocs)
+        ..addAll(familyDocs)
         ..addAll(localOnly);
     } catch (error) {
       // Corpus serveur indisponible : on garde le catalogue local.
       // ignore: avoid_print
       print('Corpus Supabase indisponible, catalogue local utilisé : $error');
+    }
+  }
+
+  bool _isOfficialLibraryDocument(LegalDocument document) {
+    switch (document.type) {
+      case LegalDocumentType.constitution:
+      case LegalDocumentType.code:
+      case LegalDocumentType.loi:
+      case LegalDocumentType.decret:
+      case LegalDocumentType.arrete:
+      case LegalDocumentType.jurisprudence:
+        return true;
+      case LegalDocumentType.traite:
+      case LegalDocumentType.doctrine:
+      case LegalDocumentType.rapport:
+      case LegalDocumentType.modeleActe:
+        return false;
     }
   }
 
