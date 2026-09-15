@@ -23,7 +23,12 @@ class TrainingCatalogScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          leading: const AppShellMenuButton(),
+          leading: IconButton(
+            tooltip: 'Retour à l’espace étudiant',
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          actions: const [AppShellMenuButton()],
           title: const Text('Catalogue certifiant'),
         ),
         body: SafeArea(
