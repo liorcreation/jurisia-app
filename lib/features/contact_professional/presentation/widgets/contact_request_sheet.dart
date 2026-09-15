@@ -43,6 +43,7 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       _messageController.text.trim().isNotEmpty;
 
   Future<void> _submit(ContactProfessionalController controller) async {
+    FocusScope.of(context).unfocus();
     final success = await controller.submit(
       category: widget.category,
       fullName: _nameController.text,
@@ -80,9 +81,15 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.gold, size: 20),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.gold,
+            size: 20,
+          ),
           const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Text(notice, style: Theme.of(context).textTheme.bodySmall)),
+          Expanded(
+            child: Text(notice, style: Theme.of(context).textTheme.bodySmall),
+          ),
         ],
       ),
     );
@@ -93,10 +100,28 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Vos coordonnées',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontFamily: 'Libre Caslon Display',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Un seul moyen de contact suffit. Nous l’utiliserons uniquement pour le suivi de votre demande.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           GlowFocusField(
             child: TextField(
               controller: _nameController,
               onChanged: (_) => setState(() {}),
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
               maxLength: AppInputLimits.shortField,
               decoration: const InputDecoration(
                 labelText: 'Nom complet',
@@ -110,6 +135,8 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
             child: TextField(
               controller: _contactController,
               onChanged: (_) => setState(() {}),
+              textInputAction: TextInputAction.next,
+              keyboardType: TextInputType.emailAddress,
               maxLength: AppInputLimits.shortField,
               decoration: const InputDecoration(
                 labelText: 'Téléphone ou e-mail',
@@ -123,6 +150,8 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
             child: TextField(
               controller: _messageController,
               onChanged: (_) => setState(() {}),
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.newline,
               maxLines: 4,
               maxLength: AppInputLimits.contactMessage,
               decoration: const InputDecoration(
@@ -137,36 +166,59 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
     );
   }
 
-  Widget? _errorText(BuildContext context, ContactProfessionalController controller) {
-    if (controller.status != ContactSubmissionStatus.error || controller.errorMessage == null) {
+  Widget? _errorText(
+    BuildContext context,
+    ContactProfessionalController controller,
+  ) {
+    if (controller.status != ContactSubmissionStatus.error ||
+        controller.errorMessage == null) {
       return null;
     }
     return Text(
       controller.errorMessage!,
-      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.error),
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: AppColors.error),
     );
   }
 
-  Widget _submitButton(ContactProfessionalController controller, bool submitting) {
-    return LuxuryElevatedButton(
-      onPressed: _canSubmit && !submitting ? () => _submit(controller) : null,
-      child: submitting
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.nightBlueDeep),
-            )
-          : const Text('Envoyer la demande'),
+  Widget _submitButton(
+    ContactProfessionalController controller,
+    bool submitting,
+  ) {
+    return Tooltip(
+      message: _canSubmit
+          ? 'Envoyer votre demande en toute sécurité'
+          : 'Complétez les trois champs pour continuer',
+      child: LuxuryElevatedButton(
+        onPressed: _canSubmit && !submitting ? () => _submit(controller) : null,
+        icon: submitting ? null : Icons.lock_outline_rounded,
+        child: submitting
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.nightBlueDeep,
+                ),
+              )
+            : const Text('Envoyer la demande'),
+      ),
     );
   }
 
-  Widget _buildMobileSheet(BuildContext context, ContactProfessionalController controller) {
+  Widget _buildMobileSheet(
+    BuildContext context,
+    ContactProfessionalController controller,
+  ) {
     final submitting = controller.status == ContactSubmissionStatus.submitting;
     final notice = _noticeCard(context);
     final error = _errorText(context, controller);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: DraggableScrollableSheet(
         initialChildSize: 0.78,
         minChildSize: 0.5,
@@ -174,14 +226,21 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
         expand: false,
         builder: (context, scrollController) {
           return SmokedGlassSurface(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.large)),
-            border: const Border(top: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.large),
+            ),
+            border: const Border(
+              top: BorderSide(color: AppColors.glassBorder, width: 0.6),
+            ),
             child: Column(
               children: [
                 Container(
                   width: 40,
                   height: 4,
-                  margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
+                  margin: const EdgeInsets.only(
+                    top: AppSpacing.sm,
+                    bottom: AppSpacing.xs,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.glassBorder,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -201,20 +260,28 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                       AppSpacing.md,
                     ),
                     children: [
-                      if (notice != null) ...[notice, const SizedBox(height: AppSpacing.md)],
+                      if (notice != null) ...[
+                        notice,
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       _fieldsCard(),
-                      if (error != null) ...[const SizedBox(height: AppSpacing.sm), error],
+                      if (error != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        error,
+                      ],
                       const SizedBox(height: AppSpacing.lg),
                       Row(
                         children: [
-                          const Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.textDisabled),
+                          const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 13,
+                            color: AppColors.textDisabled,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(color: AppColors.textDisabled),
                             ),
                           ),
@@ -234,7 +301,10 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
     );
   }
 
-  Widget _buildDesktopDialog(BuildContext context, ContactProfessionalController controller) {
+  Widget _buildDesktopDialog(
+    BuildContext context,
+    ContactProfessionalController controller,
+  ) {
     final textTheme = Theme.of(context).textTheme;
     final submitting = controller.status == ContactSubmissionStatus.submitting;
     final notice = _noticeCard(context);
@@ -246,12 +316,17 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.large)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.large),
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 620, maxHeight: maxHeight),
         child: SmokedGlassSurface(
           borderRadius: BorderRadius.circular(AppRadius.large),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.8),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.28),
+            width: 0.8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -270,9 +345,15 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (notice != null) ...[notice, const SizedBox(height: AppSpacing.md)],
+                      if (notice != null) ...[
+                        notice,
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       _fieldsCard(),
-                      if (error != null) ...[const SizedBox(height: AppSpacing.sm), error],
+                      if (error != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        error,
+                      ],
                     ],
                   ),
                 ),
@@ -281,7 +362,10 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(color: AppColors.gold.withValues(alpha: 0.14), width: 0.6),
+                    top: BorderSide(
+                      color: AppColors.gold.withValues(alpha: 0.14),
+                      width: 0.6,
+                    ),
                   ),
                 ),
                 child: Column(
@@ -289,12 +373,18 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.textDisabled),
+                        const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 13,
+                          color: AppColors.textDisabled,
+                        ),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
-                            style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.textDisabled,
+                            ),
                           ),
                         ),
                       ],
@@ -323,13 +413,24 @@ class _ContactDialogHeader extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.md, AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.gold.withValues(alpha: 0.12), AppColors.gold.withValues(alpha: 0.03)],
+          colors: [
+            AppColors.gold.withValues(alpha: 0.12),
+            AppColors.gold.withValues(alpha: 0.03),
+          ],
         ),
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.16),
+            width: 0.6,
+          ),
         ),
       ),
       child: Row(
@@ -352,12 +453,17 @@ class _ContactDialogHeader extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   'Contacter un ${category.label.toLowerCase()}',
-                  style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   category.description,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),

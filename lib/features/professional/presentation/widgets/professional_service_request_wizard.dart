@@ -5,16 +5,16 @@ import '../../../../core/platform/app_platform_style.dart';
 import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/premium_surface.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../contact_professional/domain/entities/professional_category.dart';
 import '../controllers/professional_service_request_controller.dart';
 import '../../domain/entities/professional_service_request.dart';
+import '../../domain/entities/professional_service_category.dart';
 
 /// Ouvre le parcours de demande sur mobile, tablette ou desktop avec la même
 /// machine d’étapes et le même contrat de persistance.
 Future<void> showProfessionalServiceRequestWizard(
   BuildContext context, {
   ProfessionalRequestKind initialKind = ProfessionalRequestKind.legalAct,
-  ProfessionalCategory? initialCategory,
+  ProfessionalServiceCategory? initialCategory,
   String? initialActType,
 }) async {
   final controller = context.read<ProfessionalServiceRequestController>();
@@ -62,7 +62,7 @@ class ProfessionalServiceRequestWizard extends StatefulWidget {
   });
 
   final ProfessionalRequestKind initialKind;
-  final ProfessionalCategory? initialCategory;
+  final ProfessionalServiceCategory? initialCategory;
   final String? initialActType;
 
   @override
@@ -73,7 +73,9 @@ class ProfessionalServiceRequestWizard extends StatefulWidget {
 class _ProfessionalServiceRequestWizardState
     extends State<ProfessionalServiceRequestWizard> {
   late ProfessionalRequestKind _kind;
-  late ProfessionalCategory _category;
+  late ProfessionalServiceCategory _category;
+  String? _selectedServiceType;
+  bool _isOtherService = false;
   ProfessionalRequestUrgency _urgency = ProfessionalRequestUrgency.standard;
   ProfessionalAppointmentMode _appointmentMode =
       ProfessionalAppointmentMode.video;
@@ -91,9 +93,17 @@ class _ProfessionalServiceRequestWizardState
   void initState() {
     super.initState();
     _kind = widget.initialKind;
-    _category = widget.initialCategory ?? ProfessionalCategory.juriste;
-    if (widget.initialActType != null) {
-      _actTypeController.text = widget.initialActType!;
+    _category =
+        widget.initialCategory ?? ProfessionalServiceCategory.jurisconsult;
+    final initialActType = widget.initialActType?.trim();
+    if (initialActType != null && initialActType.isNotEmpty) {
+      if (_category.serviceTypes.contains(initialActType)) {
+        _selectedServiceType = initialActType;
+      } else {
+        _isOtherService = true;
+        _selectedServiceType = 'Autre';
+        if (initialActType != 'Autre') _actTypeController.text = initialActType;
+      }
     }
   }
 
@@ -113,9 +123,9 @@ class _ProfessionalServiceRequestWizardState
       case 0:
         return true;
       case 1:
+        final serviceType = _resolvedServiceType;
         return _detailsController.text.trim().length >= 12 &&
-            (_kind == ProfessionalRequestKind.expertAppointment ||
-                _actTypeController.text.trim().isNotEmpty) &&
+            serviceType.isNotEmpty &&
             (_kind != ProfessionalRequestKind.expertAppointment ||
                 _desiredDate != null);
       case 2:
@@ -126,6 +136,11 @@ class _ProfessionalServiceRequestWizardState
         return true;
     }
     return false;
+  }
+
+  String get _resolvedServiceType {
+    if (_isOtherService) return _actTypeController.text.trim();
+    return _selectedServiceType?.trim() ?? '';
   }
 
   void _next() {
@@ -154,10 +169,8 @@ class _ProfessionalServiceRequestWizardState
     final controller = context.read<ProfessionalServiceRequestController>();
     final success = await controller.submit(
       kind: _kind,
-      category: _category.name,
-      actType: _kind == ProfessionalRequestKind.legalAct
-          ? _actTypeController.text
-          : null,
+      category: _category.slug,
+      actType: _resolvedServiceType,
       fullName: _nameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
@@ -253,23 +266,45 @@ class _ProfessionalServiceRequestWizardState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StepTitle(
-          eyebrow: '01 — Orientation',
-          title: 'Dans quelle catégorie ?',
+          eyebrow: '01 — Votre parcours',
+          title: 'Quel service recherchez-vous ?',
           subtitle:
-              'Votre choix oriente immédiatement le type d’expert et le circuit de traitement.',
+              'Choisissez la catégorie qui correspond le mieux à votre besoin. Vous préciserez ensuite le service exact.',
         ),
         const SizedBox(height: AppSpacing.lg),
-        for (final category in ProfessionalCategory.values) ...[
-          _ChoiceTile(
-            selected: _category == category,
-            icon: _categoryIcon(category),
-            title: category.label,
-            subtitle: category.description,
-            onTap: () => setState(() => _category = category),
-          ),
-          if (category != ProfessionalCategory.values.last)
-            const SizedBox(height: AppSpacing.sm),
-        ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 620 ? 2 : 1;
+            final itemWidth = columns == 1
+                ? constraints.maxWidth
+                : (constraints.maxWidth - AppSpacing.sm) / 2;
+            return Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final category in ProfessionalServiceCategory.values)
+                  SizedBox(
+                    width: itemWidth,
+                    child: _ServiceCategoryChoice(
+                      category: category,
+                      selected: _category == category,
+                      onTap: () => setState(() {
+                        _category = category;
+                        if (_selectedServiceType != null &&
+                            !category.serviceTypes.contains(
+                              _selectedServiceType,
+                            )) {
+                          _selectedServiceType = null;
+                          _isOtherService = false;
+                          _actTypeController.clear();
+                        }
+                      }),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -289,13 +324,40 @@ class _ProfessionalServiceRequestWizardState
         ),
         const SizedBox(height: AppSpacing.lg),
         Text(
-          'Choisissez maintenant le service à lancer',
+          'Quel type de service souhaitez-vous lancer ?',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: AppColors.goldLight,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
+        for (final serviceType in [..._category.serviceTypes, 'Autre']) ...[
+          _ServiceTypeChoice(
+            title: serviceType,
+            selected:
+                (_isOtherService && serviceType == 'Autre') ||
+                (!_isOtherService && _selectedServiceType == serviceType),
+            onTap: () => setState(() {
+              _selectedServiceType = serviceType;
+              _isOtherService = serviceType == 'Autre';
+              if (!_isOtherService) _actTypeController.clear();
+            }),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        if (_isOtherService) ...[
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: _actTypeController,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Décrivez le service recherché',
+              hintText: 'Ex. formalité ou accompagnement spécifique…',
+              prefixIcon: Icon(Icons.edit_note_rounded),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
         for (final kind in ProfessionalRequestKind.values) ...[
           _ChoiceTile(
             selected: _kind == kind,
@@ -310,17 +372,6 @@ class _ProfessionalServiceRequestWizardState
             const SizedBox(height: AppSpacing.sm),
         ],
         const SizedBox(height: AppSpacing.lg),
-        if (!isAppointment)
-          TextField(
-            controller: _actTypeController,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Type d’acte ou de contrat',
-              hintText: 'Ex. bail commercial, statuts, contrat de prestation…',
-              prefixIcon: Icon(Icons.description_outlined),
-            ),
-          ),
-        if (!isAppointment) const SizedBox(height: AppSpacing.md),
         TextField(
           controller: _detailsController,
           onChanged: (_) => setState(() {}),
@@ -468,7 +519,8 @@ class _ProfessionalServiceRequestWizardState
                 compact: true,
               ),
               const SizedBox(height: AppSpacing.md),
-              _ReviewLine(label: 'Professionnel', value: _category.label),
+              _ReviewLine(label: 'Catégorie', value: _category.label),
+              _ReviewLine(label: 'Service', value: _resolvedServiceType),
               _ReviewLine(
                 label: 'Demandeur',
                 value: _nameController.text.trim(),
@@ -477,11 +529,6 @@ class _ProfessionalServiceRequestWizardState
                 label: 'Contact',
                 value: _emailController.text.trim(),
               ),
-              if (!isAppointment)
-                _ReviewLine(
-                  label: 'Acte',
-                  value: _actTypeController.text.trim(),
-                ),
               if (isAppointment)
                 _ReviewLine(
                   label: 'Date souhaitée',
@@ -647,6 +694,109 @@ class _StepTitle extends StatelessWidget {
   }
 }
 
+class _ServiceCategoryChoice extends StatelessWidget {
+  const _ServiceCategoryChoice({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ProfessionalServiceCategory category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      tone: selected ? PremiumSurfaceTone.cobalt : PremiumSurfaceTone.glass,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            category.icon,
+            color: selected ? AppColors.gold : AppColors.cobaltLight,
+            size: 23,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  category.label,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  category.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Icon(
+            selected
+                ? Icons.check_circle_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: selected ? AppColors.gold : AppColors.cobaltLight,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceTypeChoice extends StatelessWidget {
+  const _ServiceTypeChoice({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      tone: selected ? PremiumSurfaceTone.cobalt : PremiumSurfaceTone.glass,
+      child: Row(
+        children: [
+          Icon(
+            selected
+                ? Icons.radio_button_checked_rounded
+                : Icons.radio_button_unchecked_rounded,
+            color: selected ? AppColors.gold : AppColors.cobaltLight,
+            size: 19,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(title)),
+          if (title == 'Autre')
+            const Icon(
+              Icons.edit_note_rounded,
+              color: AppColors.goldLight,
+              size: 19,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ChoiceTile extends StatelessWidget {
   const _ChoiceTile({
     required this.selected,
@@ -755,15 +905,6 @@ class _ReviewLine extends StatelessWidget {
     );
   }
 }
-
-IconData _categoryIcon(ProfessionalCategory category) => switch (category) {
-  ProfessionalCategory.notaire => Icons.account_balance_rounded,
-  ProfessionalCategory.avocat => Icons.gavel_rounded,
-  ProfessionalCategory.juriste => Icons.balance_rounded,
-  ProfessionalCategory.huissier => Icons.markunread_mailbox_rounded,
-  ProfessionalCategory.greffier => Icons.assignment_rounded,
-  ProfessionalCategory.juge => Icons.account_balance_wallet_rounded,
-};
 
 String _formatDate(DateTime date) =>
     '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';

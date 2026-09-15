@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../contact_professional/domain/entities/professional_category.dart';
 import '../../domain/entities/professional_service_request.dart';
+import '../../domain/entities/professional_service_category.dart';
 import '../../domain/repositories/professional_service_request_repository.dart';
 
 class ProfessionalServiceRequestRepositoryImpl
@@ -65,7 +65,7 @@ class ProfessionalServiceRequestRepositoryImpl
     final request = ProfessionalServiceRequest(
       id: _uuid.v4(),
       kind: kind,
-      category: ProfessionalCategory.fromName(category),
+      category: ProfessionalServiceCategory.fromName(category),
       actType: actType,
       fullName: fullName,
       email: email,
@@ -119,7 +119,7 @@ class ProfessionalServiceRequestRepositoryImpl
         (value) => value.name == row['kind'],
         orElse: () => ProfessionalRequestKind.legalAct,
       ),
-      category: ProfessionalCategory.fromName(
+      category: ProfessionalServiceCategory.fromName(
         row['category'] as String? ?? 'juriste',
       ),
       actType: row['act_type'] as String?,

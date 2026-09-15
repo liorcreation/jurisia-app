@@ -1,4 +1,4 @@
-import '../../../contact_professional/domain/entities/professional_category.dart';
+import 'professional_service_category.dart';
 
 enum ProfessionalRequestKind { legalAct, expertAppointment }
 
@@ -85,7 +85,7 @@ class ProfessionalServiceRequest {
 
   final String id;
   final ProfessionalRequestKind kind;
-  final ProfessionalCategory category;
+  final ProfessionalServiceCategory category;
   final String? actType;
   final String fullName;
   final String email;

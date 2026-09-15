@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:jurisia_app/features/contact_professional/domain/entities/professional_category.dart';
 import 'package:jurisia_app/features/professional/domain/entities/professional_service_request.dart';
+import 'package:jurisia_app/features/professional/domain/entities/professional_service_category.dart';
 import 'package:jurisia_app/features/professional/domain/repositories/professional_service_request_repository.dart';
 import 'package:jurisia_app/features/professional/domain/usecases/submit_professional_service_request_usecase.dart';
 import 'package:jurisia_app/features/professional/presentation/controllers/professional_service_request_controller.dart';
@@ -40,7 +40,7 @@ class _FakeProfessionalServiceRequestRepository
     final request = ProfessionalServiceRequest(
       id: 'service-$submitCallCount',
       kind: kind,
-      category: ProfessionalCategory.fromName(category),
+      category: ProfessionalServiceCategory.fromName(category),
       actType: actType,
       fullName: fullName,
       email: email,
@@ -67,7 +67,7 @@ void main() {
 
       final result = await useCase(
         kind: ProfessionalRequestKind.legalAct,
-        category: 'notaire',
+        category: 'services_notariaux',
         actType: '  Statuts de société  ',
         fullName: ' Awa Traoré ',
         email: ' awa@example.com ',
@@ -93,7 +93,7 @@ void main() {
       expect(
         () => useCase(
           kind: ProfessionalRequestKind.expertAppointment,
-          category: 'avocat',
+          category: 'services_avocats',
           actType: null,
           fullName: 'Awa Traoré',
           email: 'awa@example.com',
@@ -105,6 +105,24 @@ void main() {
           appointmentMode: ProfessionalAppointmentMode.video,
         ),
         throwsArgumentError,
+      );
+    });
+  });
+
+  group('ProfessionalServiceCategory', () {
+    test('expose la typologie métier complète avec un parcours Autre', () {
+      expect(ProfessionalServiceCategory.values, hasLength(8));
+      for (final category in ProfessionalServiceCategory.values) {
+        expect(category.label, isNotEmpty);
+        expect(category.serviceTypes, hasLength(4));
+      }
+      expect(
+        ProfessionalServiceCategory.fromName('services_notariaux'),
+        ProfessionalServiceCategory.notarial,
+      );
+      expect(
+        ProfessionalServiceCategory.fromName('notaire'),
+        ProfessionalServiceCategory.notarial,
       );
     });
   });
@@ -121,7 +139,7 @@ void main() {
 
       final success = await controller.submit(
         kind: ProfessionalRequestKind.expertAppointment,
-        category: 'juriste',
+        category: 'jurisconsulte',
         actType: null,
         fullName: 'Awa Traoré',
         email: 'awa@example.com',
@@ -150,7 +168,7 @@ void main() {
 
       final success = await controller.submit(
         kind: ProfessionalRequestKind.legalAct,
-        category: 'juriste',
+        category: 'jurisconsulte',
         actType: 'Bail commercial',
         fullName: 'Awa Traoré',
         email: 'awa@example.com',
@@ -197,7 +215,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Dans quelle catégorie ?'), findsOneWidget);
+    expect(find.text('Quel service recherchez-vous ?'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

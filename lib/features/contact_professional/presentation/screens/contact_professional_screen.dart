@@ -16,6 +16,7 @@ import '../../../../theme/app_theme.dart';
 import '../../domain/entities/contact_request.dart';
 import '../../domain/entities/professional_category.dart';
 import '../../../professional/domain/entities/professional_service_request.dart';
+import '../../../professional/domain/entities/professional_service_category.dart';
 import '../controllers/contact_professional_controller.dart';
 import '../../../professional/presentation/controllers/professional_service_request_controller.dart';
 import '../widgets/contact_request_sheet.dart';

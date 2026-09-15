@@ -50,6 +50,9 @@
    actuel est désormais intégré à chaque module étudiant.
    `migration_016_professional_service_requests.sql` crée les demandes
    structurées d'actes/rendez-vous, avec RLS utilisateur stricte.
+   `migration_022_professional_service_categories.sql` remplace la liste
+   historique des professions par la typologie complète des services
+   professionnels, tout en conservant la compatibilité des anciennes demandes.
    `migration_017_legal_corpus_search.sql` expose la RPC de recherche plein
    texte utilisée par l'application.
    `migration_018_training_catalog_certificates.sql` ajoute le catalogue des

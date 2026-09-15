@@ -6,7 +6,24 @@ import { escapeHtml, sendTransactionalEmail } from "../_shared/email.ts";
 import { userClient } from "../_shared/supabase.ts";
 
 const KINDS = new Set(["legalAct", "expertAppointment"]);
-const CATEGORIES = new Set(["notaire", "avocat", "juriste", "huissier", "greffier", "juge"]);
+// Les anciennes valeurs restent acceptées pour les demandes déjà émises ;
+// les nouvelles demandes utilisent la typologie métier de l'espace Services.
+const CATEGORIES = new Set([
+  "services_notariaux",
+  "services_avocats",
+  "services_huissier",
+  "jurisconsulte",
+  "creation_entreprise_association",
+  "creation_societes",
+  "creation_cooperatives",
+  "consultation_approfondie",
+  "notaire",
+  "avocat",
+  "juriste",
+  "huissier",
+  "greffier",
+  "juge",
+]);
 const URGENCIES = new Set(["standard", "priority", "urgent"]);
 const MODES = new Set(["phone", "video", "inPerson"]);
 

@@ -14,11 +14,11 @@ import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
-import '../../../contact_professional/domain/entities/professional_category.dart';
 import '../../data/datasources/professional_template_local_datasource.dart';
 import '../../domain/entities/drafting_request.dart';
 import '../../domain/entities/legal_drafting_result.dart';
 import '../../domain/entities/professional_template.dart';
+import '../../domain/entities/professional_service_category.dart';
 import '../controllers/professional_documents_controller.dart';
 import '../widgets/drafting_intake_sheet.dart';
 import '../widgets/professional_service_request_wizard.dart';
@@ -77,7 +77,7 @@ class ProfessionalScreen extends StatelessWidget {
 
   void _openServiceCategory(
     BuildContext context,
-    ProfessionalCategory category,
+    ProfessionalServiceCategory category,
   ) {
     showProfessionalServiceRequestWizard(context, initialCategory: category);
   }
@@ -278,7 +278,7 @@ class _DesktopProfessionalView extends StatelessWidget {
 
   final _OpenIntake onOpenIntake;
   final VoidCallback onOpenServiceRequest;
-  final ValueChanged<ProfessionalCategory> onOpenServiceCategory;
+  final ValueChanged<ProfessionalServiceCategory> onOpenServiceCategory;
   final VoidCallback onOpenOtherRequest;
 
   @override
@@ -443,7 +443,7 @@ class _AtelierBody extends StatelessWidget {
   final List<LegalDraftingResult> recent;
   final _OpenIntake onOpenIntake;
   final VoidCallback onOpenServiceRequest;
-  final ValueChanged<ProfessionalCategory> onOpenServiceCategory;
+  final ValueChanged<ProfessionalServiceCategory> onOpenServiceCategory;
   final VoidCallback onOpenOtherRequest;
 
   @override
@@ -646,7 +646,7 @@ class _AtelierBody extends StatelessWidget {
 class _ProfessionalServiceNavigator extends StatelessWidget {
   const _ProfessionalServiceNavigator({required this.onSelectCategory});
 
-  final ValueChanged<ProfessionalCategory> onSelectCategory;
+  final ValueChanged<ProfessionalServiceCategory> onSelectCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -657,14 +657,14 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
         const _Eyebrow('SERVICE PROFESSIONNEL'),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Commencez par votre catégorie',
+          'Choisissez votre parcours juridique',
           style: textTheme.headlineSmall?.copyWith(
             fontFamily: 'Libre Caslon Display',
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Puis choisissez le type de service ou d’acte à préparer.',
+          'Sélectionnez une catégorie, puis le type de service recherché — ou « Autre » si votre besoin est spécifique.',
           style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -681,13 +681,18 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                for (var i = 0; i < ProfessionalCategory.values.length; i++)
+                for (
+                  var i = 0;
+                  i < ProfessionalServiceCategory.values.length;
+                  i++
+                )
                   SizedBox(
                     width: width,
                     child: _ServiceCategoryTile(
-                      category: ProfessionalCategory.values[i],
-                      onTap: () =>
-                          onSelectCategory(ProfessionalCategory.values[i]),
+                      category: ProfessionalServiceCategory.values[i],
+                      onTap: () => onSelectCategory(
+                        ProfessionalServiceCategory.values[i],
+                      ),
                     ),
                   ),
               ],
@@ -702,7 +707,7 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
 class _ServiceCategoryTile extends StatefulWidget {
   const _ServiceCategoryTile({required this.category, required this.onTap});
 
-  final ProfessionalCategory category;
+  final ProfessionalServiceCategory category;
   final VoidCallback onTap;
 
   @override
@@ -714,7 +719,8 @@ class _ServiceCategoryTileState extends State<_ServiceCategoryTile> {
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.category == ProfessionalCategory.juge
+    final color =
+        widget.category == ProfessionalServiceCategory.deepConsultation
         ? AppColors.metalCobalt
         : AppColors.gold;
     return MouseRegion(
@@ -728,21 +734,44 @@ class _ServiceCategoryTileState extends State<_ServiceCategoryTile> {
           padding: const EdgeInsets.all(AppSpacing.md),
           borderColor: color.withValues(alpha: _hovered ? 0.58 : 0.28),
           borderWidth: _hovered ? 1 : 0.6,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(_categoryIcon(widget.category), color: color, size: 21),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  widget.category.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Icon(widget.category.icon, color: color, size: 21),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      widget.category.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                widget.category.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                '${widget.category.serviceTypes.length} services proposés · Autre',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),
@@ -750,15 +779,6 @@ class _ServiceCategoryTileState extends State<_ServiceCategoryTile> {
     );
   }
 }
-
-IconData _categoryIcon(ProfessionalCategory category) => switch (category) {
-  ProfessionalCategory.notaire => Icons.account_balance_rounded,
-  ProfessionalCategory.avocat => Icons.gavel_rounded,
-  ProfessionalCategory.juriste => Icons.balance_rounded,
-  ProfessionalCategory.huissier => Icons.markunread_mailbox_rounded,
-  ProfessionalCategory.greffier => Icons.assignment_rounded,
-  ProfessionalCategory.juge => Icons.account_balance_wallet_rounded,
-};
 
 class _InstrumentCard extends StatefulWidget {
   const _InstrumentCard({required this.mode, required this.onOpen});

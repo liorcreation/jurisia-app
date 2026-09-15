@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../features/contact_professional/domain/entities/professional_category.dart';
 import '../../../features/professional/domain/entities/professional_service_request.dart';
+import '../../../features/professional/domain/entities/professional_service_category.dart';
 
 abstract class AdminServiceRequestRepository {
   Future<List<ProfessionalServiceRequest>> list();
@@ -109,5 +109,5 @@ class SupabaseAdminServiceRequestRepository
   }
 }
 
-ProfessionalCategory _categoryFromName(String name) =>
-    ProfessionalCategory.fromName(name);
+ProfessionalServiceCategory _categoryFromName(String name) =>
+    ProfessionalServiceCategory.fromName(name);

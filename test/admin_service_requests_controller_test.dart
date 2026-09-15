@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:jurisia_app/admin/features/service_requests/admin_service_request_repository.dart';
 import 'package:jurisia_app/admin/features/service_requests/admin_service_requests_controller.dart';
-import 'package:jurisia_app/features/contact_professional/domain/entities/professional_category.dart';
 import 'package:jurisia_app/features/professional/domain/entities/professional_service_request.dart';
+import 'package:jurisia_app/features/professional/domain/entities/professional_service_category.dart';
 
 class _FakeAdminServiceRequestRepository
     implements AdminServiceRequestRepository {
@@ -10,7 +10,7 @@ class _FakeAdminServiceRequestRepository
     : item = ProfessionalServiceRequest(
         id: 'service-1',
         kind: ProfessionalRequestKind.legalAct,
-        category: ProfessionalCategory.notaire,
+        category: ProfessionalServiceCategory.notarial,
         actType: 'Bail commercial',
         fullName: 'Awa Traoré',
         email: 'awa@example.com',

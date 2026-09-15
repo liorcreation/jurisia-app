@@ -6,7 +6,7 @@ import '../../../core/widgets/entrance_fade.dart';
 import '../../../core/widgets/glass_container.dart';
 import '../../../core/widgets/gradient_icon_badge.dart';
 import '../../../core/widgets/luxury_scaffold_background.dart';
-import '../../../features/contact_professional/domain/entities/professional_category.dart';
+import '../../../features/professional/domain/entities/professional_service_category.dart';
 import '../../../features/professional/domain/entities/professional_service_request.dart';
 import '../../../theme/app_theme.dart';
 import '../../theme/admin_theme.dart';
