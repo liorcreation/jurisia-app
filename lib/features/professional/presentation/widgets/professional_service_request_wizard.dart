@@ -25,6 +25,14 @@ Future<void> showProfessionalServiceRequestWizard(
     initialCategory: initialCategory,
     initialActType: initialActType,
   );
+  // Les routes de dialogue sont construites par le Navigator, qui se trouve
+  // au-dessus de la portée du shell où le contrôleur est fourni. On relaie
+  // donc explicitement la même instance au wizard pour éviter un écran gris
+  // vide dès l'ouverture d'une catégorie.
+  final wizardWithController = ChangeNotifierProvider.value(
+    value: controller,
+    child: wizard,
+  );
   if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
     await showDialog<void>(
       context: context,
@@ -34,7 +42,7 @@ Future<void> showProfessionalServiceRequestWizard(
         insetPadding: const EdgeInsets.all(AppSpacing.xl),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 840),
-          child: wizard,
+          child: wizardWithController,
         ),
       ),
     );
@@ -47,7 +55,7 @@ Future<void> showProfessionalServiceRequestWizard(
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
-        child: wizard,
+        child: wizardWithController,
       ),
     );
   }

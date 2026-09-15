@@ -37,91 +37,9 @@
       background-attachment: fixed;
     }
 
-    #jurisia-boot-screen {
-      align-items: center;
-      background:
-        radial-gradient(circle at 50% 38%, rgba(212, 170, 69, 0.12), transparent 28%),
-        linear-gradient(180deg, #071527 0%, #0B1F3A 100%);
-      color: #F7F0DE;
-      display: flex;
-      flex-direction: column;
-      font-family: Georgia, 'Times New Roman', serif;
-      inset: 0;
-      justify-content: center;
-      position: fixed;
-      z-index: 10;
-    }
-
-    #jurisia-boot-screen[hidden] {
-      display: none;
-    }
-
-    .jurisia-boot-seal {
-      align-items: center;
-      border: 1px solid rgba(239, 196, 83, 0.72);
-      border-radius: 999px;
-      box-shadow: 0 0 0 8px rgba(239, 196, 83, 0.06), 0 0 42px rgba(239, 196, 83, 0.18);
-      display: flex;
-      height: 64px;
-      justify-content: center;
-      position: relative;
-      width: 64px;
-    }
-
-    .jurisia-boot-seal::before,
-    .jurisia-boot-seal::after {
-      border: 1px solid rgba(239, 196, 83, 0.3);
-      border-radius: 999px;
-      content: '';
-      inset: 8px;
-      position: absolute;
-    }
-
-    .jurisia-boot-seal::after {
-      animation: jurisia-boot-pulse 1.8s ease-in-out infinite;
-      inset: -9px;
-    }
-
-    .jurisia-boot-mark {
-      color: #EFC453;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-    }
-
-    .jurisia-boot-title {
-      font-size: 22px;
-      letter-spacing: 0.04em;
-      margin-top: 22px;
-    }
-
-    .jurisia-boot-caption {
-      color: rgba(224, 226, 234, 0.72);
-      font-family: Arial, sans-serif;
-      font-size: 11px;
-      letter-spacing: 0.18em;
-      margin-top: 8px;
-      text-transform: uppercase;
-    }
-
-    @keyframes jurisia-boot-pulse {
-      0%, 100% { opacity: 0.35; transform: scale(0.94); }
-      50% { opacity: 1; transform: scale(1.04); }
-    }
   </style>
 </head>
 <body>
-  <div id="jurisia-boot-screen" role="status" aria-live="polite">
-    <div class="jurisia-boot-seal"><span class="jurisia-boot-mark">J</span></div>
-    <div class="jurisia-boot-title">JurisIA</div>
-    <div class="jurisia-boot-caption">Votre intelligence juridique</div>
-  </div>
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    window.addEventListener('flutter-first-frame', function () {
-      var bootScreen = document.getElementById('jurisia-boot-screen');
-      if (bootScreen) bootScreen.hidden = true;
-    });
-  </script>
 </body>
 </html>
