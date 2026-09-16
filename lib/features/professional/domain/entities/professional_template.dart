@@ -2,6 +2,11 @@ import '../../../../models/legal_document/legal_domain.dart';
 
 /// Type d'acte proposé en rédaction rapide dans l'Espace professionnel.
 enum DraftingActType {
+  contratVente,
+  bailHabitation,
+  bailProfessionnel,
+  miseEnDemeure,
+  contratPartenariat,
   bailCommercial,
   contratPrestation,
   statutsSociete,
@@ -12,6 +17,16 @@ enum DraftingActType {
 extension DraftingActTypeLabel on DraftingActType {
   String get label {
     switch (this) {
+      case DraftingActType.contratVente:
+        return 'Contrat de vente';
+      case DraftingActType.bailHabitation:
+        return 'Bail à usage d’habitation';
+      case DraftingActType.bailProfessionnel:
+        return 'Bail à usage professionnel';
+      case DraftingActType.miseEnDemeure:
+        return 'Mise en demeure';
+      case DraftingActType.contratPartenariat:
+        return 'Contrat de partenariat';
       case DraftingActType.bailCommercial:
         return 'Bail commercial';
       case DraftingActType.contratPrestation:

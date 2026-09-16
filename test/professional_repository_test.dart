@@ -61,6 +61,23 @@ ProfessionalTemplate _templateByType(DraftingActType type) {
 }
 
 void main() {
+  test('expose les modèles d’actes prêts à l’emploi demandés', () {
+    const dataSource = LocalProfessionalTemplateDataSource();
+    final titles = dataSource.getAll().map((template) => template.title).toSet();
+
+    expect(
+      titles,
+      containsAll([
+        'Contrat de vente',
+        'Bail à usage d’habitation',
+        'Bail à usage professionnel',
+        'Contrat de travail',
+        'Mise en demeure',
+        'Contrat de partenariat',
+      ]),
+    );
+  });
+
   group('DraftLegalDocumentUseCase — rédaction', () {
     test('rédige un acte à partir d\'un modèle et enrichit le contexte depuis la bibliothèque', () async {
       final built = _buildRepository([
