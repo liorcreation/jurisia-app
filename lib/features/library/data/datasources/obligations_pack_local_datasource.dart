@@ -6,7 +6,7 @@ import '../../../../models/legal_document/legal_domain.dart';
 /// Les fichiers transmis contiennent principalement des ouvrages édités et
 /// des supports de cours. Le catalogue local conserve donc leurs notices,
 /// plans et synthèses originales, mais pas une reproduction intégrale.
-const obligationsPackLocalDocuments = <LegalDocument>[
+final obligationsPackLocalDocuments = <LegalDocument>[
   LegalDocument(
     id: 'doc-doctrine-terre-obligations',
     title: 'Droit civil — Les obligations',
