@@ -20,7 +20,7 @@ import '../widgets/document_type_icon.dart';
 import '../widgets/summary_only_badge.dart';
 import 'document_detail_screen.dart';
 
-/// Bibliothèque de référence du droit burkinabè des personnes et de la famille.
+/// Bibliothèque juridique de référence de JurisIA.
 /// Le périmètre est volontairement fermé pendant la phase de constitution du
 /// corpus officiel. Le [LibraryController] est fourni par [AppShell].
 ///
@@ -215,9 +215,9 @@ class _MobileLibrary extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.only(right: AppSpacing.sm),
                           child: _FilterChip(
-                            label: 'Droit des personnes et de la famille',
-                            selected: true,
-                            onSelected: () {},
+                            label: 'Tout le corpus juridique',
+                            selected: controller.selectedDomain == null,
+                            onSelected: () => controller.clearFilters(),
                             compact: true,
                           ),
                         ),
@@ -399,7 +399,7 @@ class _CorpusIntro extends StatelessWidget {
   Widget build(BuildContext context) {
     return PremiumSectionHeader(
       eyebrow: 'Veille & recherche',
-      title: 'Droit des personnes et de la famille',
+      title: 'Bibliothèque juridique',
       subtitle:
           'Corpus vérifié : recherchez une loi, un article, une étude ou une référence.',
       action: searching
@@ -491,7 +491,7 @@ class _DesktopLibrary extends StatelessWidget {
                                   onSelect: controller.selectType,
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
-                                const _FamilyScopeBanner(),
+                                const _CorpusScopeBanner(),
                                 const SizedBox(height: AppSpacing.lg),
                                 _ResultsBar(
                                   count: results.length,
@@ -576,7 +576,7 @@ class _LibraryHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$total références officielles — personnes et famille',
+                  '$total références — textes, doctrine et modèles',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
@@ -1003,8 +1003,8 @@ class _FacetState extends State<_Facet> {
   }
 }
 
-class _FamilyScopeBanner extends StatelessWidget {
-  const _FamilyScopeBanner();
+class _CorpusScopeBanner extends StatelessWidget {
+  const _CorpusScopeBanner();
 
   @override
   Widget build(BuildContext context) {
@@ -1020,7 +1020,7 @@ class _FamilyScopeBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Périmètre actif : droit des personnes et de la famille — textes et références vérifiés.',
+              'Périmètre actif : corpus juridique JurisIA — textes, doctrine et ressources pédagogiques.',
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),

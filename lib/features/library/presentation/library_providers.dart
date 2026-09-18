@@ -12,10 +12,10 @@ import 'controllers/library_controller.dart';
 LibraryController buildLibraryController() {
   final LibraryRepository repository = LibraryRepositoryImpl(
     dataSource: const LocalLegalDocumentDataSource(
-      familyOnly: true,
+      familyOnly: false,
       officialOnly: false,
     ),
-    familyOnly: true,
+    familyOnly: false,
     officialOnly: false,
     supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
     userId: SupabaseConfig.isReady

@@ -65,6 +65,11 @@
    avec le Code des personnes et de la famille de 2025, classe le Code de
    1989 comme archive abrogée, et indexe deux thèses doctrinales sous forme
    de synthèses bibliographiques.
+   `migration_023_obligations_pack.sql` ajoute le pack pédagogique « Droit
+   des obligations » : neuf références dédoublonnées, leurs plans et des
+   synthèses originales. Les ouvrages édités restent référencés comme
+   doctrine ; leurs reproductions intégrales ne sont pas publiées sans
+   autorisation de diffusion.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la

@@ -73,6 +73,28 @@ void main() {
           'doc-these-egalite-mariage-afrique',
           'doc-these-pluralisme-justice-mossi',
         ]),
-      );
-    });
+    );
+  });
+
+  test('le catalogue général expose le pack Droit des obligations', () {
+    final documents = const LocalLegalDocumentDataSource(
+      familyOnly: false,
+      officialOnly: false,
+    ).getAll();
+
+    expect(
+      documents.map((document) => document.id),
+      containsAll(<String>[
+        'doc-doctrine-terre-obligations',
+        'doc-doctrine-porchy-simon-obligations',
+        'doc-annales-obligations-dalloz',
+        'doc-technique-contractuelle-meyer',
+        'doc-gorlier-contrats-speciaux',
+        'doc-malaurie-contrats-speciaux',
+        'doc-renault-brahinsky-obligations-mementos',
+        'doc-boustani-contrats-speciaux',
+        'doc-renault-brahinsky-obligations-essentiel',
+      ]),
+    );
+  });
 }
