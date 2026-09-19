@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/app_theme.dart';
 
-/// Signale qu'un document ne contient pour l'instant qu'une **synthèse**
-/// (résumé + plan du texte + lien vers la source officielle) et non le
-/// texte intégral article par article, qui sera intégré progressivement
-/// par le pipeline d'import.
+/// Signale qu'une notice documentaire renvoie à une source externe et que le
+/// texte de cette source n'est pas reproduit dans l'application.
 ///
 /// [compact] : pastille discrète pour les cartes de résultat.
 /// Sinon : bandeau explicite pour la vue détaillée.
@@ -15,11 +13,11 @@ class SummaryOnlyBadge extends StatelessWidget {
   final bool compact;
 
   static const _accent = AppColors.warning;
-  static const _label = 'Résumé — texte intégral à venir';
+  static const _label = 'Référence documentaire';
   static const _tooltip =
-      'Seule une synthèse est disponible pour ce texte (résumé, plan et lien '
-      'vers la source officielle). Le texte intégral, article par article, '
-      'sera ajouté prochainement.';
+      'Cette fiche présente une référence, un plan de lecture et un lien vers '
+      'la source. Le contenu complet JurisIA est disponible dans les cours '
+      'portant le label « contenu JurisIA ». ';
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +36,10 @@ class SummaryOnlyBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.hourglass_bottom_rounded, size: 11, color: _accent),
+              const Icon(Icons.menu_book_outlined, size: 11, color: _accent),
               const SizedBox(width: 4),
               Text(
-                'Résumé',
+                'Référence',
                 style: textTheme.labelSmall?.copyWith(
                   color: _accent,
                   fontWeight: FontWeight.w700,
@@ -64,7 +62,7 @@ class SummaryOnlyBadge extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.hourglass_bottom_rounded, size: 17, color: _accent),
+          const Icon(Icons.menu_book_outlined, size: 17, color: _accent),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -79,9 +77,9 @@ class SummaryOnlyBadge extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Cette fiche présente une synthèse du texte, son plan et le lien '
-                  'vers la source officielle. Les articles seront intégrés '
-                  'progressivement.',
+                  'Cette notice présente la source, son plan et le lien officiel '
+                  'sans reproduire le document externe. Consultez les cours '
+                  'originaux JurisIA pour le contenu pédagogique complet.',
                   style: textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
                     height: 1.35,

@@ -85,6 +85,7 @@ void main() {
     expect(
       documents.map((document) => document.id),
       containsAll(<String>[
+        'doc-jurisia-cours-complet-obligations',
         'doc-doctrine-terre-obligations',
         'doc-doctrine-porchy-simon-obligations',
         'doc-annales-obligations-dalloz',
@@ -96,5 +97,12 @@ void main() {
         'doc-renault-brahinsky-obligations-essentiel',
       ]),
     );
+
+    final course = documents.singleWhere(
+      (document) => document.id == 'doc-jurisia-cours-complet-obligations',
+    );
+    expect(course.summaryOnly, isFalse);
+    expect(course.hasFullText, isTrue);
+    expect(course.fullContent, contains('PARTIE VII — TECHNIQUE CONTRACTUELLE'));
   });
 }

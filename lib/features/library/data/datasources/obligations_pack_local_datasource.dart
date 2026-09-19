@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_obligations_course.dart';
 
 /// Références pédagogiques du pack « Droit des obligations ».
 ///
@@ -7,6 +8,40 @@ import '../../../../models/legal_document/legal_domain.dart';
 /// des supports de cours. Le catalogue local conserve donc leurs notices,
 /// plans et synthèses originales, mais pas une reproduction intégrale.
 final obligationsPackLocalDocuments = <LegalDocument>[
+  LegalDocument(
+    id: 'doc-jurisia-cours-complet-obligations',
+    title: 'Cours complet JurisIA — Droit des obligations',
+    type: LegalDocumentType.traite,
+    domain: LegalDomain.civil,
+    reference: 'Édition pédagogique originale JurisIA — pack Droit des obligations',
+    datePublication: DateTime(2026, 9, 19),
+    summary:
+        'Cours complet original : théorie générale, contrat, inexécution, responsabilité, quasi-contrats, contrats spéciaux et technique contractuelle.',
+    fullContent: jurisiaObligationsCourse,
+    outline: const [
+      'Présentation et objectifs de formation',
+      'Partie I — Les fondamentaux de l’obligation',
+      'Partie II — Le contrat',
+      'Partie III — Effets et inexécution',
+      'Partie IV — Responsabilité civile extracontractuelle',
+      'Partie V — Quasi-contrats et régime général',
+      'Partie VI — Contrats spéciaux',
+      'Partie VII — Technique contractuelle',
+      'Fiches opérationnelles et conclusion',
+    ],
+    summaryOnly: false,
+    officialSourceName: 'JurisIA — contenu pédagogique original',
+    tags: const [
+      'pack-obligations',
+      'cours complet',
+      'contenu JurisIA',
+      'contrat',
+      'responsabilité civile',
+      'quasi-contrats',
+      'contrats spéciaux',
+      'technique contractuelle',
+    ],
+  ),
   LegalDocument(
     id: 'doc-doctrine-terre-obligations',
     title: 'Droit civil — Les obligations',
