@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../domain/entities/library_search_query.dart';
+import '../../domain/entities/library_collection.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../datasources/legal_document_local_datasource.dart';
 
@@ -80,11 +81,19 @@ class LibraryRepositoryImpl implements LibraryRepository {
 
   Future<void> _mergeServerCorpus(SupabaseClient client) async {
     try {
-      final docRows = await client
-          .from('legal_documents')
-          .select(
-            'id,title,type,domain,reference,date_publication,date_entree_en_vigueur,status,summary,full_content,outline,summary_only,official_source_name,source_url,tags,related_ids,updated_at',
-          );
+      List<dynamic> docRows;
+      try {
+        docRows = await client.from('legal_documents').select(
+          'id,title,type,domain,reference,date_publication,date_entree_en_vigueur,status,summary,full_content,outline,summary_only,official_source_name,file_url,source_url,tags,related_ids,updated_at',
+        );
+      } catch (_) {
+        // Compatibilité avec les environnements Supabase antérieurs à la
+        // migration PDF : les documents restent consultables pendant que la
+        // colonne file_url est déployée.
+        docRows = await client.from('legal_documents').select(
+          'id,title,type,domain,reference,date_publication,date_entree_en_vigueur,status,summary,full_content,outline,summary_only,official_source_name,source_url,tags,related_ids,updated_at',
+        );
+      }
       if ((docRows as List).isEmpty) return;
 
       final articleRows = await client
@@ -134,6 +143,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
                 (row['summary_only'] as bool? ?? false) &&
                 (articlesByDoc[row['id']] ?? const []).isEmpty,
             officialSourceName: row['official_source_name'] as String?,
+            fileUrl: row['file_url'] as String?,
             sourceUrl: row['source_url'] as String?,
             tags:
                 (row['tags'] as List?)?.map((e) => e as String).toList() ??
@@ -196,6 +206,10 @@ class LibraryRepositoryImpl implements LibraryRepository {
       if (query.favoritesOnly && !document.isFavorite) return false;
       if (query.type != null && document.type != query.type) return false;
       if (query.domain != null && document.domain != query.domain) return false;
+      if (query.collectionTag != null &&
+          !documentBelongsToLibraryCollection(document, query.collectionTag!)) {
+        return false;
+      }
       if (query.dateFrom != null &&
           document.datePublication.isBefore(query.dateFrom!)) {
         return false;
@@ -243,6 +257,10 @@ class LibraryRepositoryImpl implements LibraryRepository {
         }
         if (query.dateTo != null &&
             document.datePublication.isAfter(query.dateTo!)) {
+          continue;
+        }
+        if (query.collectionTag != null &&
+            !documentBelongsToLibraryCollection(document, query.collectionTag!)) {
           continue;
         }
         filtered.add(document);

@@ -8,6 +8,7 @@ class LibrarySearchQuery {
     this.keyword = '',
     this.type,
     this.domain,
+    this.collectionTag,
     this.dateFrom,
     this.dateTo,
     this.favoritesOnly = false,
@@ -23,6 +24,10 @@ class LibrarySearchQuery {
 
   /// Branche du droit.
   final LegalDomain? domain;
+
+  /// Pack éditorial sélectionné dans la navigation principale de la
+  /// bibliothèque.
+  final String? collectionTag;
 
   /// Borne inférieure (incluse) de la date de publication.
   final DateTime? dateFrom;

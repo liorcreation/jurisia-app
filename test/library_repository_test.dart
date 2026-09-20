@@ -17,7 +17,7 @@ class _FakeDataSource implements LegalDocumentDataSource {
           id: 'a',
           title: 'Code civil',
           type: LegalDocumentType.code,
-          domain: LegalDomain.civil,
+          domain: LegalDomain.famille,
           reference: 'Livre I à IV',
           datePublication: DateTime(1958, 3, 4),
           summary: 'Régit les personnes, la famille, les biens.',
@@ -33,7 +33,7 @@ class _FakeDataSource implements LegalDocumentDataSource {
           datePublication: DateTime(1992, 12, 15),
           summary: 'Relations individuelles et collectives de travail.',
           fullContent: 'Article 12 : le contrat de travail peut être à durée déterminée.',
-          tags: const ['contrat de travail'],
+          tags: const ['contrat de travail', 'pack-obligations'],
         ),
         LegalDocument(
           id: 'c',
@@ -95,6 +95,18 @@ void main() {
     test('filters by legal domain', () {
       final results = searchUseCase(const LibrarySearchQuery(domain: LegalDomain.travail));
       expect(results.map((d) => d.id).toSet(), {'b', 'c'});
+    });
+
+    test('filters exclusively by JurisIA collection pack', () {
+      final family = searchUseCase(
+        const LibrarySearchQuery(collectionTag: 'pack-droit-famille'),
+      );
+      expect(family.map((d) => d.id), ['a']);
+
+      final obligations = searchUseCase(
+        const LibrarySearchQuery(collectionTag: 'pack-obligations'),
+      );
+      expect(obligations.map((d) => d.id), ['b']);
     });
 
     test('filters by publication date range', () {

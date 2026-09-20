@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../domain/entities/library_search_query.dart';
+import '../../domain/entities/library_collection.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/usecases/search_legal_documents_usecase.dart';
 import '../../domain/usecases/toggle_bookmark_usecase.dart';
@@ -30,6 +31,7 @@ class LibraryController extends ChangeNotifier {
   LegalDocumentType? _selectedType;
   LegalDomain? _selectedDomain;
   bool _favoritesOnly = false;
+  String? _selectedCollectionTag;
   List<LegalDocument> _results = const [];
   bool _isSearchingCorpus = false;
   bool _isHydrating = true;
@@ -41,6 +43,7 @@ class LibraryController extends ChangeNotifier {
   LegalDocumentType? get selectedType => _selectedType;
   LegalDomain? get selectedDomain => _selectedDomain;
   bool get favoritesOnly => _favoritesOnly;
+  String? get selectedCollectionTag => _selectedCollectionTag;
   List<LegalDocument> get results => _results;
   bool get isSearchingCorpus => _isSearchingCorpus;
   bool get isHydrating => _isHydrating;
@@ -65,6 +68,7 @@ class LibraryController extends ChangeNotifier {
       _keyword.trim().isNotEmpty ||
       _selectedType != null ||
       _selectedDomain != null ||
+      _selectedCollectionTag != null ||
       _favoritesOnly;
 
   /// Remet tous les critères à zéro.
@@ -72,6 +76,7 @@ class LibraryController extends ChangeNotifier {
     _keyword = '';
     _selectedType = null;
     _selectedDomain = null;
+    _selectedCollectionTag = null;
     _favoritesOnly = false;
     _remoteSearchGeneration++;
     _remoteDebounce?.cancel();
@@ -93,6 +98,12 @@ class LibraryController extends ChangeNotifier {
 
   void selectDomain(LegalDomain? domain) {
     _selectedDomain = _selectedDomain == domain ? null : domain;
+    _runSearch();
+    _scheduleRemoteSearch();
+  }
+
+  void selectCollection(String? collectionTag) {
+    _selectedCollectionTag = collectionTag;
     _runSearch();
     _scheduleRemoteSearch();
   }
@@ -119,6 +130,7 @@ class LibraryController extends ChangeNotifier {
         keyword: _keyword,
         type: _selectedType,
         domain: _selectedDomain,
+        collectionTag: _selectedCollectionTag,
         favoritesOnly: _favoritesOnly,
       ),
     );
@@ -158,6 +170,7 @@ class LibraryController extends ChangeNotifier {
         keyword: keyword,
         type: _selectedType,
         domain: _selectedDomain,
+        collectionTag: _selectedCollectionTag,
         favoritesOnly: _favoritesOnly,
       ),
     );

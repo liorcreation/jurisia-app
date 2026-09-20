@@ -14,6 +14,7 @@ import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
+import '../../domain/entities/library_collection.dart';
 import '../widgets/document_category_badge.dart';
 import '../widgets/document_tag.dart';
 import '../widgets/document_type_icon.dart';
@@ -173,6 +174,12 @@ class _MobileLibrary extends StatelessWidget {
                         controller.updateKeyword('');
                       },
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _MobileCollectionStrip(
+                    documents: all,
+                    selectedTag: controller.selectedCollectionTag,
+                    onSelect: controller.selectCollection,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   SizedBox(
@@ -390,6 +397,44 @@ class _MobileFacet extends StatelessWidget {
   }
 }
 
+class _MobileCollectionStrip extends StatelessWidget {
+  const _MobileCollectionStrip({
+    required this.documents,
+    required this.selectedTag,
+    required this.onSelect,
+  });
+
+  final List<LegalDocument> documents;
+  final String? selectedTag;
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 78,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        itemCount: libraryCollections.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) {
+          final collection = libraryCollections[index];
+          final count = documents
+              .where((document) => documentBelongsToLibraryCollection(document, collection.tag))
+              .length;
+          return _CollectionFacet(
+            collection: collection,
+            count: count,
+            selected: selectedTag == collection.tag,
+            compact: true,
+            onTap: () => onSelect(collection.tag),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class _CorpusIntro extends StatelessWidget {
   const _CorpusIntro({required this.searching});
 
@@ -485,6 +530,12 @@ class _DesktopLibrary extends StatelessWidget {
                                   },
                                 ),
                                 const SizedBox(height: AppSpacing.xl),
+                                _CollectionStrip(
+                                  documents: all,
+                                  selectedTag: controller.selectedCollectionTag,
+                                  onSelect: controller.selectCollection,
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
                                 _FacetStrip(
                                   documents: all,
                                   selected: controller.selectedType,
@@ -884,6 +935,171 @@ class _FacetStrip extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class _CollectionStrip extends StatelessWidget {
+  const _CollectionStrip({
+    required this.documents,
+    required this.selectedTag,
+    required this.onSelect,
+  });
+
+  final List<LegalDocument> documents;
+  final String? selectedTag;
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionLabel('Parcourir par pack juridique'),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            for (final collection in libraryCollections)
+              _CollectionFacet(
+                collection: collection,
+                count: documents
+                    .where((document) => documentBelongsToLibraryCollection(document, collection.tag))
+                    .length,
+                selected: selectedTag == collection.tag,
+                onTap: () => onSelect(collection.tag),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _CollectionFacet extends StatefulWidget {
+  const _CollectionFacet({
+    required this.collection,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+    this.compact = false,
+  });
+
+  final LibraryCollection collection;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  State<_CollectionFacet> createState() => _CollectionFacetState();
+}
+
+class _CollectionFacetState extends State<_CollectionFacet> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final content = Row(
+      children: [
+        Container(
+          width: widget.compact ? 28 : 34,
+          height: widget.compact ? 28 : 34,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: widget.selected
+                ? AppGradients.goldMetallic
+                : AppGradients.heroCard,
+            borderRadius: BorderRadius.circular(AppRadius.small),
+          ),
+          child: Icon(
+            _iconForCollection(widget.collection.icon),
+            size: widget.compact ? 15 : 18,
+            color: AppColors.nightBlueDeep,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.collection.title,
+                maxLines: widget.compact ? 1 : 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelMedium?.copyWith(
+                  color: widget.selected ? AppColors.gold : AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: widget.compact ? 11.5 : 12.5,
+                ),
+              ),
+              Text(
+                '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: TapScale(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 250,
+              height: widget.compact ? 68 : 76,
+              padding: EdgeInsets.all(widget.compact ? 9 : 11),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                color: widget.selected
+                    ? AppColors.gold.withValues(alpha: 0.14)
+                    : _hovered
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : AppColors.legalBlueDark.withValues(alpha: 0.42),
+                border: Border.all(
+                  color: widget.selected
+                      ? AppColors.gold.withValues(alpha: 0.55)
+                      : AppColors.glassBorder,
+                  width: widget.selected ? 1 : 0.8,
+                ),
+              ),
+              child: content,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+IconData _iconForCollection(String icon) {
+  switch (icon) {
+    case 'family':
+      return Icons.family_restroom_rounded;
+    case 'obligations':
+      return Icons.handshake_rounded;
+    case 'penal':
+      return Icons.gavel_rounded;
+    case 'judicial':
+      return Icons.account_balance_rounded;
+    case 'administrative':
+      return Icons.policy_rounded;
+    case 'banking':
+      return Icons.account_balance_wallet_rounded;
+    default:
+      return Icons.menu_book_rounded;
   }
 }
 

@@ -10,6 +10,7 @@ import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
+import '../../../../models/legal_document/legal_domain.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/library_controller.dart';
 import '../widgets/document_category_badge.dart';
@@ -168,6 +169,23 @@ class _ReaderState extends State<_Reader> {
     }
   }
 
+  String? get _pdfUrl {
+    final fileUrl = widget.document.fileUrl?.trim();
+    if (fileUrl != null && fileUrl.isNotEmpty) return fileUrl;
+
+    final sourceUrl = widget.document.sourceUrl?.trim();
+    if (sourceUrl == null || sourceUrl.isEmpty) return null;
+    final withoutQuery = sourceUrl.toLowerCase().split('?').first;
+    return withoutQuery.endsWith('.pdf') ? sourceUrl : null;
+  }
+
+  void _openPdf() {
+    final url = _pdfUrl;
+    if (url != null) {
+      launchUrl(Uri.parse(url), webOnlyWindowName: '_blank');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final doc = widget.document;
@@ -239,6 +257,14 @@ class _ReaderState extends State<_Reader> {
                             if (doc.awaitingFullText) ...[
                               const SizedBox(height: AppSpacing.lg),
                               const SummaryOnlyBadge(),
+                            ],
+                            if (doc.domain == LegalDomain.famille) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              _FamilyPdfCard(
+                                document: doc,
+                                pdfUrl: _pdfUrl,
+                                onOpen: _pdfUrl == null ? null : _openPdf,
+                              ),
                             ],
                             const SizedBox(height: AppSpacing.xl),
                             if (showFactsInline) ...[
@@ -1429,6 +1455,93 @@ class _FactRow extends StatelessWidget {
             child: Text(
               value,
               style: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary, height: 1.35),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FamilyPdfCard extends StatelessWidget {
+  const _FamilyPdfCard({
+    required this.document,
+    required this.pdfUrl,
+    required this.onOpen,
+  });
+
+  final LegalDocument document;
+  final String? pdfUrl;
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final available = pdfUrl != null;
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      borderRadius: AppRadius.medium,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: available
+                  ? AppColors.gold.withValues(alpha: 0.16)
+                  : AppColors.legalBlueDark.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(AppRadius.small),
+              border: Border.all(
+                color: available
+                    ? AppColors.gold.withValues(alpha: 0.5)
+                    : AppColors.glassBorder,
+              ),
+            ),
+            child: Icon(
+              Icons.picture_as_pdf_rounded,
+              color: available ? AppColors.gold : AppColors.textDisabled,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Version PDF',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  available
+                      ? 'Le document de la famille est disponible dans son format PDF original.'
+                      : 'Le PDF original doit encore être rattaché à cette fiche dans le corpus.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                ),
+                if (available) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                    label: const Text('Ouvrir le PDF'),
+                  ),
+                ] else if (document.sourceUrl != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'La source officielle reste accessible depuis les actions du document.',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.textDisabled,
+                        ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
