@@ -71,6 +71,9 @@
    original JurisIA, avec son texte pédagogique intégral et son plan de
    formation. Les ouvrages externes restent des références documentaires et
    ne sont pas reproduits.
+   `migration_025_jurisia_penal_pack.sql` ajoute trois cours complets
+   originaux JurisIA : droit pénal général, droit pénal spécial et procédure
+   pénale.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
