@@ -2,6 +2,7 @@ import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import 'obligations_pack_local_datasource.dart';
 import 'jurisia_penal_pack_local_datasource.dart';
+import 'jurisia_private_judicial_law_pack_local_datasource.dart';
 
 /// Frontière data vers la source des documents juridiques. Permet de
 /// substituer une source distante (Supabase, alimentée par le pipeline
@@ -34,6 +35,7 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
         ..._documents,
         ...obligationsPackLocalDocuments,
         ...jurisiaPenalPackLocalDocuments,
+        ...jurisiaPrivateJudicialLawPackLocalDocuments,
       ]
       .where(
         (document) =>

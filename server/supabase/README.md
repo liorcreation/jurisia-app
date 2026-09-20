@@ -74,6 +74,9 @@
    `migration_025_jurisia_penal_pack.sql` ajoute trois cours complets
    originaux JurisIA : droit pénal général, droit pénal spécial et procédure
    pénale.
+   `migration_026_jurisia_private_judicial_law_pack.sql` ajoute trois cours
+   complets sur les fondements du droit judiciaire privé, la procédure civile,
+   les juridictions et l'exécution civile.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
