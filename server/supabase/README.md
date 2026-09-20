@@ -80,6 +80,9 @@
    `migration_027_jurisia_administrative_law_pack.sql` ajoute trois cours
    complets sur l'action administrative, les contrats administratifs et le
    contentieux administratif.
+   `migration_028_jurisia_banking_insurance_pack.sql` ajoute trois cours
+   complets sur le droit bancaire, la réglementation bancaire UMOA et le droit
+   des assurances CIMA.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
