@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import '../../domain/entities/library_search_query.dart';
-import '../../domain/entities/library_collection.dart';
 import '../../domain/repositories/library_repository.dart';
 import '../../domain/usecases/search_legal_documents_usecase.dart';
 import '../../domain/usecases/toggle_bookmark_usecase.dart';

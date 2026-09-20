@@ -20,6 +20,7 @@ import '../widgets/document_tag.dart';
 import '../widgets/document_type_icon.dart';
 import '../widgets/summary_only_badge.dart';
 import 'document_detail_screen.dart';
+import 'pdf_document_screen.dart';
 
 /// Bibliothèque juridique de référence de JurisIA.
 /// Le périmètre est volontairement fermé pendant la phase de constitution du
@@ -56,11 +57,15 @@ class _LibraryViewState extends State<_LibraryView> {
     LibraryController controller,
     String documentId,
   ) {
+    final document = controller.documentById(documentId);
+    final pdfUrl = document == null ? null : pdfUrlForDocument(document);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider<LibraryController>.value(
           value: controller,
-          child: DocumentDetailScreen(documentId: documentId),
+          child: pdfUrl == null
+              ? DocumentDetailScreen(documentId: documentId)
+              : PdfDocumentScreen(document: document!, pdfUrl: pdfUrl),
         ),
       ),
     );
@@ -73,6 +78,13 @@ class _LibraryViewState extends State<_LibraryView> {
     void clearAll() {
       controller.clearFilters();
       _searchController.clear();
+    }
+
+    if (controller.selectedCollectionTag == null) {
+      return _LibraryPackCatalog(
+        documents: controller.allDocuments,
+        onSelect: controller.selectCollection,
+      );
     }
 
     if (AppPlatformStyle.of(context) == AppPlatformStyle.desktop) {
@@ -89,6 +101,233 @@ class _LibraryViewState extends State<_LibraryView> {
       searchController: _searchController,
       onOpenDetail: (id) => _openDetail(context, controller, id),
       onClearAll: clearAll,
+    );
+  }
+}
+
+class _LibraryPackCatalog extends StatelessWidget {
+  const _LibraryPackCatalog({
+    required this.documents,
+    required this.onSelect,
+  });
+
+  final List<LegalDocument> documents;
+  final ValueChanged<String?> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return LuxuryScaffoldBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Bibliothèque juridique'),
+          leading: const AppShellMenuButton(),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1120),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _PackCatalogIntro(),
+                    const SizedBox(height: AppSpacing.xl),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = constraints.maxWidth >= 900
+                            ? 3
+                            : constraints.maxWidth >= 600
+                                ? 2
+                                : 1;
+                        final gap = AppSpacing.md;
+                        final width = columns == 1
+                            ? constraints.maxWidth
+                            : (constraints.maxWidth - gap * (columns - 1)) /
+                                columns;
+                        return Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            for (var index = 0;
+                                index < libraryCollections.length;
+                                index++)
+                              SizedBox(
+                                width: width,
+                                child: EntranceFadeSlide(
+                                  index: index,
+                                  child: _PackCard(
+                                    collection: libraryCollections[index],
+                                    count: documents
+                                        .where((document) =>
+                                            documentBelongsToLibraryCollection(
+                                              document,
+                                              libraryCollections[index].tag,
+                                            ))
+                                        .length,
+                                    onTap: () => onSelect(
+                                      libraryCollections[index].tag,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PackCatalogIntro extends StatelessWidget {
+  const _PackCatalogIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumSectionHeader(
+      eyebrow: 'Bibliothèque JurisIA',
+      title: 'Choisissez votre domaine juridique',
+      subtitle:
+          'Six collections structurées pour accéder directement aux documents correspondant à chaque branche du droit.',
+      action: const PremiumStatusPill(
+        label: '6 packs disponibles',
+        tone: PremiumStatusTone.gold,
+        icon: Icons.auto_awesome_rounded,
+        compact: true,
+      ),
+    );
+  }
+}
+
+class _PackCard extends StatefulWidget {
+  const _PackCard({
+    required this.collection,
+    required this.count,
+    required this.onTap,
+  });
+
+  final LibraryCollection collection;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  State<_PackCard> createState() => _PackCardState();
+}
+
+class _PackCardState extends State<_PackCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: TapScale(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(AppRadius.large),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              height: 220,
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.large),
+                gradient: _hovered
+                    ? AppGradients.heroCard
+                    : AppGradients.glassCard,
+                border: Border.all(
+                  color: _hovered
+                      ? AppColors.gold.withValues(alpha: 0.62)
+                      : AppColors.glassBorder,
+                  width: _hovered ? 1.1 : 0.8,
+                ),
+                boxShadow: _hovered
+                    ? [
+                        BoxShadow(
+                          color: AppColors.gold.withValues(alpha: 0.13),
+                          blurRadius: 28,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 46,
+                        height: 46,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.goldMetallic,
+                          borderRadius: BorderRadius.circular(AppRadius.medium),
+                        ),
+                        child: Icon(
+                          _iconForCollection(widget.collection.icon),
+                          color: AppColors.nightBlueDeep,
+                          size: 24,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppColors.gold,
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    widget.collection.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.collection.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -176,10 +415,9 @@ class _MobileLibrary extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  _MobileCollectionStrip(
-                    documents: all,
-                    selectedTag: controller.selectedCollectionTag,
-                    onSelect: controller.selectCollection,
+                  _SelectedCollectionHeader(
+                    collectionTag: controller.selectedCollectionTag!,
+                    onBack: onClearAll,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   SizedBox(
@@ -397,39 +635,55 @@ class _MobileFacet extends StatelessWidget {
   }
 }
 
-class _MobileCollectionStrip extends StatelessWidget {
-  const _MobileCollectionStrip({
-    required this.documents,
-    required this.selectedTag,
-    required this.onSelect,
+class _SelectedCollectionHeader extends StatelessWidget {
+  const _SelectedCollectionHeader({
+    required this.collectionTag,
+    required this.onBack,
   });
 
-  final List<LegalDocument> documents;
-  final String? selectedTag;
-  final ValueChanged<String?> onSelect;
+  final String collectionTag;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 78,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        itemCount: libraryCollections.length,
-        separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (context, index) {
-          final collection = libraryCollections[index];
-          final count = documents
-              .where((document) => documentBelongsToLibraryCollection(document, collection.tag))
-              .length;
-          return _CollectionFacet(
-            collection: collection,
-            count: count,
-            selected: selectedTag == collection.tag,
-            compact: true,
-            onTap: () => onSelect(collection.tag),
-          );
-        },
+    final collection = libraryCollections.firstWhere(
+      (item) => item.tag == collectionTag,
+      orElse: () => libraryCollections.first,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: GlassContainer(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        borderRadius: AppRadius.medium,
+        child: Row(
+          children: [
+            Icon(
+              _iconForCollection(collection.icon),
+              color: AppColors.gold,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                collection.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ),
+            TextButton.icon(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back_rounded, size: 16),
+              label: const Text('Packs'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -530,10 +784,10 @@ class _DesktopLibrary extends StatelessWidget {
                                   },
                                 ),
                                 const SizedBox(height: AppSpacing.xl),
-                                _CollectionStrip(
-                                  documents: all,
-                                  selectedTag: controller.selectedCollectionTag,
-                                  onSelect: controller.selectCollection,
+                                _SelectedCollectionHeader(
+                                  collectionTag:
+                                      controller.selectedCollectionTag!,
+                                  onBack: onClearAll,
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
                                 _FacetStrip(
@@ -934,152 +1188,6 @@ class _FacetStrip extends StatelessWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _CollectionStrip extends StatelessWidget {
-  const _CollectionStrip({
-    required this.documents,
-    required this.selectedTag,
-    required this.onSelect,
-  });
-
-  final List<LegalDocument> documents;
-  final String? selectedTag;
-  final ValueChanged<String?> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionLabel('Parcourir par pack juridique'),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            for (final collection in libraryCollections)
-              _CollectionFacet(
-                collection: collection,
-                count: documents
-                    .where((document) => documentBelongsToLibraryCollection(document, collection.tag))
-                    .length,
-                selected: selectedTag == collection.tag,
-                onTap: () => onSelect(collection.tag),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _CollectionFacet extends StatefulWidget {
-  const _CollectionFacet({
-    required this.collection,
-    required this.count,
-    required this.selected,
-    required this.onTap,
-    this.compact = false,
-  });
-
-  final LibraryCollection collection;
-  final int count;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool compact;
-
-  @override
-  State<_CollectionFacet> createState() => _CollectionFacetState();
-}
-
-class _CollectionFacetState extends State<_CollectionFacet> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final content = Row(
-      children: [
-        Container(
-          width: widget.compact ? 28 : 34,
-          height: widget.compact ? 28 : 34,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: widget.selected
-                ? AppGradients.goldMetallic
-                : AppGradients.heroCard,
-            borderRadius: BorderRadius.circular(AppRadius.small),
-          ),
-          child: Icon(
-            _iconForCollection(widget.collection.icon),
-            size: widget.compact ? 15 : 18,
-            color: AppColors.nightBlueDeep,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.collection.title,
-                maxLines: widget.compact ? 1 : 2,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelMedium?.copyWith(
-                  color: widget.selected ? AppColors.gold : AppColors.textPrimary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: widget.compact ? 11.5 : 12.5,
-                ),
-              ),
-              Text(
-                '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: TapScale(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 250,
-              height: widget.compact ? 68 : 76,
-              padding: EdgeInsets.all(widget.compact ? 9 : 11),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.medium),
-                color: widget.selected
-                    ? AppColors.gold.withValues(alpha: 0.14)
-                    : _hovered
-                        ? Colors.white.withValues(alpha: 0.05)
-                        : AppColors.legalBlueDark.withValues(alpha: 0.42),
-                border: Border.all(
-                  color: widget.selected
-                      ? AppColors.gold.withValues(alpha: 0.55)
-                      : AppColors.glassBorder,
-                  width: widget.selected ? 1 : 0.8,
-                ),
-              ),
-              child: content,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

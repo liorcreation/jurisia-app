@@ -94,7 +94,7 @@ class LibraryRepositoryImpl implements LibraryRepository {
           'id,title,type,domain,reference,date_publication,date_entree_en_vigueur,status,summary,full_content,outline,summary_only,official_source_name,source_url,tags,related_ids,updated_at',
         );
       }
-      if ((docRows as List).isEmpty) return;
+      if (docRows.isEmpty) return;
 
       final articleRows = await client
           .from('legal_articles')

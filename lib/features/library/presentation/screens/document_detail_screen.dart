@@ -16,6 +16,7 @@ import '../controllers/library_controller.dart';
 import '../widgets/document_category_badge.dart';
 import '../widgets/document_tag.dart';
 import '../widgets/summary_only_badge.dart';
+import 'pdf_document_screen.dart';
 
 const _months = [
   'janvier',
@@ -170,19 +171,20 @@ class _ReaderState extends State<_Reader> {
   }
 
   String? get _pdfUrl {
-    final fileUrl = widget.document.fileUrl?.trim();
-    if (fileUrl != null && fileUrl.isNotEmpty) return fileUrl;
-
-    final sourceUrl = widget.document.sourceUrl?.trim();
-    if (sourceUrl == null || sourceUrl.isEmpty) return null;
-    final withoutQuery = sourceUrl.toLowerCase().split('?').first;
-    return withoutQuery.endsWith('.pdf') ? sourceUrl : null;
+    return pdfUrlForDocument(widget.document);
   }
 
   void _openPdf() {
     final url = _pdfUrl;
     if (url != null) {
-      launchUrl(Uri.parse(url), webOnlyWindowName: '_blank');
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PdfDocumentScreen(
+            document: widget.document,
+            pdfUrl: url,
+          ),
+        ),
+      );
     }
   }
 
