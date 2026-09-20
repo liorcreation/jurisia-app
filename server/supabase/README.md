@@ -77,6 +77,9 @@
    `migration_026_jurisia_private_judicial_law_pack.sql` ajoute trois cours
    complets sur les fondements du droit judiciaire privé, la procédure civile,
    les juridictions et l'exécution civile.
+   `migration_027_jurisia_administrative_law_pack.sql` ajoute trois cours
+   complets sur l'action administrative, les contrats administratifs et le
+   contentieux administratif.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
