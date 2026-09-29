@@ -930,7 +930,7 @@ class _LiveStatusPill extends StatelessWidget {
           ),
           const SizedBox(width: 7),
           Text(
-            'ESPACE SÉCURISÉ',
+            'ESPACE ACTIF',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w700,
