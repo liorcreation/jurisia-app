@@ -72,14 +72,19 @@ class _LitigationViewState extends State<_LitigationView> {
     // l'ouverture réelle d'une consultation, c.-à-d. au premier message de
     // l'utilisateur d'une conversation neuve. Une relance après échec réseau
     // passe par `controller.retry` et n'est jamais recomptée.
-    final isFirstUserMessage =
-        controller.conversation.messages.every((m) => m.sender != MessageSender.user);
+    final isFirstUserMessage = controller.conversation.messages.every(
+      (m) => m.sender != MessageSender.user,
+    );
     if (isFirstUserMessage) {
-      final allowed =
-          await context.read<EntitlementsController>().tryConsume(EntitlementFeature.litigeConsultations);
+      final allowed = await context.read<EntitlementsController>().tryConsume(
+        EntitlementFeature.litigeConsultations,
+      );
       if (!allowed) {
         if (mounted) {
-          await showUpgradeSheet(context, feature: EntitlementFeature.litigeConsultations);
+          await showUpgradeSheet(
+            context,
+            feature: EntitlementFeature.litigeConsultations,
+          );
         }
         return;
       }
@@ -111,7 +116,10 @@ class _LitigationViewState extends State<_LitigationView> {
     AppPlatformStyle platformStyle,
   ) {
     if (platformStyle == AppPlatformStyle.ios) {
-      showIosNewConsultationSheet(context, onConfirm: controller.startNewConsultation);
+      showIosNewConsultationSheet(
+        context,
+        onConfirm: controller.startNewConsultation,
+      );
     } else {
       controller.startNewConsultation();
     }
@@ -137,10 +145,14 @@ class _LitigationViewState extends State<_LitigationView> {
 
     final messages = controller.conversation.messages;
     final itemCount =
-        messages.length + (controller.isSending ? 1 : 0) + (controller.errorMessage != null ? 1 : 0);
+        messages.length +
+        (controller.isSending ? 1 : 0) +
+        (controller.errorMessage != null ? 1 : 0);
     final hasUserMessage = messages.any((m) => m.sender == MessageSender.user);
     final showConversation =
-        hasUserMessage || controller.isSending || controller.errorMessage != null;
+        hasUserMessage ||
+        controller.isSending ||
+        controller.errorMessage != null;
 
     final canStartNew = !controller.isSending;
     final newConsultationAction = _NewConsultationButton(
@@ -170,7 +182,9 @@ class _LitigationViewState extends State<_LitigationView> {
 
                     if (controller.isSending) {
                       if (remaining == 0) {
-                        return _AssistantThinkingBubble(streamingText: controller.streamingText);
+                        return _AssistantThinkingBubble(
+                          streamingText: controller.streamingText,
+                        );
                       }
                       remaining -= 1;
                     }
@@ -244,7 +258,9 @@ class _DesktopLitigationView extends StatelessWidget {
     final messages = conversation.messages;
     final hasUserMessage = messages.any((m) => m.sender == MessageSender.user);
     final showConversation =
-        hasUserMessage || controller.isSending || controller.errorMessage != null;
+        hasUserMessage ||
+        controller.isSending ||
+        controller.errorMessage != null;
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -255,8 +271,9 @@ class _DesktopLitigationView extends StatelessWidget {
               _DesktopHeader(
                 conversation: conversation,
                 started: hasUserMessage,
-                onNewConsultation:
-                    controller.isSending ? null : controller.startNewConsultation,
+                onNewConsultation: controller.isSending
+                    ? null
+                    : controller.startNewConsultation,
               ),
               Expanded(
                 child: showConversation
@@ -302,10 +319,18 @@ class _DesktopHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -315,7 +340,11 @@ class _DesktopHeader extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.forum_rounded, size: 18, color: AppColors.gold),
+                    const Icon(
+                      Icons.forum_rounded,
+                      size: 18,
+                      color: AppColors.gold,
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     Flexible(
                       child: Text(
@@ -338,8 +367,13 @@ class _DesktopHeader extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: onNewConsultation,
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
-                textStyle: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 10,
+                ),
+                textStyle: textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               icon: const Icon(Icons.add_comment_outlined, size: 18),
               label: const Text('Nouvelle consultation'),
@@ -383,7 +417,10 @@ class _HeaderSubtitle extends StatelessWidget {
         ),
         if (conversation.domain != null) ...[
           const SizedBox(width: AppSpacing.sm),
-          _MetaChip(icon: Icons.balance_rounded, label: conversation.domain!.label),
+          _MetaChip(
+            icon: Icons.balance_rounded,
+            label: conversation.domain!.label,
+          ),
         ],
         if (conversation.complexity != null) ...[
           const SizedBox(width: 6),
@@ -416,7 +453,9 @@ class _MetaChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textPrimary),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -455,7 +494,9 @@ class _ComplexityChip extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textPrimary),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textPrimary),
           ),
         ],
       ),
@@ -468,7 +509,10 @@ class _ComplexityChip extends StatelessWidget {
 /// réponses de l'IA en prose ouverte précédée de la marque — la grammaire
 /// des grands assistants, dans le registre JurisIA.
 class _ConversationStream extends StatelessWidget {
-  const _ConversationStream({required this.controller, required this.scrollController});
+  const _ConversationStream({
+    required this.controller,
+    required this.scrollController,
+  });
 
   final LitigationChatController controller;
   final ScrollController scrollController;
@@ -503,7 +547,10 @@ class _ConversationStream extends StatelessWidget {
       controller: scrollController,
       child: SingleChildScrollView(
         controller: scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xl,
+        ),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: _kReadingColumnWidth),
@@ -604,10 +651,10 @@ class _UserTurn extends StatelessWidget {
             borderRadius: AppRadius.large,
             child: Text(
               text,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: AppColors.textPrimary, height: 1.45),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.textPrimary,
+                height: 1.45,
+              ),
             ),
           ),
         ),
@@ -625,161 +672,127 @@ class _WelcomeHero extends StatelessWidget {
 
   static const List<_Starter> _starters = [
     _Starter(
-      icon: Icons.work_off_outlined,
-      title: 'Litige avec mon employeur',
-      subtitle: 'Licenciement, salaires ou heures impayés, congés, contrat non respecté.',
-      prompt: "J'ai un litige avec mon employeur. ",
+      icon: Icons.family_restroom_rounded,
+      title: 'Famille & personnes',
+      subtitle: 'Mariage, séparation, filiation ou succession.',
+      prompt: "J'ai une question de droit de la famille ou des personnes. ",
     ),
     _Starter(
-      icon: Icons.landscape_outlined,
-      title: 'Conflit foncier ou de voisinage',
-      subtitle: 'Limites de parcelle, titre contesté, empiètement, nuisances répétées.',
+      icon: Icons.work_outline_rounded,
+      title: 'Travail & emploi',
+      subtitle: 'Contrat, licenciement, salaire ou conditions de travail.',
+      prompt: "J'ai un litige lié au travail ou à mon emploi. ",
+    ),
+    _Starter(
+      icon: Icons.landscape_rounded,
+      title: 'Foncier & voisinage',
+      subtitle: 'Parcelle, limites, occupation ou nuisances.',
       prompt: "J'ai un conflit foncier ou de voisinage. ",
     ),
     _Starter(
-      icon: Icons.home_outlined,
-      title: 'Problème de bail ou de loyer',
-      subtitle: "Menace d'expulsion, caution non restituée, loyers, réparations.",
+      icon: Icons.home_work_rounded,
+      title: 'Logement & bail',
+      subtitle: 'Loyer, réparations, caution ou expulsion.',
       prompt: "J'ai un problème lié à mon bail ou à mon logement. ",
     ),
     _Starter(
-      icon: Icons.request_quote_outlined,
-      title: 'Recouvrer une somme due',
-      subtitle: 'Facture impayée, prêt entre particuliers, reconnaissance de dette.',
+      icon: Icons.account_balance_wallet_rounded,
+      title: 'Dette & paiement',
+      subtitle: 'Facture impayée, prêt ou somme à recouvrer.',
       prompt: "Je cherche à recouvrer une somme qu'on me doit. ",
+    ),
+    _Starter(
+      icon: Icons.more_horiz_rounded,
+      title: 'Autre situation',
+      subtitle: 'Décrivez librement les faits et votre objectif.',
+      prompt: 'Je souhaite expliquer une situation juridique. ',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 900;
+        final horizontalPadding = constraints.maxWidth < 520
+            ? AppSpacing.md
+            : AppSpacing.xl;
+        final intro = _WelcomeIdentityPane(compact: !wide);
+        final choices = _ConsultationChoices(
+          starters: _starters,
+          onUseStarter: onUseStarter,
+        );
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const _HeroMark(),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Exposez votre situation',
-                textAlign: TextAlign.center,
-                style: textTheme.displaySmall,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                width: 64,
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: AppGradients.goldSheen,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 520),
-                child: Text(
-                  "Racontez ce qui vous amène avec vos propres mots — les faits, les personnes "
-                  "concernées, ce que vous cherchez à obtenir. Quelques questions suivront pour "
-                  "cerner votre dossier.",
-                  textAlign: TextAlign.center,
-                  style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.55),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Row(
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            wide ? AppSpacing.xl : AppSpacing.lg,
+            horizontalPadding,
+            AppSpacing.xl,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1180),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Expanded(child: Divider(color: AppColors.divider, endIndent: AppSpacing.md)),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                    "OU PARTEZ D'UNE SITUATION COURANTE",
-                    maxLines: 1,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: AppColors.textDisabled,
-                      letterSpacing: AppLetterSpacing.caps,
-                      fontWeight: FontWeight.w700,
-                    ),
-                      ),
-                    ),
-                  ),
-                  const Expanded(child: Divider(color: AppColors.divider, indent: AppSpacing.md)),
+                  if (wide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(width: 340, child: intro),
+                        const SizedBox(width: AppSpacing.xl),
+                        Expanded(child: choices),
+                      ],
+                    )
+                  else ...[
+                    intro,
+                    const SizedBox(height: AppSpacing.xl),
+                    choices,
+                  ],
+                  const SizedBox(height: AppSpacing.xl),
+                  const _ConsultationJourney(),
+                  const SizedBox(height: AppSpacing.md),
+                  const _ConfidentialityNote(),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final twoColumns = constraints.maxWidth >= 620;
-                  final cardWidth = twoColumns
-                      ? (constraints.maxWidth - AppSpacing.md) / 2
-                      : constraints.maxWidth;
-                  return Wrap(
-                    spacing: AppSpacing.md,
-                    runSpacing: AppSpacing.md,
-                    children: [
-                      for (var i = 0; i < _starters.length; i++)
-                        SizedBox(
-                          width: cardWidth,
-                          child: EntranceFadeSlide(
-                            index: i,
-                            child: _StarterCard(
-                              starter: _starters[i],
-                              onTap: () => onUseStarter(_starters[i].prompt),
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              const _ConfidentialityNote(),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 class _HeroMark extends StatelessWidget {
-  const _HeroMark();
+  const _HeroMark({required this.size});
+
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 720),
+      tween: Tween(begin: 0.82, end: 1),
+      duration: const Duration(milliseconds: 850),
       curve: Curves.easeOutBack,
-      builder: (context, t, child) => Opacity(
-        opacity: t.clamp(0.0, 1.0),
-        child: Transform.scale(scale: 0.7 + 0.3 * t, child: child),
-      ),
-      child: SizedBox(
-        width: 112,
-        height: 112,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.gold.withValues(alpha: 0.22),
-                    AppColors.gold.withValues(alpha: 0),
-                  ],
-                ),
-              ),
-              child: const SizedBox.expand(),
+      builder: (context, scale, child) =>
+          Transform.scale(scale: scale, child: child),
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.gold.withValues(alpha: 0.09),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.28)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: 0.1),
+              blurRadius: size / 2,
             ),
-            const JurisIAMark(size: 62),
           ],
         ),
+        child: JurisIAMark(size: size * 0.55),
       ),
     );
   }
@@ -799,10 +812,331 @@ class _Starter {
   final String prompt;
 }
 
+class _WelcomeIdentityPane extends StatelessWidget {
+  const _WelcomeIdentityPane({required this.compact});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return EntranceFadeSlide(
+      duration: AppMotion.slow,
+      offset: const Offset(0, 0.04),
+      child: Container(
+        constraints: BoxConstraints(minHeight: compact ? 0 : 384),
+        padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xE51B3E67), Color(0xC70D1B30), Color(0xA80B0F19)],
+          ),
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
+          boxShadow: AppShadows.cardElevated,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -90,
+              right: -95,
+              child: Container(
+                width: 250,
+                height: 250,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.cobaltLight.withValues(alpha: 0.2),
+                      AppColors.cobaltLight.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _HeroMark(size: compact ? 54 : 68),
+                    const Spacer(),
+                    const _LiveStatusPill(),
+                  ],
+                ),
+                SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
+                Text(
+                  'VOTRE ESPACE\nJURIDIQUE',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.goldLight,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: AppLetterSpacing.caps,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Faisons le point\nsur votre situation.',
+                  style:
+                      (compact
+                              ? textTheme.headlineMedium
+                              : textTheme.headlineLarge)
+                          ?.copyWith(
+                            color: AppColors.textPrimary,
+                            height: 1.06,
+                            fontWeight: FontWeight.w600,
+                          ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Expliquez les faits simplement. JurisIA vous aide à les organiser et à comprendre les prochaines pistes possibles.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveStatusPill extends StatelessWidget {
+  const _LiveStatusPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(
+              color: AppColors.success,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            'ESPACE SÉCURISÉ',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConsultationChoices extends StatelessWidget {
+  const _ConsultationChoices({
+    required this.starters,
+    required this.onUseStarter,
+  });
+
+  final List<_Starter> starters;
+  final ValueChanged<String> onUseStarter;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'COMMENCER UNE CONSULTATION',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.textDisabled,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: AppLetterSpacing.caps,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Quel est votre sujet ?',
+                    style: textTheme.headlineSmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              '6 domaines',
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 600 ? 2 : 1;
+            final gap = AppSpacing.md;
+            final cardWidth =
+                (constraints.maxWidth - gap * (columns - 1)) / columns;
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                for (var i = 0; i < starters.length; i++)
+                  SizedBox(
+                    width: cardWidth,
+                    child: EntranceFadeSlide(
+                      index: i + 1,
+                      stagger: const Duration(milliseconds: 55),
+                      child: _StarterCard(
+                        starter: starters[i],
+                        index: i + 1,
+                        onTap: () => onUseStarter(starters[i].prompt),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _ConsultationJourney extends StatelessWidget {
+  const _ConsultationJourney();
+
+  static const _steps = [
+    (Icons.edit_note_rounded, 'Vous racontez', 'Les faits et votre objectif'),
+    (Icons.auto_awesome_rounded, 'On clarifie', 'Quelques questions ciblées'),
+    (Icons.route_rounded, 'Vous avancez', 'Des pistes et démarches utiles'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.deepSlateElevated.withValues(alpha: 0.64),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 620;
+          final steps = [
+            for (final step in _steps)
+              _JourneyStep(icon: step.$1, title: step.$2, subtitle: step.$3),
+          ];
+          if (compact) {
+            return Column(
+              children: [
+                for (var i = 0; i < steps.length; i++) ...[
+                  if (i > 0) const SizedBox(height: AppSpacing.sm),
+                  steps[i],
+                ],
+              ],
+            );
+          }
+          return Row(
+            children: [
+              for (var i = 0; i < steps.length; i++) ...[
+                Expanded(child: steps[i]),
+                if (i < steps.length - 1) const SizedBox(width: AppSpacing.lg),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _JourneyStep extends StatelessWidget {
+  const _JourneyStep({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.gold.withValues(alpha: 0.09),
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.22)),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.goldLight),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.labelLarge?.copyWith(color: AppColors.textPrimary),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StarterCard extends StatelessWidget {
-  const _StarterCard({required this.starter, required this.onTap});
+  const _StarterCard({
+    required this.starter,
+    required this.index,
+    required this.onTap,
+  });
 
   final _Starter starter;
+  final int index;
   final VoidCallback onTap;
 
   @override
@@ -811,6 +1145,8 @@ class _StarterCard extends StatelessWidget {
 
     return GlassContainer(
       onTap: onTap,
+      borderRadius: AppRadius.medium,
+      borderColor: AppColors.gold.withValues(alpha: 0.18),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -821,11 +1157,45 @@ class _StarterCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(starter.title, style: textTheme.titleSmall),
-                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        starter.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: AppColors.goldLight.withValues(alpha: 0.8),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
                 Text(
                   starter.subtitle,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'PÉRIMÈTRE  0${index.toString()}',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.goldLight.withValues(alpha: 0.78),
+                    fontSize: 9,
+                    letterSpacing: 1,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ],
             ),
@@ -844,13 +1214,19 @@ class _ConfidentialityNote extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.lock_outline_rounded, size: 13, color: AppColors.textDisabled),
+        const Icon(
+          Icons.lock_outline_rounded,
+          size: 13,
+          color: AppColors.textDisabled,
+        ),
         const SizedBox(width: 6),
         Flexible(
           child: Text(
-            'Vos échanges sont confidentiels.',
+            'Vos échanges restent privés. Évitez toutefois d’inclure des identifiants ou données bancaires.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
           ),
         ),
       ],
@@ -903,9 +1279,12 @@ class _DesktopComposerState extends State<_DesktopComposer> {
   }
 
   KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
-    final isEnter = event.logicalKey == LogicalKeyboardKey.enter ||
+    final isEnter =
+        event.logicalKey == LogicalKeyboardKey.enter ||
         event.logicalKey == LogicalKeyboardKey.numpadEnter;
-    if (event is KeyDownEvent && isEnter && !HardwareKeyboard.instance.isShiftPressed) {
+    if (event is KeyDownEvent &&
+        isEnter &&
+        !HardwareKeyboard.instance.isShiftPressed) {
       if (widget.enabled) widget.onSend();
       return KeyEventResult.handled;
     }
@@ -917,7 +1296,12 @@ class _DesktopComposerState extends State<_DesktopComposer> {
     final textTheme = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: _kReadingColumnWidth),
@@ -939,7 +1323,9 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                         ]
                       : [
                           BoxShadow(
-                            color: AppColors.nightBlueDeep.withValues(alpha: 0.4),
+                            color: AppColors.nightBlueDeep.withValues(
+                              alpha: 0.4,
+                            ),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -947,7 +1333,9 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                 ),
                 child: GlassContainer(
                   borderRadius: AppRadius.large,
-                  borderColor: _focused ? AppColors.cobalt : AppColors.glassBorder,
+                  borderColor: _focused
+                      ? AppColors.cobalt
+                      : AppColors.glassBorder,
                   borderWidth: _focused ? 1.1 : 0.5,
                   padding: const EdgeInsets.fromLTRB(AppSpacing.md, 7, 7, 7),
                   child: Row(
@@ -1002,7 +1390,9 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                             return const SizedBox.shrink();
                           }
                           return Padding(
-                            padding: const EdgeInsets.only(right: AppSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              right: AppSpacing.sm,
+                            ),
                             child: Text(
                               '$length / ${AppInputLimits.chatMessage}',
                               style: textTheme.labelSmall?.copyWith(
@@ -1053,7 +1443,12 @@ class _SendButton extends StatelessWidget {
               gradient: enabled ? AppGradients.goldMetallic : null,
               color: enabled ? null : AppColors.legalBlueDark,
               boxShadow: enabled
-                  ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 8)]
+                  ? [
+                      BoxShadow(
+                        color: AppColors.gold.withValues(alpha: 0.35),
+                        blurRadius: 8,
+                      ),
+                    ]
                   : null,
             ),
             child: Icon(
@@ -1074,22 +1469,28 @@ class _DisclaimerLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const AiDisclaimerScreen()),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const AiDisclaimerScreen())),
       borderRadius: BorderRadius.circular(AppRadius.small),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.textDisabled),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 13,
+              color: AppColors.textDisabled,
+            ),
             const SizedBox(width: 5),
             Flexible(
               child: Text(
                 "L'IA aide à comprendre, ne remplace pas un avocat.",
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
               ),
             ),
           ],
@@ -1104,7 +1505,9 @@ class _KbdHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled);
+    final style = Theme.of(
+      context,
+    ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1134,9 +1537,9 @@ class _Kbd extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -1187,7 +1590,9 @@ class _NewConsultationButton extends StatelessWidget {
                         )
                       : null,
                   border: Border.all(
-                    color: AppColors.gold.withValues(alpha: enabled ? 0.5 : 0.16),
+                    color: AppColors.gold.withValues(
+                      alpha: enabled ? 0.5 : 0.16,
+                    ),
                     width: 0.9,
                   ),
                   boxShadow: enabled
@@ -1231,10 +1636,10 @@ class _ChatBubble extends StatelessWidget {
       child: isUser
           ? Text(
               message.content,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyLarge
-                  ?.copyWith(color: AppColors.textPrimary, height: 1.4),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.textPrimary,
+                height: 1.4,
+              ),
             )
           : MarkdownText(message.content),
     );
@@ -1249,7 +1654,10 @@ class _ProfessionalSuggestionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         gradient: AppGradients.goldMetallic,
         borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -1257,14 +1665,18 @@ class _ProfessionalSuggestionChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.handshake_rounded, size: 14, color: AppColors.nightBlueDeep),
+          const Icon(
+            Icons.handshake_rounded,
+            size: 14,
+            color: AppColors.nightBlueDeep,
+          ),
           const SizedBox(width: 4),
           Text(
             'Orientation suggérée : $label',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.nightBlueDeep,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.nightBlueDeep,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -1280,20 +1692,31 @@ class _AiDisclaimerHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const AiDisclaimerScreen()),
-      ),
+      onTap: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const AiDisclaimerScreen())),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xs),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.xs,
+        ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.textDisabled),
+            const Icon(
+              Icons.info_outline_rounded,
+              size: 13,
+              color: AppColors.textDisabled,
+            ),
             const SizedBox(width: 4),
             Expanded(
               child: Text(
                 "L'IA aide à comprendre, ne remplace pas un avocat.",
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                style: Theme.of(
+                  context,
+                ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
               ),
             ),
           ],
@@ -1312,7 +1735,9 @@ class _AssistantThinkingBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChatBubble(
       isUser: false,
-      child: streamingText.isEmpty ? const AiThinkingIndicator() : MarkdownText(streamingText),
+      child: streamingText.isEmpty
+          ? const AiThinkingIndicator()
+          : MarkdownText(streamingText),
     );
   }
 }
