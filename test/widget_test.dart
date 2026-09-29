@@ -118,6 +118,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Library packs open cleanly on phone and desktop', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    for (final size in const [Size(400, 900), Size(1280, 900)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(_wrapHomeNavigation());
+      await _settle(tester);
+
+      if (size.width < 600) {
+        await tester.tap(find.byIcon(Icons.menu_rounded));
+        await _settle(tester);
+      }
+      await tester.tap(find.text('Bibliothèque'));
+      await _settle(tester);
+
+      expect(
+        find.text('Le droit, organisé pour éclairer vos décisions.'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull, reason: 'catalogue $size');
+
+      await tester.ensureVisible(find.text('DROIT DES OBLIGATIONS'));
+      await _settle(tester);
+      await tester.tap(find.text('DROIT DES OBLIGATIONS'));
+      await _settle(tester);
+      expect(find.textContaining('PACK JURIDIQUE'), findsWidgets);
+      expect(tester.takeException(), isNull, reason: 'pack $size');
+    }
+  });
+
   testWidgets(
     'Tablet layout: a permanent compact rail preserves content space',
     (WidgetTester tester) async {

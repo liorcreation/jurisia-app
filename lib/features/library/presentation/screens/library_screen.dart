@@ -106,10 +106,7 @@ class _LibraryViewState extends State<_LibraryView> {
 }
 
 class _LibraryPackCatalog extends StatelessWidget {
-  const _LibraryPackCatalog({
-    required this.documents,
-    required this.onSelect,
-  });
+  const _LibraryPackCatalog({required this.documents, required this.onSelect});
 
   final List<LegalDocument> documents;
   final ValueChanged<String?> onSelect;
@@ -123,68 +120,337 @@ class _LibraryPackCatalog extends StatelessWidget {
           title: const Text('Bibliothèque juridique'),
           leading: const AppShellMenuButton(),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.xxl,
+        body: Stack(
+          children: [
+            const Positioned.fill(
+              child: IgnorePointer(child: _LibraryAmbience()),
             ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1120),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _PackCatalogIntro(),
-                    const SizedBox(height: AppSpacing.xl),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final columns = constraints.maxWidth >= 900
-                            ? 3
-                            : constraints.maxWidth >= 600
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _LibraryLandingHero(documentCount: documents.length),
+                        const SizedBox(height: 30),
+                        const _CollectionSectionHeading(),
+                        const SizedBox(height: AppSpacing.md),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columns = constraints.maxWidth >= 1040
+                                ? 3
+                                : constraints.maxWidth >= 680
                                 ? 2
                                 : 1;
-                        final gap = AppSpacing.md;
-                        final width = columns == 1
-                            ? constraints.maxWidth
-                            : (constraints.maxWidth - gap * (columns - 1)) /
-                                columns;
-                        return Wrap(
-                          spacing: gap,
-                          runSpacing: gap,
-                          children: [
-                            for (var index = 0;
-                                index < libraryCollections.length;
-                                index++)
-                              SizedBox(
-                                width: width,
-                                child: EntranceFadeSlide(
-                                  index: index,
-                                  child: _PackCard(
-                                    collection: libraryCollections[index],
-                                    count: documents
-                                        .where((document) =>
-                                            documentBelongsToLibraryCollection(
-                                              document,
-                                              libraryCollections[index].tag,
-                                            ))
-                                        .length,
-                                    onTap: () => onSelect(
-                                      libraryCollections[index].tag,
+                            final gap = AppSpacing.md;
+                            final width = columns == 1
+                                ? constraints.maxWidth
+                                : (constraints.maxWidth - gap * (columns - 1)) /
+                                      columns;
+                            return Wrap(
+                              spacing: gap,
+                              runSpacing: gap,
+                              children: [
+                                for (
+                                  var index = 0;
+                                  index < libraryCollections.length;
+                                  index++
+                                )
+                                  SizedBox(
+                                    width: width,
+                                    child: EntranceFadeSlide(
+                                      index: index,
+                                      stagger: const Duration(milliseconds: 70),
+                                      child: _PackCard(
+                                        collection: libraryCollections[index],
+                                        index: index + 1,
+                                        count: documents
+                                            .where(
+                                              (document) =>
+                                                  documentBelongsToLibraryCollection(
+                                                    document,
+                                                    libraryCollections[index]
+                                                        .tag,
+                                                  ),
+                                            )
+                                            .length,
+                                        onTap: () => onSelect(
+                                          libraryCollections[index].tag,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                          ],
-                        );
-                      },
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        const _LibraryCatalogFootnote(),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LibraryLandingHero extends StatelessWidget {
+  const _LibraryLandingHero({required this.documentCount});
+
+  final int documentCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 680;
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          padding: EdgeInsets.all(compact ? 22 : 34),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.large + 4),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF17385E), Color(0xFF101C30), Color(0xFF0B101A)],
+              stops: [0, 0.54, 1],
+            ),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.nightBlueDeep.withValues(alpha: 0.38),
+                blurRadius: 34,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: compact ? -150 : 70,
+                top: compact ? -170 : -230,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 430,
+                    height: 430,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.07),
+                        width: 1,
+                      ),
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 320,
+                        height: 320,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.cobaltLight.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (compact)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _LibraryEyebrow(),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Le droit, organisé pour éclairer vos décisions.',
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Libre Caslon Display',
+                        height: 1.08,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Explorez les ressources de JurisIA par domaine, puis ouvrez chaque document dans son lecteur dédié.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.55,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        _LibraryMetric(
+                          icon: Icons.grid_view_rounded,
+                          value: '${libraryCollections.length}',
+                          label: 'domaines',
+                        ),
+                        _LibraryMetric(
+                          icon: Icons.menu_book_rounded,
+                          value: '$documentCount',
+                          label: 'références',
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _LibraryEyebrow(),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Le droit, organisé pour éclairer vos décisions.',
+                            style: textTheme.displaySmall?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontFamily: 'Libre Caslon Display',
+                              height: 1.04,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 620),
+                            child: Text(
+                              'Explorez les ressources de JurisIA par domaine, puis ouvrez chaque document dans son lecteur dédié.',
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.55,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xl),
+                    _LibraryCorpusSeal(documentCount: documentCount),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LibraryEyebrow extends StatelessWidget {
+  const _LibraryEyebrow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.auto_awesome_rounded,
+            size: 14,
+            color: AppColors.gold,
+          ),
+          const SizedBox(width: 7),
+          Text(
+            'BIBLIOTHÈQUE JURISIA',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.goldLight,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LibraryCorpusSeal extends StatelessWidget {
+  const _LibraryCorpusSeal({required this.documentCount});
+
+  final int documentCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 178,
+      height: 178,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withValues(alpha: 0.025),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cobaltLight.withValues(alpha: 0.12),
+            blurRadius: 42,
+            spreadRadius: 8,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Container(
+          width: 146,
+          height: 146,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                libraryCollections.length.toString().padLeft(2, '0'),
+                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                  color: AppColors.goldLight,
+                  fontFamily: 'Libre Caslon Display',
+                  height: 1,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'COLLECTIONS',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  letterSpacing: 1.8,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 9),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.cobalt.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  '$documentCount références',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -192,21 +458,114 @@ class _LibraryPackCatalog extends StatelessWidget {
   }
 }
 
-class _PackCatalogIntro extends StatelessWidget {
-  const _PackCatalogIntro();
+class _LibraryMetric extends StatelessWidget {
+  const _LibraryMetric({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    return PremiumSectionHeader(
-      eyebrow: 'Bibliothèque JurisIA',
-      title: 'Choisissez votre domaine juridique',
-      subtitle:
-          'Six collections structurées pour accéder directement aux documents correspondant à chaque branche du droit.',
-      action: const PremiumStatusPill(
-        label: '6 packs disponibles',
-        tone: PremiumStatusTone.gold,
-        icon: Icons.auto_awesome_rounded,
-        compact: true,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.goldLight),
+          const SizedBox(width: 7),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CollectionSectionHeading extends StatelessWidget {
+  const _CollectionSectionHeading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _SectionLabel('Votre bibliothèque'),
+              const SizedBox(height: 8),
+              Text(
+                'Explorez les packs',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Libre Caslon Display',
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          '01 — 06',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+            color: AppColors.goldLight,
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LibraryCatalogFootnote extends StatelessWidget {
+  const _LibraryCatalogFootnote();
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      borderRadius: AppRadius.medium,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.tips_and_updates_outlined,
+            size: 17,
+            color: AppColors.gold,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Choisissez une matière pour parcourir uniquement ses ressources. Sélectionnez un document pour l’ouvrir dans son lecteur dédié.',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -215,11 +574,13 @@ class _PackCatalogIntro extends StatelessWidget {
 class _PackCard extends StatefulWidget {
   const _PackCard({
     required this.collection,
+    required this.index,
     required this.count,
     required this.onTap,
   });
 
   final LibraryCollection collection;
+  final int index;
   final int count;
   final VoidCallback onTap;
 
@@ -243,14 +604,19 @@ class _PackCardState extends State<_PackCard> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(AppRadius.large),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              height: 220,
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              height: 246,
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.large),
-                gradient: _hovered
-                    ? AppGradients.heroCard
-                    : AppGradients.glassCard,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _hovered
+                      ? const [Color(0xFF1B3E66), Color(0xFF111C2D)]
+                      : const [Color(0xD9172639), Color(0xB80D131E)],
+                ),
                 border: Border.all(
                   color: _hovered
                       ? AppColors.gold.withValues(alpha: 0.62)
@@ -267,60 +633,138 @@ class _PackCardState extends State<_PackCard> {
                       ]
                     : null,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.goldMetallic,
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
-                        ),
-                        child: Icon(
-                          _iconForCollection(widget.collection.icon),
-                          color: AppColors.nightBlueDeep,
-                          size: 24,
+                  Positioned(
+                    right: 0,
+                    top: -17,
+                    child: IgnorePointer(
+                      child: Text(
+                        widget.index.toString().padLeft(2, '0'),
+                        style: textTheme.displayLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.035),
+                          fontFamily: 'Libre Caslon Display',
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.gold,
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 240),
+                            transform: Matrix4.rotationZ(_hovered ? 0.045 : 0),
+                            transformAlignment: Alignment.center,
+                            width: 48,
+                            height: 48,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              gradient: AppGradients.goldMetallic,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.medium,
+                              ),
+                              boxShadow: _hovered
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.gold.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 18,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            child: Icon(
+                              _iconForCollection(widget.collection.icon),
+                              color: AppColors.nightBlueDeep,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'PACK ${widget.index.toString().padLeft(2, '0')}',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.goldLight,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.arrow_outward_rounded,
+                            color: _hovered
+                                ? AppColors.goldLight
+                                : AppColors.textDisabled,
+                            size: 19,
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        widget.collection.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Libre Caslon Display',
+                          fontWeight: FontWeight.w700,
+                          height: 1.14,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        widget.collection.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.gold.withValues(alpha: 0.46),
+                              AppColors.glassBorder,
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.menu_book_rounded,
+                            size: 15,
+                            color: AppColors.gold,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
+                            style: textTheme.labelMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'EXPLORER',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.goldLight,
+                              letterSpacing: 1,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    widget.collection.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      height: 1.15,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.collection.subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
-                    style: textTheme.labelMedium?.copyWith(
-                      color: AppColors.gold,
-                      fontWeight: FontWeight.w700,
-                    ),
                   ),
                 ],
               ),
@@ -417,6 +861,7 @@ class _MobileLibrary extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   _SelectedCollectionHeader(
                     collectionTag: controller.selectedCollectionTag!,
+                    count: results.length,
                     onBack: onClearAll,
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -638,10 +1083,12 @@ class _MobileFacet extends StatelessWidget {
 class _SelectedCollectionHeader extends StatelessWidget {
   const _SelectedCollectionHeader({
     required this.collectionTag,
+    required this.count,
     required this.onBack,
   });
 
   final String collectionTag;
+  final int count;
   final VoidCallback onBack;
 
   @override
@@ -652,38 +1099,119 @@ class _SelectedCollectionHeader extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: GlassContainer(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        borderRadius: AppRadius.medium,
-        child: Row(
-          children: [
-            Icon(
-              _iconForCollection(collection.icon),
-              color: AppColors.gold,
-              size: 20,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 560;
+          final title = Text(
+            collection.title,
+            maxLines: compact ? 2 : 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: AppColors.textPrimary,
+              fontFamily: 'Libre Caslon Display',
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                collection.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
+          );
+          final backButton = compact
+              ? IconButton(
+                  tooltip: 'Retour aux packs',
+                  onPressed: onBack,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: AppColors.goldLight,
+                )
+              : OutlinedButton.icon(
+                  onPressed: onBack,
+                  icon: const Icon(Icons.grid_view_rounded, size: 16),
+                  label: const Text('Tous les packs'),
+                );
+
+          return GlassContainer(
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? AppSpacing.sm : AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
-            TextButton.icon(
-              onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded, size: 16),
-              label: const Text('Packs'),
-            ),
-          ],
-        ),
+            borderRadius: AppRadius.medium,
+            child: compact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _iconForCollection(collection.icon),
+                            color: AppColors.gold,
+                            size: 19,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'PACK JURIDIQUE',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: AppColors.goldLight,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1,
+                                ),
+                          ),
+                          const Spacer(),
+                          backButton,
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 0, 8, 4),
+                        child: title,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          '$count ${count == 1 ? 'ressource' : 'ressources'} dans cette sélection',
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: AppGradients.goldMetallic,
+                          borderRadius: BorderRadius.circular(AppRadius.medium),
+                        ),
+                        child: Icon(
+                          _iconForCollection(collection.icon),
+                          color: AppColors.nightBlueDeep,
+                          size: 21,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'PACK JURIDIQUE  ·  $count ${count == 1 ? 'RESSOURCE' : 'RESSOURCES'}',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: AppColors.goldLight,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.9,
+                                  ),
+                            ),
+                            const SizedBox(height: 3),
+                            title,
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      backButton,
+                    ],
+                  ),
+          );
+        },
       ),
     );
   }
@@ -787,6 +1315,7 @@ class _DesktopLibrary extends StatelessWidget {
                                 _SelectedCollectionHeader(
                                   collectionTag:
                                       controller.selectedCollectionTag!,
+                                  count: results.length,
                                   onBack: onClearAll,
                                 ),
                                 const SizedBox(height: AppSpacing.lg),
@@ -1370,29 +1899,43 @@ class _ResultsBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Row(
-      children: [
-        Text(
-          count <= 1 ? '$count résultat' : '$count résultats',
-          style: textTheme.titleSmall?.copyWith(color: AppColors.textPrimary),
-        ),
-        if (hasFilters) ...[
-          const SizedBox(width: AppSpacing.md),
-          TextButton.icon(
-            onPressed: onClear,
-            icon: const Icon(Icons.close_rounded, size: 15),
-            label: const Text('Effacer les filtres'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              textStyle: textTheme.labelMedium,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: 4,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 560;
+        return Row(
+          children: [
+            Expanded(
+              child: Text(
+                count <= 1 ? '$count résultat' : '$count résultats',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.titleSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
-          ),
-        ],
-      ],
+            if (hasFilters) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Tooltip(
+                message: 'Effacer tous les filtres',
+                child: TextButton.icon(
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded, size: 15),
+                  label: Text(compact ? 'Effacer' : 'Effacer les filtres'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    textStyle: textTheme.labelMedium,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 4,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -1461,6 +2004,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final doc = widget.document;
+    final hasPdf = pdfUrlForDocument(doc) != null;
 
     Widget badge = DocumentCategoryBadge(type: doc.type, size: 46);
     if (_hovered) {
@@ -1519,6 +2063,8 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
+                      _DocumentAccessBadge(hasPdf: hasPdf),
+                      const SizedBox(height: 7),
                       if (doc.awaitingFullText) ...[
                         const SummaryOnlyBadge(compact: true),
                         const SizedBox(height: 6),
@@ -1529,7 +2075,29 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         children: [
                           DocumentTag(label: doc.type.label),
                           DocumentTag(label: doc.domain.label),
-                          DocumentTag(label: 'Réf. ${doc.reference}'),
+                        ],
+                      ),
+                      if (doc.reference.trim().isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        _DocumentReferenceLine(reference: doc.reference),
+                      ],
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text(
+                            hasPdf ? 'OUVRIR LE PDF' : 'OUVRIR LA FICHE',
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.goldLight,
+                              letterSpacing: 0.9,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.arrow_outward_rounded,
+                            size: 16,
+                            color: AppColors.goldLight.withValues(alpha: 0.8),
+                          ),
                         ],
                       ),
                     ],
@@ -1546,6 +2114,73 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DocumentAccessBadge extends StatelessWidget {
+  const _DocumentAccessBadge({required this.hasPdf});
+
+  final bool hasPdf;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = hasPdf ? AppColors.success : AppColors.cobaltLight;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasPdf ? Icons.picture_as_pdf_rounded : Icons.article_outlined,
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            hasPdf ? 'LECTURE PDF' : 'NOTICE DOCUMENTAIRE',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentReferenceLine extends StatelessWidget {
+  const _DocumentReferenceLine({required this.reference});
+
+  final String reference;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.legalBlueDark.withValues(alpha: 0.66),
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: Text(
+        'Réf. $reference',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: AppColors.textSecondary,
+          height: 1.25,
         ),
       ),
     );
