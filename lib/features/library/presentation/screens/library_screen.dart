@@ -8,7 +8,6 @@ import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
-import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
 import '../../../../core/widgets/tap_scale.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
@@ -796,9 +795,16 @@ class _MobileLibrary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final results = controller.results;
-    final all = controller.allDocuments;
+    final collectionDocuments = controller.allDocuments
+        .where(
+          (document) => documentBelongsToLibraryCollection(
+            document,
+            controller.selectedCollectionTag!,
+          ),
+        )
+        .toList(growable: false);
     final counts = <LegalDocumentType, int>{};
-    for (final document in all) {
+    for (final document in collectionDocuments) {
       counts[document.type] = (counts[document.type] ?? 0) + 1;
     }
 
@@ -831,16 +837,11 @@ class _MobileLibrary extends StatelessWidget {
             SafeArea(
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.md,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: _CorpusIntro(
-                      searching: controller.isSearchingCorpus,
-                    ),
+                  _SelectedCollectionHeader(
+                    collectionTag: controller.selectedCollectionTag!,
+                    count: results.length,
+                    totalCount: collectionDocuments.length,
+                    onBack: onClearAll,
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -859,12 +860,6 @@ class _MobileLibrary extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  _SelectedCollectionHeader(
-                    collectionTag: controller.selectedCollectionTag!,
-                    count: results.length,
-                    onBack: onClearAll,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                   SizedBox(
                     height: 40,
                     child: ListView(
@@ -877,7 +872,7 @@ class _MobileLibrary extends StatelessWidget {
                           gradient: AppGradients.goldMetallic,
                           icon: Icons.apps_rounded,
                           label: 'Tous',
-                          count: all.length,
+                          count: collectionDocuments.length,
                           selected: controller.selectedType == null,
                           onTap: () => controller.selectType(null),
                         ),
@@ -894,25 +889,14 @@ class _MobileLibrary extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  SizedBox(
-                    height: 36,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.sm),
-                          child: _FilterChip(
-                            label: 'Tout le corpus juridique',
-                            selected: controller.selectedDomain == null,
-                            onSelected: () => controller.clearFilters(),
-                            compact: true,
-                          ),
-                        ),
-                      ],
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xs,
+                      AppSpacing.md,
+                      0,
                     ),
+                    child: _CorpusScopeBanner(),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -1084,11 +1068,13 @@ class _SelectedCollectionHeader extends StatelessWidget {
   const _SelectedCollectionHeader({
     required this.collectionTag,
     required this.count,
+    required this.totalCount,
     required this.onBack,
   });
 
   final String collectionTag;
   final int count;
+  final int totalCount;
   final VoidCallback onBack;
 
   @override
@@ -1097,19 +1083,48 @@ class _SelectedCollectionHeader extends StatelessWidget {
       (item) => item.tag == collectionTag,
       orElse: () => libraryCollections.first,
     );
+    final position = libraryCollections.indexOf(collection) + 1;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        0,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 560;
+          final compact = constraints.maxWidth < 620;
+          final textTheme = Theme.of(context).textTheme;
+          final icon = Container(
+            width: compact ? 42 : 54,
+            height: compact ? 42 : 54,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: AppGradients.goldMetallic,
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Icon(
+              _iconForCollection(collection.icon),
+              color: AppColors.nightBlueDeep,
+              size: compact ? 21 : 27,
+            ),
+          );
           final title = Text(
             collection.title,
-            maxLines: compact ? 2 : 1,
+            maxLines: compact ? 3 : 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: textTheme.headlineSmall?.copyWith(
               color: AppColors.textPrimary,
               fontFamily: 'Libre Caslon Display',
               fontWeight: FontWeight.w700,
+              height: 1.08,
             ),
           );
           final backButton = compact
@@ -1126,90 +1141,97 @@ class _SelectedCollectionHeader extends StatelessWidget {
                 );
 
           return GlassContainer(
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? AppSpacing.sm : AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            borderRadius: AppRadius.medium,
-            child: compact
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            _iconForCollection(collection.icon),
-                            color: AppColors.gold,
-                            size: 19,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'PACK JURIDIQUE',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
+            padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
+            borderRadius: AppRadius.large,
+            borderColor: AppColors.gold.withValues(alpha: 0.28),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: compact ? 0 : 12,
+                  top: compact ? 8 : 0,
+                  child: IgnorePointer(
+                    child: Icon(
+                      _iconForCollection(collection.icon),
+                      size: compact ? 84 : 122,
+                      color: AppColors.gold.withValues(alpha: 0.035),
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        if (!compact) ...[
+                          icon,
+                          const SizedBox(width: AppSpacing.md),
+                        ],
+                        if (compact) icon,
+                        if (compact) const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'COLLECTION  ${position.toString().padLeft(2, '0')} / ${libraryCollections.length.toString().padLeft(2, '0')}',
+                                style: textTheme.labelSmall?.copyWith(
                                   color: AppColors.goldLight,
                                   fontWeight: FontWeight.w800,
-                                  letterSpacing: 1,
+                                  letterSpacing: 1.15,
                                 ),
+                              ),
+                              if (!compact) ...[
+                                const SizedBox(height: 5),
+                                title,
+                              ],
+                            ],
                           ),
-                          const Spacer(),
-                          backButton,
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 0, 8, 4),
-                        child: title,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: Text(
-                          '$count ${count == 1 ? 'ressource' : 'ressources'} dans cette sélection',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textSecondary),
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        backButton,
+                      ],
+                    ),
+                    if (compact) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      title,
                     ],
-                  )
-                : Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          gradient: AppGradients.goldMetallic,
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
-                        ),
-                        child: Icon(
-                          _iconForCollection(collection.icon),
-                          color: AppColors.nightBlueDeep,
-                          size: 21,
-                        ),
+                    const SizedBox(height: 7),
+                    Text(
+                      collection.subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.35,
                       ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              'PACK JURIDIQUE  ·  $count ${count == 1 ? 'RESSOURCE' : 'RESSOURCES'}',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    color: AppColors.goldLight,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.9,
-                                  ),
-                            ),
-                            const SizedBox(height: 3),
-                            title,
-                          ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        _PackMetric(
+                          icon: Icons.menu_book_rounded,
+                          label:
+                              '$totalCount ${totalCount == 1 ? 'document' : 'documents'}',
                         ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      backButton,
-                    ],
-                  ),
+                        if (count != totalCount)
+                          _PackMetric(
+                            icon: Icons.filter_alt_rounded,
+                            label:
+                                '$count ${count == 1 ? 'résultat' : 'résultats'}',
+                          )
+                        else
+                          const _PackMetric(
+                            icon: Icons.verified_rounded,
+                            label: 'Corpus du pack',
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           );
         },
       ),
@@ -1217,33 +1239,35 @@ class _SelectedCollectionHeader extends StatelessWidget {
   }
 }
 
-class _CorpusIntro extends StatelessWidget {
-  const _CorpusIntro({required this.searching});
+class _PackMetric extends StatelessWidget {
+  const _PackMetric({required this.icon, required this.label});
 
-  final bool searching;
+  final IconData icon;
+  final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return PremiumSectionHeader(
-      eyebrow: 'Veille & recherche',
-      title: 'Bibliothèque juridique',
-      subtitle:
-          'Corpus vérifié : recherchez une loi, un article, une étude ou une référence.',
-      action: searching
-          ? const PremiumStatusPill(
-              label: 'Recherche plein texte…',
-              tone: PremiumStatusTone.info,
-              icon: Icons.manage_search_rounded,
-              compact: true,
-            )
-          : const PremiumStatusPill(
-              label: 'Corpus vérifié',
-              tone: PremiumStatusTone.gold,
-              icon: Icons.verified_rounded,
-              compact: true,
-            ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+    decoration: BoxDecoration(
+      color: AppColors.legalBlueDark.withValues(alpha: 0.62),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: AppColors.glassBorder),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: AppColors.gold),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 // ===========================================================================
@@ -1266,7 +1290,14 @@ class _DesktopLibrary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final results = controller.results;
-    final all = controller.allDocuments;
+    final collectionDocuments = controller.allDocuments
+        .where(
+          (document) => documentBelongsToLibraryCollection(
+            document,
+            controller.selectedCollectionTag!,
+          ),
+        )
+        .toList(growable: false);
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -1280,7 +1311,7 @@ class _DesktopLibrary extends StatelessWidget {
               Column(
                 children: [
                   _LibraryHeader(
-                    total: all.length,
+                    total: collectionDocuments.length,
                     favoritesOnly: controller.favoritesOnly,
                     onToggleFavorites: controller.toggleFavoritesOnly,
                   ),
@@ -1299,10 +1330,14 @@ class _DesktopLibrary extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                _CorpusIntro(
-                                  searching: controller.isSearchingCorpus,
+                                _SelectedCollectionHeader(
+                                  collectionTag:
+                                      controller.selectedCollectionTag!,
+                                  count: results.length,
+                                  totalCount: collectionDocuments.length,
+                                  onBack: onClearAll,
                                 ),
-                                const SizedBox(height: AppSpacing.lg),
+                                const SizedBox(height: AppSpacing.md),
                                 _RadiantSearchField(
                                   controller: searchController,
                                   onChanged: controller.updateKeyword,
@@ -1311,16 +1346,9 @@ class _DesktopLibrary extends StatelessWidget {
                                     controller.updateKeyword('');
                                   },
                                 ),
-                                const SizedBox(height: AppSpacing.xl),
-                                _SelectedCollectionHeader(
-                                  collectionTag:
-                                      controller.selectedCollectionTag!,
-                                  count: results.length,
-                                  onBack: onClearAll,
-                                ),
                                 const SizedBox(height: AppSpacing.lg),
                                 _FacetStrip(
-                                  documents: all,
+                                  documents: collectionDocuments,
                                   selected: controller.selectedType,
                                   onSelect: controller.selectType,
                                 ),
@@ -1410,7 +1438,7 @@ class _LibraryHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$total références — textes, doctrine et modèles',
+                  '$total documents dans le pack actif',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
@@ -1873,7 +1901,7 @@ class _CorpusScopeBanner extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Périmètre actif : corpus juridique JurisIA — textes, doctrine et ressources pédagogiques.',
+              'Consultation limitée au pack ouvert · textes, doctrine et ressources pédagogiques.',
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
@@ -2378,48 +2406,4 @@ class _Mote {
   final double speed;
   final double drift;
   final double phase;
-}
-
-// ===========================================================================
-//  MOBILE
-// ===========================================================================
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-    this.compact = false,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-      selectedColor: AppColors.gold.withValues(alpha: 0.22),
-      backgroundColor: AppColors.legalBlueDark.withValues(alpha: 0.6),
-      labelStyle:
-          (compact
-                  ? Theme.of(context).textTheme.labelSmall
-                  : Theme.of(context).textTheme.labelMedium)
-              ?.copyWith(
-                color: selected ? AppColors.gold : AppColors.textSecondary,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-      visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        side: BorderSide(
-          color: selected ? AppColors.gold : AppColors.glassBorder,
-        ),
-      ),
-    );
-  }
 }

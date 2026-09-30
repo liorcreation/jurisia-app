@@ -147,7 +147,11 @@ void main() {
       await _settle(tester);
       await tester.tap(find.text('DROIT DES OBLIGATIONS'));
       await _settle(tester);
-      expect(find.textContaining('PACK JURIDIQUE'), findsWidgets);
+      expect(find.textContaining('COLLECTION'), findsOneWidget);
+      expect(
+        find.text('Obligations, contrats et responsabilité'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull, reason: 'pack $size');
     }
   });
