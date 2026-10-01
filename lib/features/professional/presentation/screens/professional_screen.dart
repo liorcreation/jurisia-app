@@ -524,27 +524,7 @@ class _AtelierBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _Eyebrow('Ingénierie juridique assistée par IA'),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Votre atelier de rédaction',
-          style: textTheme.displaySmall?.copyWith(
-            fontFamily: 'Libre Caslon Display',
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Text(
-            'Trois instruments pour produire un travail abouti — un acte sur mesure, '
-            'l\'audit d\'un contrat, ou une note de synthèse — chacun nourri par les '
-            'textes de la bibliothèque juridique.',
-            style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ),
+        const _ProfessionalHero(),
         const SizedBox(height: AppSpacing.xl),
         PremiumSurface(
           tone: PremiumSurfaceTone.cobalt,
@@ -643,6 +623,195 @@ class _AtelierBody extends StatelessWidget {
   }
 }
 
+class _ProfessionalHero extends StatelessWidget {
+  const _ProfessionalHero();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 700;
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.large + 4),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF173B60), Color(0xFF111E31), Color(0xFF0A1019)],
+              stops: [0, 0.55, 1],
+            ),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cobalt.withValues(alpha: 0.18),
+                blurRadius: 32,
+                offset: const Offset(0, 16),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: compact ? -96 : 12,
+                top: compact ? -110 : -156,
+                child: IgnorePointer(
+                  child: Icon(
+                    Icons.balance_rounded,
+                    size: compact ? 230 : 330,
+                    color: AppColors.gold.withValues(alpha: 0.045),
+                  ),
+                ),
+              ),
+              if (compact)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const PremiumStatusPill(
+                      label: 'ATELIER JURISIA',
+                      tone: PremiumStatusTone.gold,
+                      icon: Icons.auto_awesome_rounded,
+                      compact: true,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Le droit, transformé\nen livrables.',
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Libre Caslon Display',
+                        height: 1.06,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Des services structurés, des modèles prêts à l’emploi et une IA qui vous aide à passer de la question au document.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    const _ProfessionalHeroStats(),
+                  ],
+                )
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const PremiumStatusPill(
+                            label: 'ATELIER JURISIA',
+                            tone: PremiumStatusTone.gold,
+                            icon: Icons.auto_awesome_rounded,
+                            compact: true,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            'Le droit, transformé en livrables.',
+                            style: textTheme.displaySmall?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontFamily: 'Libre Caslon Display',
+                              height: 1.04,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 700),
+                            child: Text(
+                              'Des services structurés, des modèles prêts à l’emploi et une IA qui vous aide à passer de la question au document.',
+                              style: textTheme.bodyLarge?.copyWith(
+                                color: AppColors.textSecondary,
+                                height: 1.55,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xl),
+                    const _ProfessionalHeroStats(),
+                  ],
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProfessionalHeroStats extends StatelessWidget {
+  const _ProfessionalHeroStats();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: const [
+        _ProfessionalStat(
+          icon: Icons.hub_rounded,
+          value: '04',
+          label: 'pôles métier',
+        ),
+        _ProfessionalStat(
+          icon: Icons.auto_awesome_rounded,
+          value: '01',
+          label: 'atelier assisté',
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfessionalStat extends StatelessWidget {
+  const _ProfessionalStat({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.05),
+      borderRadius: BorderRadius.circular(AppRadius.medium),
+      border: Border.all(color: AppColors.glassBorder),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: AppColors.goldLight),
+        const SizedBox(width: 7),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    ),
+  );
+}
+
 class _ProfessionalServiceNavigator extends StatelessWidget {
   const _ProfessionalServiceNavigator({required this.onSelectCategory});
 
@@ -683,15 +852,15 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
               children: [
                 for (
                   var i = 0;
-                  i < ProfessionalServiceCategory.values.length;
+                  i < ProfessionalServiceCategory.primaryValues.length;
                   i++
                 )
                   SizedBox(
                     width: width,
                     child: _ServiceCategoryTile(
-                      category: ProfessionalServiceCategory.values[i],
+                      category: ProfessionalServiceCategory.primaryValues[i],
                       onTap: () => onSelectCategory(
-                        ProfessionalServiceCategory.values[i],
+                        ProfessionalServiceCategory.primaryValues[i],
                       ),
                     ),
                   ),
@@ -719,8 +888,7 @@ class _ServiceCategoryTileState extends State<_ServiceCategoryTile> {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        widget.category == ProfessionalServiceCategory.deepConsultation
+    final color = widget.category == ProfessionalServiceCategory.jurisconsult
         ? AppColors.metalCobalt
         : AppColors.gold;
     return MouseRegion(
@@ -946,101 +1114,161 @@ class _TemplateGrid extends StatelessWidget {
   }
 }
 
-class _TemplateCard extends StatelessWidget {
+class _TemplateCard extends StatefulWidget {
   const _TemplateCard({required this.template, required this.onOpen});
 
   final ProfessionalTemplate template;
   final VoidCallback onOpen;
 
   @override
+  State<_TemplateCard> createState() => _TemplateCardState();
+}
+
+class _TemplateCardState extends State<_TemplateCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final template = widget.template;
 
-    return GlassContainer(
-      onTap: onOpen,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedSlide(
+        duration: AppMotion.standard,
+        offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
+        child: GlassContainer(
+          onTap: widget.onOpen,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          borderColor: AppColors.gold.withValues(alpha: _hovered ? 0.62 : 0.28),
+          borderWidth: _hovered ? 1 : 0.6,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GradientIconBadge(
-                icon: _domainIconPro(template.domain),
-                size: 40,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      template.title,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontFamily: 'Libre Caslon Display',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      template.domain.label,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            template.description,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.35,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Icon(
-                Icons.tune_rounded,
-                size: 13,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  '${template.requiredFields.length} informations',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GradientIconBadge(
+                    icon: _domainIconPro(template.domain),
+                    size: 44,
                   ),
-                ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          template.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleSmall?.copyWith(
+                            fontFamily: 'Libre Caslon Display',
+                            fontWeight: FontWeight.w600,
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          template.domain.label,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.goldLight,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.bolt_rounded,
+                    size: 16,
+                    color: AppColors.gold,
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                'Rédiger',
-                style: textTheme.labelMedium?.copyWith(
-                  color: AppColors.goldLight,
-                  fontWeight: FontWeight.w700,
+                template.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 14,
-                color: AppColors.goldLight,
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  _TemplateMeta(
+                    icon: Icons.tune_rounded,
+                    label: '${template.requiredFields.length} informations',
+                  ),
+                  const _TemplateMeta(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'Assisté par IA',
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Configurer cet acte',
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppColors.goldLight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_outward_rounded,
+                    size: 16,
+                    color: _hovered
+                        ? AppColors.goldLight
+                        : AppColors.textSecondary,
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
+
+class _TemplateMeta extends StatelessWidget {
+  const _TemplateMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color: AppColors.legalBlueDark.withValues(alpha: 0.65),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: AppColors.glassBorder),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: AppColors.gold),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _RecentPanel extends StatelessWidget {

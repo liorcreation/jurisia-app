@@ -94,6 +94,16 @@ void main() {
         await tester.tap(find.text(entry.key));
         await _settle(tester);
         expect(find.text(entry.value), findsWidgets, reason: entry.key);
+        if (entry.key == 'Service professionnel') {
+          for (final category in [
+            'Services notariaux',
+            'Services d’avocats',
+            'Services d’huissier',
+            'Jurisconsulte',
+          ]) {
+            expect(find.text(category), findsOneWidget);
+          }
+        }
         expect(tester.takeException(), isNull, reason: entry.key);
       }
     },

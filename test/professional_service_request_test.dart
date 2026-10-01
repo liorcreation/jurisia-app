@@ -110,21 +110,24 @@ void main() {
   });
 
   group('ProfessionalServiceCategory', () {
-    test('expose la typologie métier complète avec un parcours Autre', () {
-      expect(ProfessionalServiceCategory.values, hasLength(8));
-      for (final category in ProfessionalServiceCategory.values) {
-        expect(category.label, isNotEmpty);
-        expect(category.serviceTypes, hasLength(4));
-      }
-      expect(
-        ProfessionalServiceCategory.fromName('services_notariaux'),
-        ProfessionalServiceCategory.notarial,
-      );
-      expect(
-        ProfessionalServiceCategory.fromName('notaire'),
-        ProfessionalServiceCategory.notarial,
-      );
-    });
+    test(
+      'expose les quatre pôles et leurs services avec un parcours Autre',
+      () {
+        expect(ProfessionalServiceCategory.primaryValues, hasLength(4));
+        for (final category in ProfessionalServiceCategory.primaryValues) {
+          expect(category.label, isNotEmpty);
+          expect(category.serviceTypes.length, greaterThan(10));
+        }
+        expect(
+          ProfessionalServiceCategory.fromName('services_notariaux'),
+          ProfessionalServiceCategory.notarial,
+        );
+        expect(
+          ProfessionalServiceCategory.fromName('notaire'),
+          ProfessionalServiceCategory.notarial,
+        );
+      },
+    );
   });
 
   group('ProfessionalServiceRequestController', () {

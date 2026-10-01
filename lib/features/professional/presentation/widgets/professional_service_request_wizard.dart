@@ -290,7 +290,8 @@ class _ProfessionalServiceRequestWizardState
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                for (final category in ProfessionalServiceCategory.values)
+                for (final category
+                    in ProfessionalServiceCategory.primaryValues)
                   SizedBox(
                     width: itemWidth,
                     child: _ServiceCategoryChoice(
