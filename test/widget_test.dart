@@ -156,6 +156,50 @@ void main() {
     }
   });
 
+  testWidgets('Student journey opens the catalogue and a specialty cleanly', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // Le parcours complet est vérifié sur mobile ; la navigation desktop est
+    // déjà couverte par le test de shell permanent ci-dessus.
+    for (final size in const [Size(400, 900)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(_wrapHomeNavigation());
+      await _settle(tester);
+
+      if (size.width < 600) {
+        await tester.tap(find.byIcon(Icons.menu_rounded));
+        await _settle(tester);
+      }
+      await tester.tap(find.text('Étudiant'));
+      await _settle(tester);
+      expect(find.textContaining('Votre progression'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Formations Certifiantes'));
+      await tester.tap(find.text('Formations Certifiantes'));
+      await _settle(tester);
+      expect(find.text('Choisissez votre spécialité.'), findsOneWidget);
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'catalogue étudiant $size',
+      );
+
+      await tester.ensureVisible(find.text('Droit de la famille'));
+      await tester.tap(find.text('Droit de la famille'));
+      await _settle(tester);
+      expect(
+        find.text('Une spécialité pensée pour la pratique.'),
+        findsOneWidget,
+      );
+      expect(find.text('Architecture du parcours'), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'spécialité $size');
+    }
+  });
+
   testWidgets(
     'Tablet layout: a permanent compact rail preserves content space',
     (WidgetTester tester) async {
