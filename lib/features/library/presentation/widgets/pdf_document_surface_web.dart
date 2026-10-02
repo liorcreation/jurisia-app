@@ -12,7 +12,9 @@ class PdfDocumentSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewType = 'jurisia-pdf-${url.hashCode}';
+    final compact = MediaQuery.sizeOf(context).width < 640;
+    final viewType =
+        'jurisia-pdf-${url.hashCode}-${compact ? 'mobile' : 'wide'}';
     if (_registeredPdfViews.add(viewType)) {
       ui_web.platformViewRegistry.registerViewFactory(viewType, (viewId) {
         final frame = web.HTMLIFrameElement()
@@ -21,6 +23,12 @@ class PdfDocumentSurface extends StatelessWidget {
           ..style.border = '0'
           ..style.width = '100%'
           ..style.height = '100%'
+          ..style.display = 'block'
+          ..style.overflow = 'auto'
+          ..style.setProperty('touch-action', 'pan-y')
+          ..style.setProperty('overscroll-behavior', 'contain')
+          ..style.setProperty('-webkit-overflow-scrolling', 'touch')
+          ..setAttribute('scrolling', 'yes')
           ..setAttribute('allowfullscreen', 'true');
         return frame;
       });
@@ -32,4 +40,3 @@ class PdfDocumentSurface extends StatelessWidget {
     );
   }
 }
-

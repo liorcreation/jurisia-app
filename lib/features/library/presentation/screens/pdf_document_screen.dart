@@ -60,43 +60,120 @@ class PdfDocumentScreen extends StatelessWidget {
             children: [
               _PdfDocumentToolbar(document: document),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                  ),
-                  child: pdfUrl == null
-                      ? _PdfUnavailable(document: document)
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.medium),
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.03),
-                              border: Border.all(
-                                color: AppColors.gold.withValues(alpha: 0.22),
-                              ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 640;
+                    final viewer = Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
+                      child: pdfUrl == null
+                          ? _PdfUnavailable(document: document)
+                          : ClipRRect(
                               borderRadius: BorderRadius.circular(
                                 AppRadius.medium,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.nightBlueDeep.withValues(
-                                    alpha: 0.42,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.03),
+                                  border: Border.all(
+                                    color: AppColors.gold.withValues(
+                                      alpha: 0.22,
+                                    ),
                                   ),
-                                  blurRadius: 28,
-                                  offset: const Offset(0, 14),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.medium,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.nightBlueDeep.withValues(
+                                        alpha: 0.42,
+                                      ),
+                                      blurRadius: 28,
+                                      offset: const Offset(0, 14),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: PdfDocumentSurface(url: pdfUrl!),
+                              ),
                             ),
-                            child: PdfDocumentSurface(url: pdfUrl!),
+                    );
+                    if (!compact || pdfUrl == null) return viewer;
+                    return Column(
+                      children: [
+                        Expanded(child: viewer),
+                        _MobilePdfHint(
+                          onOpen: () => launchUrl(
+                            Uri.parse(pdfUrl!),
+                            webOnlyWindowName: '_blank',
                           ),
                         ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobilePdfHint extends StatelessWidget {
+  const _MobilePdfHint({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: 5,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.legalBlueDark.withValues(alpha: 0.75),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.glassBorder),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.swipe_vertical_rounded,
+              size: 16,
+              color: AppColors.goldLight,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Faites glisser le document pour le parcourir',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onOpen,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.goldLight,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 32),
+              ),
+              child: const Text('Plein écran'),
+            ),
+          ],
         ),
       ),
     );
