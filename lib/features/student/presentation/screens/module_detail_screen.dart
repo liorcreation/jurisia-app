@@ -284,12 +284,116 @@ class _CourseTab extends StatelessWidget {
 
     return ListView.separated(
       padding: _tabReadingPadding(context),
-      itemCount: module.lessons.length,
+      itemCount: module.lessons.length + 1,
       separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xl),
-      itemBuilder: (context, index) =>
-          _LessonBlock(order: index + 1, lesson: module.lessons[index]),
+      itemBuilder: (context, index) => index == 0
+          ? _MobileModuleOverview(module: module)
+          : _LessonBlock(order: index, lesson: module.lessons[index - 1]),
     );
   }
+}
+
+class _MobileModuleOverview extends StatelessWidget {
+  const _MobileModuleOverview({required this.module});
+
+  final CourseModule module;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final totalMinutes = module.lessons.fold<int>(
+      0,
+      (sum, lesson) => sum + lesson.estimatedMinutes,
+    );
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      borderColor: AppColors.gold.withValues(alpha: 0.34),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0x251D4D7B), Color(0x10121D2B)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded, color: AppColors.gold),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'FEUILLE DE ROUTE',
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.goldLight,
+                  letterSpacing: AppLetterSpacing.caps,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            module.description,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              _ModuleOverviewChip(
+                icon: Icons.menu_book_rounded,
+                label: '${module.lessons.length} leçons',
+              ),
+              _ModuleOverviewChip(
+                icon: Icons.schedule_rounded,
+                label: totalMinutes > 0
+                    ? '$totalMinutes min'
+                    : 'À votre rythme',
+              ),
+              _ModuleOverviewChip(
+                icon: Icons.edit_note_rounded,
+                label: '${module.exercises.length} exercices',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ModuleOverviewChip extends StatelessWidget {
+  const _ModuleOverviewChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+    decoration: BoxDecoration(
+      color: AppColors.legalBlueDark.withValues(alpha: 0.65),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: AppColors.glassBorder),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.goldLight),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _RevisionTab extends StatelessWidget {

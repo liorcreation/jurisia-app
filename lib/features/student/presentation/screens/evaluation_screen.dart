@@ -568,13 +568,14 @@ class _EvaluationBriefingState extends State<_EvaluationBriefing> {
   Widget build(BuildContext context) {
     final mode = widget.controller.mode!;
     final textTheme = Theme.of(context).textTheme;
+    final compact = MediaQuery.sizeOf(context).width < 600;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),
           child: GlassContainer(
-            padding: const EdgeInsets.all(AppSpacing.xl),
+            padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
             borderColor: AppColors.gold.withValues(alpha: 0.42),
             child: Column(
               children: [
@@ -599,6 +600,22 @@ class _EvaluationBriefingState extends State<_EvaluationBriefing> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    _EvaluationBriefChip(
+                      icon: Icons.workspace_premium_rounded,
+                      label: 'Validation sur 20',
+                    ),
+                    _EvaluationBriefChip(
+                      icon: Icons.shield_rounded,
+                      label: 'Session sécurisée',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   _description(mode),
                   textAlign: TextAlign.center,
@@ -655,6 +672,37 @@ class _EvaluationBriefingState extends State<_EvaluationBriefing> {
       ),
     );
   }
+}
+
+class _EvaluationBriefChip extends StatelessWidget {
+  const _EvaluationBriefChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: AppColors.cobalt.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: AppColors.cobaltLight.withValues(alpha: 0.3)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.cobaltLight),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _BriefingRow extends StatelessWidget {

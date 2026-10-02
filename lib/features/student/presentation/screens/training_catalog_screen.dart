@@ -47,6 +47,8 @@ class TrainingCatalogScreen extends StatelessWidget {
                   children: [
                     _CatalogHero(categoryCount: categories.length),
                     const SizedBox(height: AppSpacing.xl),
+                    const _LearningRouteRail(),
+                    const SizedBox(height: AppSpacing.xl),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final columns = constraints.maxWidth >= 880
@@ -174,6 +176,8 @@ class TrainingOrientationSection extends StatelessWidget {
             );
           },
         ),
+        const SizedBox(height: AppSpacing.xl),
+        const _LearningRouteRail(),
         const SizedBox(height: AppSpacing.xl),
         const _CatalogTrustNote(),
       ],
@@ -315,6 +319,138 @@ class _CatalogHeroMeta extends StatelessWidget {
           icon: Icons.verified_rounded,
           value: '100%',
           label: 'parcours guidés',
+        ),
+        const _StudentStat(
+          icon: Icons.auto_awesome_rounded,
+          value: '01',
+          label: 'certificat JurisIA',
+        ),
+      ],
+    );
+  }
+}
+
+class _LearningRouteRail extends StatelessWidget {
+  const _LearningRouteRail();
+
+  static const _steps = [
+    (
+      icon: Icons.explore_rounded,
+      number: '01',
+      title: 'Choisir',
+      text: 'Une spécialité alignée sur votre projet.',
+    ),
+    (
+      icon: Icons.menu_book_rounded,
+      number: '02',
+      title: 'Progresser',
+      text: 'Des modules courts, des cas et une méthode.',
+    ),
+    (
+      icon: Icons.workspace_premium_rounded,
+      number: '03',
+      title: 'Certifier',
+      text: 'Une évaluation finale pour valider vos acquis.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 700;
+        final steps = [
+          for (final step in _steps)
+            _LearningRouteStep(
+              icon: step.icon,
+              number: step.number,
+              title: step.title,
+              text: step.text,
+            ),
+        ];
+        return GlassContainer(
+          padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
+          borderColor: AppColors.cobaltLight.withValues(alpha: 0.24),
+          gradient: const LinearGradient(
+            colors: [Color(0x201A5590), Color(0x0D10243A)],
+          ),
+          child: compact
+              ? Column(
+                  children: [
+                    for (var i = 0; i < steps.length; i++) ...[
+                      steps[i],
+                      if (i < steps.length - 1)
+                        const Divider(height: AppSpacing.xl),
+                    ],
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < steps.length; i++) ...[
+                      Expanded(child: steps[i]),
+                      if (i < steps.length - 1)
+                        const SizedBox(width: AppSpacing.md),
+                    ],
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _LearningRouteStep extends StatelessWidget {
+  const _LearningRouteStep({
+    required this.icon,
+    required this.number,
+    required this.title,
+    required this.text,
+  });
+
+  final IconData icon;
+  final String number;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: AppGradients.goldMetallic,
+            borderRadius: BorderRadius.circular(AppRadius.small),
+          ),
+          child: Icon(icon, size: 19, color: AppColors.nightBlueDeep),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$number  $title',
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                text,
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -764,6 +900,10 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                     icon: Icons.verified_rounded,
                     label: 'Validation finale',
                   ),
+                  _CatalogChip(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'Certificat JurisIA',
+                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -879,6 +1019,8 @@ class _CategoryDetailContent extends StatelessWidget {
       children: [
         _CategoryHero(category: category),
         const SizedBox(height: AppSpacing.xl),
+        _CategorySnapshot(category: category),
+        const SizedBox(height: AppSpacing.xl),
         const _CatalogEyebrow('VOTRE PARCOURS'),
         const SizedBox(height: AppSpacing.sm),
         Text(
@@ -974,8 +1116,138 @@ class _CategoryDetailContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        const _ComingSoonPanel(),
+        const _CategoryRoadmap(),
       ],
+    );
+  }
+}
+
+class _CategorySnapshot extends StatelessWidget {
+  const _CategorySnapshot({required this.category});
+
+  final TrainingCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 700;
+        final items = [
+          const _SnapshotItem(
+            icon: Icons.route_rounded,
+            value: '03',
+            label: 'étapes guidées',
+          ),
+          const _SnapshotItem(
+            icon: Icons.gavel_rounded,
+            value: '100%',
+            label: 'orienté pratique',
+          ),
+          _SnapshotItem(
+            icon: Icons.verified_rounded,
+            value: category.isAvailable ? 'OK' : '—',
+            label: 'statut du parcours',
+          ),
+        ];
+        return GlassContainer(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          borderColor: AppColors.gold.withValues(alpha: 0.24),
+          child: compact
+              ? Wrap(
+                  spacing: AppSpacing.lg,
+                  runSpacing: AppSpacing.md,
+                  children: items,
+                )
+              : Row(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      Expanded(child: items[i]),
+                      if (i < items.length - 1)
+                        const SizedBox(
+                          height: 34,
+                          child: VerticalDivider(width: AppSpacing.xl),
+                        ),
+                    ],
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}
+
+class _SnapshotItem extends StatelessWidget {
+  const _SnapshotItem({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(icon, size: 19, color: AppColors.goldLight),
+      const SizedBox(width: AppSpacing.sm),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+class _CategoryRoadmap extends StatelessWidget {
+  const _CategoryRoadmap();
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumLikePanel(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.auto_awesome_rounded, color: AppColors.goldLight),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Votre feuille de route',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Orientation → modules guidés → exercices → évaluation certifiante. Les contenus disponibles apparaîtront dans votre espace étudiant au fil de leur ouverture.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1123,32 +1395,6 @@ class _DetailPillar extends StatelessWidget {
       ],
     ),
   );
-}
-
-class _ComingSoonPanel extends StatelessWidget {
-  const _ComingSoonPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    return PremiumLikePanel(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.auto_awesome_rounded, color: AppColors.goldLight),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Le catalogue détaillé, les leçons et les évaluations de cette spécialité sont en cours de finalisation. Votre orientation est bien enregistrée.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class PremiumLikePanel extends StatelessWidget {
