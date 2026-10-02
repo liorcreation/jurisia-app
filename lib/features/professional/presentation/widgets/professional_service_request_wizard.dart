@@ -575,36 +575,88 @@ class _WizardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    const labels = ['Orientation', 'Prestation', 'Coordonnées', 'Validation'];
+    return Column(
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'DEMANDE PROFESSIONNELLE',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.gold,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: AppLetterSpacing.caps,
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DEMANDE PROFESSIONNELLE',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppColors.gold,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: AppLetterSpacing.caps,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    kind == ProfessionalRequestKind.legalAct
+                        ? 'Préparer un acte'
+                        : 'Prendre rendez-vous',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontFamily: 'Libre Caslon Display',
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                kind == ProfessionalRequestKind.legalAct
-                    ? 'Préparer un acte'
-                    : 'Prendre rendez-vous',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontFamily: 'Libre Caslon Display',
-                ),
-              ),
-            ],
-          ),
+            ),
+            PremiumStatusPill(
+              label: '${step + 1}/4',
+              tone: PremiumStatusTone.info,
+              compact: true,
+            ),
+          ],
         ),
-        PremiumStatusPill(
-          label: '${step + 1}/4',
-          tone: PremiumStatusTone.info,
-          compact: true,
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            for (var i = 0; i < labels.length; i++) ...[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: AppMotion.standard,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: i <= step
+                            ? AppColors.gold
+                            : AppColors.glassBorder,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        boxShadow: i == step
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.gold.withValues(alpha: 0.32),
+                                  blurRadius: 8,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      labels[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: i <= step
+                            ? AppColors.textPrimary
+                            : AppColors.textDisabled,
+                        fontWeight: i == step
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (i < labels.length - 1) const SizedBox(width: AppSpacing.xs),
+            ],
+          ],
         ),
       ],
     );

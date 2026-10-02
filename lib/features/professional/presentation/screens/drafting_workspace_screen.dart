@@ -25,13 +25,17 @@ import '../controllers/drafting_workspace_controller.dart';
 
 DraftingWorkspaceController _buildController(DraftingRequest request) {
   final dataSource = buildGroqDataSource();
-  final libraryRepository = LibraryRepositoryImpl(dataSource: const LocalLegalDocumentDataSource());
+  final libraryRepository = LibraryRepositoryImpl(
+    dataSource: const LocalLegalDocumentDataSource(),
+  );
   final professionalRepository = ProfessionalRepositoryImpl(
     dataSource: dataSource,
     libraryRepository: libraryRepository,
     templateDataSource: const LocalProfessionalTemplateDataSource(),
     supabaseClient: SupabaseConfig.isReady ? SupabaseConfig.client : null,
-    userId: SupabaseConfig.isReady ? SupabaseConfig.client.auth.currentUser?.id : null,
+    userId: SupabaseConfig.isReady
+        ? SupabaseConfig.client.auth.currentUser?.id
+        : null,
   );
 
   return DraftingWorkspaceController(
@@ -56,7 +60,11 @@ String _loadingLabel(DraftingMode mode) {
 /// Espace de rédaction interactif : génération au fil de l'eau, ajustements
 /// rapides, copie, export et mise en favori du document produit.
 class DraftingWorkspaceScreen extends StatelessWidget {
-  const DraftingWorkspaceScreen({super.key, required this.request, this.controllerOverride});
+  const DraftingWorkspaceScreen({
+    super.key,
+    required this.request,
+    this.controllerOverride,
+  });
 
   final DraftingRequest request;
 
@@ -99,20 +107,19 @@ class _WorkspaceView extends StatelessWidget {
               Text(
                 chrome.label,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.goldLight,
-                      letterSpacing: AppLetterSpacing.label,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: AppColors.goldLight,
+                  letterSpacing: AppLetterSpacing.label,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 1),
               Text(
                 result?.title ?? _loadingLabel(controller.request.mode),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
               ),
             ],
           ),
@@ -120,9 +127,13 @@ class _WorkspaceView extends StatelessWidget {
             if (result != null)
               TapScale(
                 child: IconButton(
-                  tooltip: result.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                  tooltip: result.isFavorite
+                      ? 'Retirer des favoris'
+                      : 'Ajouter aux favoris',
                   icon: Icon(
-                    result.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                    result.isFavorite
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
                     color: AppColors.gold,
                   ),
                   onPressed: controller.toggleFavorite,
@@ -142,8 +153,12 @@ class _WorkspaceView extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, DraftingWorkspaceController controller) {
-    if (controller.status == DraftingStatus.error && controller.result == null) {
+  Widget _buildBody(
+    BuildContext context,
+    DraftingWorkspaceController controller,
+  ) {
+    if (controller.status == DraftingStatus.error &&
+        controller.result == null) {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: _DesktopWsError(
@@ -153,7 +168,8 @@ class _WorkspaceView extends StatelessWidget {
       );
     }
 
-    if (controller.status == DraftingStatus.generating && controller.streamingText.isEmpty) {
+    if (controller.status == DraftingStatus.generating &&
+        controller.streamingText.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: _DesktopWsGenerating(mode: controller.request.mode),
@@ -189,8 +205,19 @@ class _DocumentView extends StatelessWidget {
           children: [
             if (result != null)
               Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-                child: _AdjustmentToolbar(controller: controller),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    _DocumentStatusCard(result: result),
+                    const SizedBox(height: AppSpacing.sm),
+                    _AdjustmentToolbar(controller: controller),
+                  ],
+                ),
               ),
             Expanded(
               child: ListView(
@@ -202,10 +229,9 @@ class _DocumentView extends StatelessWidget {
                       child: GlassContainer(
                         borderColor: AppColors.error.withValues(alpha: 0.6),
                         child: Text(
-                          controller.errorMessage ?? 'Une erreur est survenue lors de l\'ajustement.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          controller.errorMessage ??
+                              'Une erreur est survenue lors de l\'ajustement.',
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: AppColors.textPrimary),
                         ),
                       ),
@@ -218,14 +244,15 @@ class _DocumentView extends StatelessWidget {
                           const SizedBox(
                             width: 13,
                             height: 13,
-                            child: CircularProgressIndicator(strokeWidth: 1.8, color: AppColors.goldLight),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.8,
+                              color: AppColors.goldLight,
+                            ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           Text(
                             'Application de l\'ajustement…',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
+                            style: Theme.of(context).textTheme.labelMedium
                                 ?.copyWith(color: AppColors.goldLight),
                           ),
                         ],
@@ -243,7 +270,10 @@ class _DocumentView extends StatelessWidget {
                   ],
                   if (result != null && result.risks.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
-                    Text('Clauses à risque identifiées', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Clauses à risque identifiées',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     for (final risk in result.risks)
                       Padding(
@@ -257,6 +287,119 @@ class _DocumentView extends StatelessWidget {
             if (result != null) _ActionBar(result: result),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DocumentStatusCard extends StatelessWidget {
+  const _DocumentStatusCard({required this.result});
+
+  final LegalDraftingResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final chrome = _modeChrome(result.mode);
+    final textTheme = Theme.of(context).textTheme;
+    return GlassContainer(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 10,
+      ),
+      borderColor: chrome.tint.withValues(alpha: 0.3),
+      gradient: LinearGradient(
+        colors: [chrome.tint.withValues(alpha: 0.14), Colors.transparent],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: chrome.tint.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(AppRadius.small),
+            ),
+            child: Icon(chrome.icon, size: 16, color: chrome.tint),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'DOCUMENT PRÊT À RELIRE',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: chrome.tint,
+                    letterSpacing: AppLetterSpacing.caps,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  result.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (result.citedSources.isNotEmpty)
+            _DocumentCountPill(
+              icon: Icons.local_library_rounded,
+              label: '${result.citedSources.length}',
+            ),
+          if (result.risks.isNotEmpty) ...[
+            const SizedBox(width: AppSpacing.xs),
+            _DocumentCountPill(
+              icon: Icons.warning_amber_rounded,
+              label: '${result.risks.length}',
+              danger: true,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentCountPill extends StatelessWidget {
+  const _DocumentCountPill({
+    required this.icon,
+    required this.label,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = danger ? AppColors.warning : AppColors.cobaltLight;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -282,27 +425,37 @@ class _AdjustmentToolbar extends StatelessWidget {
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                onTap: enabled ? () => controller.applyAdjustment(adjustment) : null,
+                onTap: enabled
+                    ? () => controller.applyAdjustment(adjustment)
+                    : null,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 child: Opacity(
                   opacity: enabled ? 1 : 0.45,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.legalBlueDark.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(AppRadius.pill),
-                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.28),
+                        width: 0.7,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.auto_fix_high_rounded, size: 13, color: AppColors.goldLight),
+                        const Icon(
+                          Icons.auto_fix_high_rounded,
+                          size: 13,
+                          color: AppColors.goldLight,
+                        ),
                         const SizedBox(width: AppSpacing.sm),
                         Text(
                           adjustment.label,
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
+                          style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(color: AppColors.textPrimary),
                         ),
                       ],
@@ -333,16 +486,26 @@ class _CitedSourcesCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.local_library_rounded, size: 18, color: AppColors.gold),
+              const Icon(
+                Icons.local_library_rounded,
+                size: 18,
+                color: AppColors.gold,
+              ),
               const SizedBox(width: AppSpacing.sm),
-              Text('Sources consultées dans la bibliothèque', style: textTheme.titleSmall),
+              Text(
+                'Sources consultées dans la bibliothèque',
+                style: textTheme.titleSmall,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           for (final source in sources)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: Text('• ${source.title} (${source.reference})', style: textTheme.bodySmall),
+              child: Text(
+                '• ${source.title} (${source.reference})',
+                style: textTheme.bodySmall,
+              ),
             ),
         ],
       ),
@@ -370,23 +533,35 @@ class _RiskCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 2,
+            ),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(
               risk.riskLevel.label,
-              style: textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700),
+              style: textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(risk.clauseExcerpt, style: textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
+          Text(
+            risk.clauseExcerpt,
+            style: textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+          ),
           const SizedBox(height: AppSpacing.sm),
           Text(risk.explanation, style: textTheme.bodyMedium),
           if (risk.suggestedRewrite.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text('Reformulation proposée :', style: textTheme.labelMedium?.copyWith(color: AppColors.gold)),
+            Text(
+              'Reformulation proposée :',
+              style: textTheme.labelMedium?.copyWith(color: AppColors.gold),
+            ),
             const SizedBox(height: 4),
             Text(risk.suggestedRewrite, style: textTheme.bodyMedium),
           ],
@@ -411,7 +586,11 @@ void _exportResult(BuildContext context, LegalDraftingResult result) {
       'utilisation.';
   Clipboard.setData(ClipboardData(text: formatted));
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Document exporté (copié) avec mise en forme, prêt à coller dans un fichier.')),
+    const SnackBar(
+      content: Text(
+        'Document exporté (copié) avec mise en forme, prêt à coller dans un fichier.',
+      ),
+    ),
   );
 }
 
@@ -454,11 +633,23 @@ class _ActionBar extends StatelessWidget {
 ({IconData icon, Color tint, String label}) _modeChrome(DraftingMode mode) {
   switch (mode) {
     case DraftingMode.redaction:
-      return (icon: Icons.draw_rounded, tint: AppColors.metalDeepGold, label: 'RÉDACTION D\'ACTE');
+      return (
+        icon: Icons.draw_rounded,
+        tint: AppColors.metalDeepGold,
+        label: 'RÉDACTION D\'ACTE',
+      );
     case DraftingMode.audit:
-      return (icon: Icons.rule_rounded, tint: AppColors.metalCobalt, label: 'AUDIT DE CONTRAT');
+      return (
+        icon: Icons.rule_rounded,
+        tint: AppColors.metalCobalt,
+        label: 'AUDIT DE CONTRAT',
+      );
     case DraftingMode.consultation:
-      return (icon: Icons.balance_rounded, tint: AppColors.metalEmerald, label: 'NOTE DE SYNTHÈSE');
+      return (
+        icon: Icons.balance_rounded,
+        tint: AppColors.metalEmerald,
+        label: 'NOTE DE SYNTHÈSE',
+      );
   }
 }
 
@@ -492,7 +683,9 @@ class _DesktopWorkspaceState extends State<_DesktopWorkspace> {
         message: controller.errorMessage ?? 'Une erreur est survenue.',
         onRetry: controller.regenerate,
       );
-    } else if (controller.status == DraftingStatus.generating && controller.streamingText.isEmpty && result == null) {
+    } else if (controller.status == DraftingStatus.generating &&
+        controller.streamingText.isEmpty &&
+        result == null) {
       body = _DesktopWsGenerating(mode: controller.request.mode);
     } else {
       body = _DesktopWsDocument(controller: controller, scroll: _scroll);
@@ -509,7 +702,8 @@ class _DesktopWorkspaceState extends State<_DesktopWorkspace> {
                 children: [
                   _DesktopWsHeader(
                     controller: controller,
-                    title: result?.title ?? _loadingLabel(controller.request.mode),
+                    title:
+                        result?.title ?? _loadingLabel(controller.request.mode),
                     eyebrow: chrome.label,
                   ),
                   Expanded(child: body),
@@ -543,10 +737,18 @@ class _DesktopWsHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -573,7 +775,9 @@ class _DesktopWsHeader extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
                 ),
               ],
             ),
@@ -582,9 +786,13 @@ class _DesktopWsHeader extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             TapScale(
               child: IconButton(
-                tooltip: result.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                tooltip: result.isFavorite
+                    ? 'Retirer des favoris'
+                    : 'Ajouter aux favoris',
                 icon: Icon(
-                  result.isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+                  result.isFavorite
+                      ? Icons.star_rounded
+                      : Icons.star_border_rounded,
                   color: AppColors.gold,
                 ),
                 onPressed: controller.toggleFavorite,
@@ -615,12 +823,16 @@ class _DesktopWsGenerating extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             _loadingLabel(mode),
-            style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+            style: textTheme.headlineSmall?.copyWith(
+              fontFamily: 'Libre Caslon Display',
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'L\'IA compose le document en s\'appuyant sur les textes de la bibliothèque.',
-            style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -638,9 +850,12 @@ class _WsPulse extends StatefulWidget {
   State<_WsPulse> createState() => _WsPulseState();
 }
 
-class _WsPulseState extends State<_WsPulse> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat(reverse: true);
+class _WsPulseState extends State<_WsPulse>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -703,12 +918,19 @@ class _DesktopWsError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
+              const Icon(
+                Icons.error_outline_rounded,
+                color: AppColors.error,
+                size: 36,
+              ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
@@ -716,7 +938,10 @@ class _DesktopWsError extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.gold,
                   foregroundColor: AppColors.nightBlueDeep,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: 12,
+                  ),
                 ),
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: const Text('Réessayer'),
@@ -741,15 +966,20 @@ class _DesktopWsDocument extends StatelessWidget {
     final text = result?.content ?? controller.streamingText;
     final generating = controller.isGenerating;
     final readingStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
-          fontFamily: 'Lora',
-          color: AppColors.textPrimary,
-          height: 1.85,
-          fontSize: 16,
-        );
+      fontFamily: 'Lora',
+      color: AppColors.textPrimary,
+      height: 1.85,
+      fontSize: 16,
+    );
 
     final reading = SingleChildScrollView(
       controller: scroll,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, AppSpacing.xl, AppSpacing.xl, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxl,
+        AppSpacing.xl,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -763,8 +993,11 @@ class _DesktopWsDocument extends StatelessWidget {
                   child: GlassContainer(
                     borderColor: AppColors.error.withValues(alpha: 0.6),
                     child: Text(
-                      controller.errorMessage ?? 'Une erreur est survenue lors de l\'ajustement.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+                      controller.errorMessage ??
+                          'Une erreur est survenue lors de l\'ajustement.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ),
@@ -776,14 +1009,17 @@ class _DesktopWsDocument extends StatelessWidget {
                       const SizedBox(
                         width: 13,
                         height: 13,
-                        child: CircularProgressIndicator(strokeWidth: 1.8, color: AppColors.goldLight),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.8,
+                          color: AppColors.goldLight,
+                        ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
-                        result == null ? 'Rédaction en cours…' : 'Application de l\'ajustement…',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
+                        result == null
+                            ? 'Rédaction en cours…'
+                            : 'Application de l\'ajustement…',
+                        style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(color: AppColors.goldLight),
                       ),
                     ],
@@ -837,7 +1073,10 @@ class _WsRail extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.nightBlueDeep.withValues(alpha: 0.3),
         border: Border(
-          left: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 1),
+          left: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.16),
+            width: 1,
+          ),
         ),
       ),
       child: Column(
@@ -871,7 +1110,11 @@ class _WsRail extends StatelessWidget {
                           children: [
                             const Padding(
                               padding: EdgeInsets.only(top: 5),
-                              child: Icon(Icons.local_library_rounded, size: 12, color: AppColors.goldLight),
+                              child: Icon(
+                                Icons.local_library_rounded,
+                                size: 12,
+                                color: AppColors.goldLight,
+                              ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
@@ -905,7 +1148,10 @@ class _WsRail extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: AppColors.gold.withValues(alpha: 0.14), width: 0.6),
+                top: BorderSide(
+                  color: AppColors.gold.withValues(alpha: 0.14),
+                  width: 0.6,
+                ),
               ),
             ),
             child: Row(
@@ -913,7 +1159,9 @@ class _WsRail extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () => _copyResult(context, result),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 11)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                    ),
                     icon: const Icon(Icons.copy_rounded, size: 15),
                     label: const Text('Copier'),
                   ),
@@ -949,16 +1197,20 @@ class _WsRailLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 12, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+        Container(
+          width: 12,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.goldLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.goldLight,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -967,7 +1219,11 @@ class _WsRailLabel extends StatelessWidget {
 }
 
 class _AdjustmentButton extends StatelessWidget {
-  const _AdjustmentButton({required this.label, required this.enabled, required this.onTap});
+  const _AdjustmentButton({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
 
   final String label;
   final bool enabled;
@@ -984,20 +1240,32 @@ class _AdjustmentButton extends StatelessWidget {
           opacity: enabled ? 1 : 0.45,
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm + 2,
+            ),
             decoration: BoxDecoration(
               color: AppColors.legalBlueDark.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppRadius.small),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+              border: Border.all(
+                color: AppColors.gold.withValues(alpha: 0.28),
+                width: 0.7,
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.auto_fix_high_rounded, size: 13, color: AppColors.goldLight),
+                const Icon(
+                  Icons.auto_fix_high_rounded,
+                  size: 13,
+                  color: AppColors.goldLight,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
               ],
@@ -1018,9 +1286,12 @@ class _WsAmbience extends StatefulWidget {
   State<_WsAmbience> createState() => _WsAmbienceState();
 }
 
-class _WsAmbienceState extends State<_WsAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 40))..repeat();
+class _WsAmbienceState extends State<_WsAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 40),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1032,7 +1303,8 @@ class _WsAmbienceState extends State<_WsAmbience> with SingleTickerProviderState
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _WsAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _WsAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -1053,12 +1325,14 @@ class _WsAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.7 + (i % 3) * 0.6;
-      final opacity = 0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.04 + 0.07 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _WsAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _WsAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }

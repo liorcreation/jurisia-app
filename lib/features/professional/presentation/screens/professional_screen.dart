@@ -526,6 +526,8 @@ class _AtelierBody extends StatelessWidget {
       children: [
         const _ProfessionalHero(),
         const SizedBox(height: AppSpacing.xl),
+        const _ProfessionalJourneyRail(),
+        const SizedBox(height: AppSpacing.xl),
         PremiumSurface(
           tone: PremiumSurfaceTone.cobalt,
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -763,6 +765,125 @@ class _ProfessionalHeroStats extends StatelessWidget {
           icon: Icons.auto_awesome_rounded,
           value: '01',
           label: 'atelier assisté',
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfessionalJourneyRail extends StatelessWidget {
+  const _ProfessionalJourneyRail();
+
+  static const _steps = [
+    (Icons.explore_rounded, 'Choisir', 'Un service ou un modèle.'),
+    (Icons.tune_rounded, 'Renseigner', 'Le contexte utile au dossier.'),
+    (Icons.auto_awesome_rounded, 'Générer', 'Une première version structurée.'),
+    (Icons.verified_rounded, 'Finaliser', 'Ajuster, copier ou exporter.'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      borderColor: AppColors.cobaltLight.withValues(alpha: 0.24),
+      gradient: const LinearGradient(
+        colors: [Color(0x201A5590), Color(0x0D10243A)],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 700;
+          final children = [
+            for (var i = 0; i < _steps.length; i++)
+              _ProfessionalJourneyStep(
+                index: i + 1,
+                icon: _steps[i].$1,
+                title: _steps[i].$2,
+                text: _steps[i].$3,
+              ),
+          ];
+          if (compact) {
+            return Column(
+              children: [
+                for (var i = 0; i < children.length; i++) ...[
+                  children[i],
+                  if (i < children.length - 1)
+                    const Divider(height: AppSpacing.lg),
+                ],
+              ],
+            );
+          }
+          return Row(
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                Expanded(child: children[i]),
+                if (i < children.length - 1)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: AppColors.textDisabled,
+                    ),
+                  ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ProfessionalJourneyStep extends StatelessWidget {
+  const _ProfessionalJourneyStep({
+    required this.index,
+    required this.icon,
+    required this.title,
+    required this.text,
+  });
+
+  final int index;
+  final IconData icon;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            gradient: AppGradients.goldMetallic,
+            borderRadius: BorderRadius.circular(AppRadius.small),
+          ),
+          child: Icon(icon, size: 18, color: AppColors.nightBlueDeep),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '0$index  $title',
+                style: textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                text,
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
