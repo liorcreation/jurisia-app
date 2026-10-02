@@ -298,6 +298,236 @@ class _DesktopContactHeader extends StatelessWidget {
   }
 }
 
+class _ContactHero extends StatelessWidget {
+  const _ContactHero();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return EntranceFadeSlide(
+      index: 0,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.legalBlueDark.withValues(alpha: 0.94),
+              AppColors.nightBlueDeep.withValues(alpha: 0.98),
+              const Color(0xFF111827).withValues(alpha: 0.96),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: 0.32),
+            width: 0.8,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.nightBlueDeep.withValues(alpha: 0.3),
+              blurRadius: 30,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -26,
+              top: -34,
+              child: Icon(
+                Icons.diversity_3_rounded,
+                size: 190,
+                color: AppColors.gold.withValues(alpha: 0.055),
+              ),
+            ),
+            Positioned(
+              right: 92,
+              bottom: -58,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.cobalt.withValues(alpha: 0.22),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 700;
+                  final copy = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const PremiumStatusPill(
+                        label: 'Réseau JurisIA',
+                        tone: PremiumStatusTone.gold,
+                        icon: Icons.verified_rounded,
+                        compact: true,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        'Une expertise claire\npour avancer.',
+                        style: textTheme.displaySmall?.copyWith(
+                          fontFamily: 'Libre Caslon Display',
+                          height: 1.03,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 620),
+                        child: Text(
+                          'Décrivez votre besoin, choisissez la bonne porte d’entrée et laissez JurisIA organiser la mise en relation avec un professionnel adapté.',
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                  final stats = Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: const [
+                      _ContactStat(
+                        value: '06',
+                        label: 'métiers référencés',
+                        icon: Icons.account_balance_rounded,
+                      ),
+                      _ContactStat(
+                        value: '01',
+                        label: 'demande guidée',
+                        icon: Icons.route_rounded,
+                      ),
+                      _ContactStat(
+                        value: '100%',
+                        label: 'suivi sécurisé',
+                        icon: Icons.lock_rounded,
+                      ),
+                    ],
+                  );
+
+                  if (compact) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [copy, const SizedBox(height: AppSpacing.lg), stats],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(child: copy),
+                      const SizedBox(width: AppSpacing.xl),
+                      Flexible(child: stats),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContactStat extends StatelessWidget {
+  const _ContactStat({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
+
+  final String value;
+  final String label;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 122),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.055),
+        borderRadius: BorderRadius.circular(AppRadius.small),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.2),
+          width: 0.6,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.goldLight),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                label,
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactSectionHeader extends StatelessWidget {
+  const _ContactSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Eyebrow('Votre point d’entrée'),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Choisissez votre expertise',
+          style: textTheme.headlineMedium?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Chaque demande commence par une orientation simple, humaine et contextualisée.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.45,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ContactBody extends StatelessWidget {
   const _ContactBody({
     required this.requests,
@@ -373,27 +603,7 @@ class _ContactBody extends StatelessWidget {
     final mainColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _Eyebrow('Mise en relation'),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Le bon professionnel, au bon moment',
-          style: textTheme.displaySmall?.copyWith(
-            fontFamily: 'Libre Caslon Display',
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Text(
-            'Choisissez le professionnel qu\'il vous faut : votre demande est transmise au '
-            'réseau de partenaires JurisIA, un membre vous recontacte directement. Rien '
-            'n\'est engagé sans votre accord.',
-            style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ),
+        const _ContactHero(),
         const SizedBox(height: AppSpacing.xl),
         PremiumSurface(
           tone: PremiumSurfaceTone.cobalt,
@@ -461,6 +671,8 @@ class _ContactBody extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
+        const _ContactSectionHeader(),
+        const SizedBox(height: AppSpacing.md),
         categoriesGrid,
       ],
     );
@@ -679,7 +891,19 @@ class _RequestPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _Eyebrow('Mes demandes'),
+          Row(
+            children: [
+              const Expanded(child: _Eyebrow('Mes demandes')),
+              PremiumStatusPill(
+                label: '${requests.length}',
+                tone: requests.isEmpty
+                    ? PremiumStatusTone.neutral
+                    : PremiumStatusTone.info,
+                icon: Icons.inbox_rounded,
+                compact: true,
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.md),
           if (requests.isEmpty)
             const _HowItWorks()
@@ -709,7 +933,19 @@ class _ServiceRequestPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _Eyebrow('Actes & rendez-vous'),
+          Row(
+            children: [
+              const Expanded(child: _Eyebrow('Actes & rendez-vous')),
+              PremiumStatusPill(
+                label: '${requests.length}',
+                tone: requests.isEmpty
+                    ? PremiumStatusTone.neutral
+                    : PremiumStatusTone.gold,
+                icon: Icons.event_note_rounded,
+                compact: true,
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.md),
           if (requests.isEmpty)
             Text(
