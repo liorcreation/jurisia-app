@@ -33,7 +33,8 @@ const _months = [
   'décembre',
 ];
 
-String _formatDate(DateTime date) => '${date.day} ${_months[date.month - 1]} ${date.year}';
+String _formatDate(DateTime date) =>
+    '${date.day} ${_months[date.month - 1]} ${date.year}';
 
 int _wordCount(String text) =>
     text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
@@ -45,7 +46,11 @@ List<String> _paragraphs(String text) => text
     .where((p) => p.isNotEmpty)
     .toList();
 
-void _copyToClipboard(BuildContext context, String content, {required String message}) {
+void _copyToClipboard(
+  BuildContext context,
+  String content, {
+  required String message,
+}) {
   Clipboard.setData(ClipboardData(text: content));
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
@@ -73,7 +78,10 @@ class DocumentDetailScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           appBar: AppBar(),
           body: Center(
-            child: Text('Document introuvable.', style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(
+              'Document introuvable.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
         ),
       );
@@ -105,7 +113,10 @@ class _ReaderState extends State<_Reader> {
   @override
   void initState() {
     super.initState();
-    _articleKeys = List.generate(widget.document.articles.length, (_) => GlobalKey());
+    _articleKeys = List.generate(
+      widget.document.articles.length,
+      (_) => GlobalKey(),
+    );
     if (widget.document.isStructured) _scroll.addListener(_trackActiveArticle);
   }
 
@@ -146,10 +157,12 @@ class _ReaderState extends State<_Reader> {
     final doc = widget.document;
     if (doc.fullContent.trim().isNotEmpty) return doc.fullContent;
     if (doc.articles.isEmpty) return '';
-    return doc.articles.map((a) {
-      final head = a.heading.isEmpty ? '' : ' — ${a.heading}';
-      return 'Article ${a.number}$head\n${a.text}';
-    }).join('\n\n');
+    return doc.articles
+        .map((a) {
+          final head = a.heading.isEmpty ? '' : ' — ${a.heading}';
+          return 'Article ${a.number}$head\n${a.text}';
+        })
+        .join('\n\n');
   }
 
   void _openRelated(String id) {
@@ -179,10 +192,8 @@ class _ReaderState extends State<_Reader> {
     if (url != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => PdfDocumentScreen(
-            document: widget.document,
-            pdfUrl: url,
-          ),
+          builder: (_) =>
+              PdfDocumentScreen(document: widget.document, pdfUrl: url),
         ),
       );
     }
@@ -196,13 +207,23 @@ class _ReaderState extends State<_Reader> {
     final copyText = _assembledText;
     final related = [
       for (final id in doc.relatedDocumentIds)
-        if (widget.controller.documentById(id) != null) widget.controller.documentById(id)!,
+        if (widget.controller.documentById(id) != null)
+          widget.controller.documentById(id)!,
     ];
 
-    void doCopy() => _copyToClipboard(context, copyText, message: 'Texte copié dans le presse-papiers.');
+    void doCopy() => _copyToClipboard(
+      context,
+      copyText,
+      message: 'Texte copié dans le presse-papiers.',
+    );
     void doDownload() {
       widget.controller.recordDownload(doc.id);
-      _copyToClipboard(context, copyText, message: 'Document copié : collez-le dans un fichier pour le conserver.');
+      _copyToClipboard(
+        context,
+        copyText,
+        message:
+            'Document copié : collez-le dans un fichier pour le conserver.',
+      );
     }
 
     final actions = _ActionStack(
@@ -217,8 +238,8 @@ class _ReaderState extends State<_Reader> {
     final Widget body = structured
         ? _ArticleList(articles: doc.articles, itemKeys: _articleKeys)
         : hasProse
-            ? _ReadingBody(content: doc.fullContent)
-            : _OutlineFallback(document: doc, onSource: _openSource);
+        ? _ReadingBody(content: doc.fullContent)
+        : _OutlineFallback(document: doc, onSource: _openSource);
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -235,7 +256,8 @@ class _ReaderState extends State<_Reader> {
                     isFavorite: doc.isFavorite,
                     canCopy: copyText.isNotEmpty,
                     onBack: () => Navigator.of(context).maybePop(),
-                    onToggleFavorite: () => widget.controller.toggleBookmark(doc.id),
+                    onToggleFavorite: () =>
+                        widget.controller.toggleBookmark(doc.id),
                     onCopy: doCopy,
                     onDownload: doDownload,
                     onSource: doc.sourceUrl != null ? _openSource : null,
@@ -291,7 +313,10 @@ class _ReaderState extends State<_Reader> {
                             body,
                             if (showFactsInline && related.isNotEmpty) ...[
                               const SizedBox(height: AppSpacing.xxl),
-                              _RelatedDocs(documents: related, onOpen: _openRelated),
+                              _RelatedDocs(
+                                documents: related,
+                                onOpen: _openRelated,
+                              ),
                             ],
                             const SizedBox(height: AppSpacing.xxl),
                           ],
@@ -313,9 +338,13 @@ class _ReaderState extends State<_Reader> {
                                   AppSpacing.xxl,
                                 ),
                           child: Align(
-                            alignment: wide ? Alignment.topLeft : Alignment.topCenter,
+                            alignment: wide
+                                ? Alignment.topLeft
+                                : Alignment.topCenter,
                             child: ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: wide ? (structured ? 720 : 740) : 800),
+                              constraints: BoxConstraints(
+                                maxWidth: wide ? (structured ? 720 : 740) : 800,
+                              ),
                               child: mainColumn,
                             ),
                           ),
@@ -347,16 +376,25 @@ class _ReaderState extends State<_Reader> {
                             SizedBox(
                               width: 352,
                               child: SingleChildScrollView(
-                                padding: const EdgeInsets.fromLTRB(0, AppSpacing.xl, AppSpacing.lg, AppSpacing.xxl),
+                                padding: const EdgeInsets.fromLTRB(
+                                  0,
+                                  AppSpacing.xl,
+                                  AppSpacing.lg,
+                                  AppSpacing.xxl,
+                                ),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     _FactSheet(document: doc),
                                     const SizedBox(height: AppSpacing.md),
                                     actions,
                                     if (related.isNotEmpty) ...[
                                       const SizedBox(height: AppSpacing.lg),
-                                      _RelatedDocs(documents: related, onOpen: _openRelated),
+                                      _RelatedDocs(
+                                        documents: related,
+                                        onOpen: _openRelated,
+                                      ),
                                     ],
                                   ],
                                 ),
@@ -400,7 +438,9 @@ class _ReadingProgressState extends State<_ReadingProgress> {
   void _update() {
     if (!widget.controller.hasClients) return;
     final max = widget.controller.position.maxScrollExtent;
-    final value = max <= 0 ? 0.0 : (widget.controller.offset / max).clamp(0.0, 1.0);
+    final value = max <= 0
+        ? 0.0
+        : (widget.controller.offset / max).clamp(0.0, 1.0);
     if ((value - _progress).abs() > 0.001) setState(() => _progress = value);
   }
 
@@ -422,7 +462,10 @@ class _ReadingProgressState extends State<_ReadingProgress> {
             decoration: BoxDecoration(
               gradient: AppGradients.goldSheen,
               boxShadow: [
-                BoxShadow(color: AppColors.gold.withValues(alpha: 0.5), blurRadius: 6),
+                BoxShadow(
+                  color: AppColors.gold.withValues(alpha: 0.5),
+                  blurRadius: 6,
+                ),
               ],
             ),
           ),
@@ -461,10 +504,18 @@ class _ReaderHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // Téléphone / petite tablette : on masque le préfixe « Bibliothèque »
@@ -489,10 +540,16 @@ class _ReaderHeader extends StatelessWidget {
                           'Bibliothèque',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: textTheme.labelMedium?.copyWith(color: AppColors.textDisabled),
+                          style: textTheme.labelMedium?.copyWith(
+                            color: AppColors.textDisabled,
+                          ),
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, size: 15, color: AppColors.textDisabled),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 15,
+                        color: AppColors.textDisabled,
+                      ),
                     ],
                     Flexible(
                       child: Text(
@@ -510,8 +567,12 @@ class _ReaderHeader extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               _RoundIcon(
-                icon: isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
-                tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+                icon: isFavorite
+                    ? Icons.star_rounded
+                    : Icons.star_border_rounded,
+                tooltip: isFavorite
+                    ? 'Retirer des favoris'
+                    : 'Ajouter aux favoris',
                 active: isFavorite,
                 onTap: onToggleFavorite,
               ),
@@ -536,9 +597,17 @@ class _ReaderHeader extends StatelessWidget {
                 ],
                 if (canCopy) ...[
                   const SizedBox(width: 6),
-                  _RoundIcon(icon: Icons.copy_rounded, tooltip: 'Copier le texte', onTap: onCopy),
+                  _RoundIcon(
+                    icon: Icons.copy_rounded,
+                    tooltip: 'Copier le texte',
+                    onTap: onCopy,
+                  ),
                   const SizedBox(width: 6),
-                  _RoundIcon(icon: Icons.download_rounded, tooltip: 'Télécharger', onTap: onDownload),
+                  _RoundIcon(
+                    icon: Icons.download_rounded,
+                    tooltip: 'Télécharger',
+                    onTap: onDownload,
+                  ),
                 ],
               ],
             ],
@@ -569,19 +638,28 @@ class _HeaderOverflowMenu extends StatelessWidget {
     return TapScale(
       child: Material(
         color: AppColors.legalBlueDark.withValues(alpha: 0.5),
-        shape: const CircleBorder(side: BorderSide(color: AppColors.glassBorder, width: 0.6)),
+        shape: const CircleBorder(
+          side: BorderSide(color: AppColors.glassBorder, width: 0.6),
+        ),
         child: PopupMenuButton<int>(
           tooltip: 'Plus d\'actions',
           icon: const Padding(
             padding: EdgeInsets.all(7),
-            child: Icon(Icons.more_horiz_rounded, size: 18, color: AppColors.textSecondary),
+            child: Icon(
+              Icons.more_horiz_rounded,
+              size: 18,
+              color: AppColors.textSecondary,
+            ),
           ),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
           color: AppColors.legalBlue,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.medium),
-            side: BorderSide(color: AppColors.gold.withValues(alpha: 0.22), width: 0.6),
+            side: BorderSide(
+              color: AppColors.gold.withValues(alpha: 0.22),
+              width: 0.6,
+            ),
           ),
           onSelected: (value) {
             switch (value) {
@@ -597,17 +675,26 @@ class _HeaderOverflowMenu extends StatelessWidget {
             if (canCopy)
               const PopupMenuItem<int>(
                 value: 0,
-                child: _OverflowRow(icon: Icons.copy_rounded, label: 'Copier le texte'),
+                child: _OverflowRow(
+                  icon: Icons.copy_rounded,
+                  label: 'Copier le texte',
+                ),
               ),
             if (canCopy)
               const PopupMenuItem<int>(
                 value: 1,
-                child: _OverflowRow(icon: Icons.download_rounded, label: 'Télécharger'),
+                child: _OverflowRow(
+                  icon: Icons.download_rounded,
+                  label: 'Télécharger',
+                ),
               ),
             if (onSource != null)
               const PopupMenuItem<int>(
                 value: 2,
-                child: _OverflowRow(icon: Icons.open_in_new_rounded, label: 'Source officielle'),
+                child: _OverflowRow(
+                  icon: Icons.open_in_new_rounded,
+                  label: 'Source officielle',
+                ),
               ),
           ],
         ),
@@ -628,7 +715,12 @@ class _OverflowRow extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: AppColors.goldLight),
         const SizedBox(width: AppSpacing.sm),
-        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary)),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
+        ),
       ],
     );
   }
@@ -658,7 +750,9 @@ class _RoundIcon extends StatelessWidget {
               : AppColors.legalBlueDark.withValues(alpha: 0.5),
           shape: CircleBorder(
             side: BorderSide(
-              color: active ? AppColors.gold.withValues(alpha: 0.6) : AppColors.glassBorder,
+              color: active
+                  ? AppColors.gold.withValues(alpha: 0.6)
+                  : AppColors.glassBorder,
               width: 0.6,
             ),
           ),
@@ -667,7 +761,11 @@ class _RoundIcon extends StatelessWidget {
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(7),
-              child: Icon(icon, size: 18, color: active ? AppColors.goldLight : AppColors.textSecondary),
+              child: Icon(
+                icon,
+                size: 18,
+                color: active ? AppColors.goldLight : AppColors.textSecondary,
+              ),
             ),
           ),
         ),
@@ -686,94 +784,146 @@ class _DocumentHero extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final words = _wordCount(document.fullContent);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 66,
-          height: 66,
-          child: Stack(
-            alignment: Alignment.center,
+    final pdfAvailable = pdfUrlForDocument(document) != null;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.legalBlueDark.withValues(alpha: 0.7),
+            AppColors.nightBlueDeep.withValues(alpha: 0.46),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.nightBlueDeep.withValues(alpha: 0.24),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      AppColors.gold.withValues(alpha: 0.28),
-                      AppColors.gold.withValues(alpha: 0),
-                    ],
-                  ),
-                ),
-                child: const SizedBox.expand(),
-              ),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.small),
-                child: ShimmerSweep(
-                  duration: const Duration(milliseconds: 4200),
-                  child: DocumentCategoryBadge(type: document.type, size: 58),
-                ),
+              const _MiniLabel('Fiche document'),
+              const Spacer(),
+              _ReaderModeBadge(
+                label: pdfAvailable ? 'Lecture PDF' : 'Lecture JurisIA',
+                icon: pdfAvailable
+                    ? Icons.picture_as_pdf_rounded
+                    : Icons.menu_book_rounded,
+                tone: pdfAvailable ? AppColors.success : AppColors.cobaltLight,
               ),
             ],
           ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          document.title,
-          style: textTheme.displaySmall?.copyWith(height: 1.12),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          document.reference,
-          style: textTheme.titleSmall?.copyWith(
-            color: AppColors.goldLight,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Container(
-          width: 60,
-          height: 2,
-          decoration: BoxDecoration(
-            gradient: AppGradients.goldSheen,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        if (document.summary.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            document.summary,
-            style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
-              height: 1.6,
+          SizedBox(
+            width: 66,
+            height: 66,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.gold.withValues(alpha: 0.28),
+                        AppColors.gold.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                  child: const SizedBox.expand(),
+                ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.small),
+                  child: ShimmerSweep(
+                    duration: const Duration(milliseconds: 4200),
+                    child: DocumentCategoryBadge(type: document.type, size: 58),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-        const SizedBox(height: AppSpacing.md),
-        Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: 6,
-          children: [
-            _MetaItem(icon: Icons.event_rounded, label: 'Publié le ${_formatDate(document.datePublication)}'),
-            if (document.dateEntreeEnVigueur != null)
-              _MetaItem(
-                icon: Icons.play_circle_outline_rounded,
-                label: 'En vigueur depuis le ${_formatDate(document.dateEntreeEnVigueur!)}',
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            document.title,
+            style: textTheme.displaySmall?.copyWith(height: 1.12),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            document.reference,
+            style: textTheme.titleSmall?.copyWith(
+              color: AppColors.goldLight,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            width: 60,
+            height: 2,
+            decoration: BoxDecoration(
+              gradient: AppGradients.goldSheen,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          if (document.summary.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              document.summary,
+              style: textTheme.bodyLarge?.copyWith(
+                color: AppColors.textSecondary,
+                fontStyle: FontStyle.italic,
+                height: 1.6,
               ),
-            _MetaItem(icon: Icons.balance_rounded, label: document.domain.label),
-            if (document.isStructured)
-              _MetaItem(
-                icon: Icons.format_list_numbered_rounded,
-                label: '${document.articles.length} article${document.articles.length > 1 ? "s" : ""}',
-              )
-            else if (words > 0)
-              _MetaItem(icon: Icons.notes_rounded, label: '≈ ${_thousands(words)} mots'),
-            if (document.status != LegalDocumentStatus.enVigueur)
-              _MetaItem(icon: Icons.gavel_rounded, label: document.status.label),
+            ),
           ],
-        ),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: 6,
+            children: [
+              _MetaItem(
+                icon: Icons.event_rounded,
+                label: 'Publié le ${_formatDate(document.datePublication)}',
+              ),
+              if (document.dateEntreeEnVigueur != null)
+                _MetaItem(
+                  icon: Icons.play_circle_outline_rounded,
+                  label:
+                      'En vigueur depuis le ${_formatDate(document.dateEntreeEnVigueur!)}',
+                ),
+              _MetaItem(
+                icon: Icons.balance_rounded,
+                label: document.domain.label,
+              ),
+              if (document.isStructured)
+                _MetaItem(
+                  icon: Icons.format_list_numbered_rounded,
+                  label:
+                      '${document.articles.length} article${document.articles.length > 1 ? "s" : ""}',
+                )
+              else if (words > 0)
+                _MetaItem(
+                  icon: Icons.notes_rounded,
+                  label: '≈ ${_thousands(words)} mots',
+                ),
+              if (document.status != LegalDocumentStatus.enVigueur)
+                _MetaItem(
+                  icon: Icons.gavel_rounded,
+                  label: document.status.label,
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -803,7 +953,9 @@ class _MetaItem extends StatelessWidget {
         const SizedBox(width: 5),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -820,17 +972,20 @@ class _ReadingBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final readingStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
-          fontFamily: 'Lora',
-          color: AppColors.textPrimary,
-          height: 1.9,
-          fontSize: 17,
-        );
+      fontFamily: 'Lora',
+      color: AppColors.textPrimary,
+      height: 1.9,
+      fontSize: 17,
+    );
 
     final paragraphs = _paragraphs(content);
     if (paragraphs.isEmpty) {
       return Text(
         "Le texte intégral de ce document n'est pas encore disponible.",
-        style: readingStyle?.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+        style: readingStyle?.copyWith(
+          color: AppColors.textSecondary,
+          fontStyle: FontStyle.italic,
+        ),
       );
     }
 
@@ -849,6 +1004,46 @@ class _ReadingBody extends StatelessWidget {
             ),
         ],
       ],
+    );
+  }
+}
+
+class _ReaderModeBadge extends StatelessWidget {
+  const _ReaderModeBadge({
+    required this.label,
+    required this.icon,
+    required this.tone,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color tone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: tone.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: tone),
+          const SizedBox(width: 5),
+          Text(
+            label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: tone,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -882,9 +1077,7 @@ class _DropCapParagraph extends StatelessWidget {
                     fontSize: 50,
                     height: 0.9,
                     color: AppColors.gold,
-                    shadows: [
-                      Shadow(color: Color(0x55C9A227), blurRadius: 14),
-                    ],
+                    shadows: [Shadow(color: Color(0x55C9A227), blurRadius: 14)],
                   ),
                 ),
               ),
@@ -902,11 +1095,11 @@ class _DropCapParagraph extends StatelessWidget {
 
 TextStyle? _articleReadingStyle(BuildContext context) =>
     Theme.of(context).textTheme.bodyLarge?.copyWith(
-          fontFamily: 'Lora',
-          color: AppColors.textPrimary,
-          height: 1.85,
-          fontSize: 16.5,
-        );
+      fontFamily: 'Lora',
+      color: AppColors.textPrimary,
+      height: 1.85,
+      fontSize: 16.5,
+    );
 
 /// Renvoie les segments de [current] qui n'apparaissent pas dans [previous]
 /// (nouveaux titres de division à afficher au-dessus de l'article).
@@ -942,7 +1135,9 @@ class _ArticleList extends StatelessWidget {
         KeyedSubtree(
           key: itemKeys[i],
           child: Padding(
-            padding: EdgeInsets.only(top: i == 0 && divisions.isEmpty ? 0 : AppSpacing.xl),
+            padding: EdgeInsets.only(
+              top: i == 0 && divisions.isEmpty ? 0 : AppSpacing.xl,
+            ),
             child: _ArticleBlock(article: articles[i], readingStyle: reading),
           ),
         ),
@@ -950,7 +1145,10 @@ class _ArticleList extends StatelessWidget {
       previousPath = articles[i].path;
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    );
   }
 }
 
@@ -963,18 +1161,21 @@ class _DivisionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: isFirst ? 0 : AppSpacing.xxl, bottom: AppSpacing.xs),
+      padding: EdgeInsets.only(
+        top: isFirst ? 0 : AppSpacing.xxl,
+        bottom: AppSpacing.xs,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             text.toUpperCase(),
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.goldLight,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.4,
-                  height: 1.3,
-                ),
+              color: AppColors.goldLight,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              height: 1.3,
+            ),
           ),
           const SizedBox(height: 8),
           Container(
@@ -1011,7 +1212,10 @@ class _ArticleBlock extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.small),
                 color: AppColors.gold.withValues(alpha: 0.13),
-                border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 0.7),
+                border: Border.all(
+                  color: AppColors.gold.withValues(alpha: 0.45),
+                  width: 0.7,
+                ),
               ),
               child: Text(
                 'Art. ${article.number}',
@@ -1040,7 +1244,11 @@ class _ArticleBlock extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        SelectableText(article.text, textAlign: TextAlign.justify, style: readingStyle),
+        SelectableText(
+          article.text,
+          textAlign: TextAlign.justify,
+          style: readingStyle,
+        ),
       ],
     );
   }
@@ -1049,7 +1257,11 @@ class _ArticleBlock extends StatelessWidget {
 /// Sommaire en rail latéral (desktop large) avec surlignage de l'article
 /// courant.
 class _SommaireRail extends StatelessWidget {
-  const _SommaireRail({required this.articles, required this.active, required this.onTap});
+  const _SommaireRail({
+    required this.articles,
+    required this.active,
+    required this.onTap,
+  });
 
   final List<LegalArticle> articles;
   final int active;
@@ -1058,7 +1270,12 @@ class _SommaireRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.sm, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.sm,
+        AppSpacing.xxl,
+      ),
       child: _SommaireBody(articles: articles, active: active, onTap: onTap),
     );
   }
@@ -1145,9 +1362,13 @@ class _SommairePanelState extends State<_SommairePanel> {
             ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 220),
-            crossFadeState: _expanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+            crossFadeState: _expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
             firstChild: Padding(
-              padding: EdgeInsets.only(top: widget.startCollapsed ? AppSpacing.sm : 0),
+              padding: EdgeInsets.only(
+                top: widget.startCollapsed ? AppSpacing.sm : 0,
+              ),
               child: _SommaireBody(
                 articles: widget.articles,
                 active: widget.active,
@@ -1259,14 +1480,19 @@ class _SommaireItemState extends State<_SommaireItem> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             margin: const EdgeInsets.symmetric(vertical: 1),
-            padding: const EdgeInsets.fromLTRB(AppSpacing.sm, 6, AppSpacing.sm, 6),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              6,
+              AppSpacing.sm,
+              6,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.small),
               color: active
                   ? AppColors.gold.withValues(alpha: 0.14)
                   : _hovered
-                      ? Colors.white.withValues(alpha: 0.04)
-                      : Colors.transparent,
+                  ? Colors.white.withValues(alpha: 0.04)
+                  : Colors.transparent,
               border: Border(
                 left: BorderSide(
                   color: active ? AppColors.gold : Colors.transparent,
@@ -1291,11 +1517,15 @@ class _SommaireItemState extends State<_SommaireItem> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    widget.heading.isEmpty ? 'Article ${widget.number}' : widget.heading,
+                    widget.heading.isEmpty
+                        ? 'Article ${widget.number}'
+                        : widget.heading,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.labelSmall?.copyWith(
-                      color: active ? AppColors.textPrimary : AppColors.textSecondary,
+                      color: active
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary,
                       fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                       height: 1.25,
                     ),
@@ -1333,13 +1563,20 @@ class _OutlineFallback extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.hourglass_top_rounded, size: 16, color: AppColors.goldLight),
+                  const Icon(
+                    Icons.hourglass_top_rounded,
+                    size: 16,
+                    color: AppColors.goldLight,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       "Le texte intégral, article par article, est en cours d'intégration "
                       'dans JurisIA.',
-                      style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.4),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -1347,12 +1584,15 @@ class _OutlineFallback extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Text(
                 'En attendant, consultez la version officielle et à jour :',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               _ActionButton(
                 icon: Icons.open_in_new_rounded,
-                label: 'Consulter sur ${document.officialSourceName ?? "la source officielle"}',
+                label:
+                    'Consulter sur ${document.officialSourceName ?? "la source officielle"}',
                 filled: true,
                 onTap: onSource,
               ),
@@ -1382,7 +1622,10 @@ class _OutlineFallback extends StatelessWidget {
                   Expanded(
                     child: Text(
                       line,
-                      style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary, height: 1.4),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -1411,9 +1654,15 @@ class _FactSheet extends StatelessWidget {
           _FactRow(label: 'Catégorie', value: document.type.label),
           _FactRow(label: 'Branche', value: document.domain.label),
           _FactRow(label: 'Référence', value: document.reference),
-          _FactRow(label: 'Publication', value: _formatDate(document.datePublication)),
+          _FactRow(
+            label: 'Publication',
+            value: _formatDate(document.datePublication),
+          ),
           if (document.dateEntreeEnVigueur != null)
-            _FactRow(label: 'Entrée en vigueur', value: _formatDate(document.dateEntreeEnVigueur!)),
+            _FactRow(
+              label: 'Entrée en vigueur',
+              value: _formatDate(document.dateEntreeEnVigueur!),
+            ),
           if (document.viewCount > 0)
             _FactRow(label: 'Consultations', value: '${document.viewCount}'),
           if (document.tags.isNotEmpty) ...[
@@ -1423,7 +1672,9 @@ class _FactSheet extends StatelessWidget {
             Wrap(
               spacing: 6,
               runSpacing: 5,
-              children: [for (final tag in document.tags) DocumentTag(label: tag)],
+              children: [
+                for (final tag in document.tags) DocumentTag(label: tag),
+              ],
             ),
           ],
         ],
@@ -1450,13 +1701,18 @@ class _FactRow extends StatelessWidget {
             width: 116,
             child: Text(
               label,
-              style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+              ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary, height: 1.35),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textPrimary,
+                height: 1.35,
+              ),
             ),
           ),
         ],
@@ -1513,9 +1769,9 @@ class _FamilyPdfCard extends StatelessWidget {
                 Text(
                   'Version PDF',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1523,9 +1779,9 @@ class _FamilyPdfCard extends StatelessWidget {
                       ? 'Le document de la famille est disponible dans son format PDF original.'
                       : 'Le PDF original doit encore être rattaché à cette fiche dans le corpus.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
                 if (available) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -1539,8 +1795,8 @@ class _FamilyPdfCard extends StatelessWidget {
                   Text(
                     'La source officielle reste accessible depuis les actions du document.',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppColors.textDisabled,
-                        ),
+                      color: AppColors.textDisabled,
+                    ),
                   ),
                 ],
               ],
@@ -1582,18 +1838,27 @@ class _ActionStack extends StatelessWidget {
         ),
         if (onCopy != null) ...[
           const SizedBox(height: 8),
-          _ActionButton(icon: Icons.copy_rounded, label: 'Copier le texte', onTap: onCopy!),
+          _ActionButton(
+            icon: Icons.copy_rounded,
+            label: 'Copier le texte',
+            onTap: onCopy!,
+          ),
         ],
         if (onDownload != null) ...[
           const SizedBox(height: 8),
-          _ActionButton(icon: Icons.download_rounded, label: 'Télécharger', onTap: onDownload!),
+          _ActionButton(
+            icon: Icons.download_rounded,
+            label: 'Télécharger',
+            onTap: onDownload!,
+          ),
         ],
         if (sourceUrl != null && sourceUrl!.isNotEmpty) ...[
           const SizedBox(height: 8),
           _ActionButton(
             icon: Icons.open_in_new_rounded,
             label: 'Consulter sur ${sourceName ?? "la source officielle"}',
-            onTap: () => launchUrl(Uri.parse(sourceUrl!), webOnlyWindowName: '_blank'),
+            onTap: () =>
+                launchUrl(Uri.parse(sourceUrl!), webOnlyWindowName: '_blank'),
           ),
         ],
       ],
@@ -1642,10 +1907,12 @@ class _ActionButtonState extends State<_ActionButton> {
               color: filled
                   ? null
                   : _hovered
-                      ? AppColors.gold.withValues(alpha: 0.12)
-                      : AppColors.legalBlueDark.withValues(alpha: 0.5),
+                  ? AppColors.gold.withValues(alpha: 0.12)
+                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
               border: Border.all(
-                color: filled ? Colors.transparent : AppColors.gold.withValues(alpha: 0.5),
+                color: filled
+                    ? Colors.transparent
+                    : AppColors.gold.withValues(alpha: 0.5),
                 width: 0.8,
               ),
             ),
@@ -1661,9 +1928,11 @@ class _ActionButtonState extends State<_ActionButton> {
                 Text(
                   widget.label,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: filled ? AppColors.nightBlueDeep : AppColors.goldLight,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: filled
+                        ? AppColors.nightBlueDeep
+                        : AppColors.goldLight,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -1707,16 +1976,25 @@ class _RelatedDocs extends StatelessWidget {
                           doc.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleSmall?.copyWith(fontSize: 12.5, height: 1.2),
+                          style: textTheme.titleSmall?.copyWith(
+                            fontSize: 12.5,
+                            height: 1.2,
+                          ),
                         ),
                         Text(
                           doc.type.label,
-                          style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight),
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.goldLight,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textSecondary),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: AppColors.textSecondary,
+                  ),
                 ],
               ),
             ),
@@ -1747,11 +2025,11 @@ class _MiniLabel extends StatelessWidget {
         Text(
           text.toUpperCase(),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.textDisabled,
-                fontWeight: FontWeight.w700,
-                letterSpacing: AppLetterSpacing.caps,
-                fontSize: 10.5,
-              ),
+            color: AppColors.textDisabled,
+            fontWeight: FontWeight.w700,
+            letterSpacing: AppLetterSpacing.caps,
+            fontSize: 10.5,
+          ),
         ),
       ],
     );
@@ -1767,9 +2045,12 @@ class _ReaderGlow extends StatefulWidget {
   State<_ReaderGlow> createState() => _ReaderGlowState();
 }
 
-class _ReaderGlowState extends State<_ReaderGlow> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 26))..repeat();
+class _ReaderGlowState extends State<_ReaderGlow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 26),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1781,7 +2062,8 @@ class _ReaderGlowState extends State<_ReaderGlow> with SingleTickerProviderState
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _GlowPainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _GlowPainter(_controller.value)),
     );
   }
 }

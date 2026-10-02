@@ -1162,6 +1162,44 @@ class _SelectedCollectionHeader extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        Expanded(
+                          child: Text(
+                            'PARCOURS DES PACKS',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.textDisabled,
+                              letterSpacing: 1.15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${position.toString().padLeft(2, '0')} / ${libraryCollections.length.toString().padLeft(2, '0')}',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.goldLight,
+                            fontWeight: FontWeight.w800,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: LinearProgressIndicator(
+                        value: position / libraryCollections.length,
+                        minHeight: 3,
+                        backgroundColor: Colors.white.withValues(alpha: 0.07),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.gold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
                         if (!compact) ...[
                           icon,
                           const SizedBox(width: AppSpacing.md),
@@ -2091,12 +2129,18 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      _DocumentAccessBadge(hasPdf: hasPdf),
-                      const SizedBox(height: 7),
-                      if (doc.awaitingFullText) ...[
-                        const SummaryOnlyBadge(compact: true),
-                        const SizedBox(height: 6),
-                      ],
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _DocumentAccessBadge(hasPdf: hasPdf),
+                          _DocumentStatusBadge(status: doc.status),
+                          if (doc.awaitingFullText)
+                            const SummaryOnlyBadge(compact: true),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
                       Wrap(
                         spacing: 5,
                         runSpacing: 4,
@@ -2179,6 +2223,55 @@ class _DocumentAccessBadge extends StatelessWidget {
               fontSize: 9,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DocumentStatusBadge extends StatelessWidget {
+  const _DocumentStatusBadge({required this.status});
+
+  final LegalDocumentStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon) = switch (status) {
+      LegalDocumentStatus.enVigueur => (
+        AppColors.success,
+        Icons.verified_rounded,
+      ),
+      LegalDocumentStatus.modifie => (AppColors.warning, Icons.update_rounded),
+      LegalDocumentStatus.abroge => (
+        AppColors.textDisabled,
+        Icons.history_rounded,
+      ),
+      LegalDocumentStatus.projet => (
+        AppColors.cobaltLight,
+        Icons.edit_note_rounded,
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: color),
+          const SizedBox(width: 4),
+          Text(
+            status.label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

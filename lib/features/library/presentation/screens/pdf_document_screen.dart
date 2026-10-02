@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../theme/app_theme.dart';
@@ -40,7 +41,7 @@ class PdfDocumentScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           title: Text(
-            document.title,
+            'Visionneuse PDF',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -49,10 +50,8 @@ class PdfDocumentScreen extends StatelessWidget {
               IconButton(
                 tooltip: 'Ouvrir le PDF dans un nouvel onglet',
                 icon: const Icon(Icons.open_in_new_rounded),
-                onPressed: () => launchUrl(
-                  Uri.parse(pdfUrl!),
-                  webOnlyWindowName: '_blank',
-                ),
+                onPressed: () =>
+                    launchUrl(Uri.parse(pdfUrl!), webOnlyWindowName: '_blank'),
               ),
           ],
         ),
@@ -61,9 +60,40 @@ class PdfDocumentScreen extends StatelessWidget {
             children: [
               _PdfDocumentToolbar(document: document),
               Expanded(
-                child: pdfUrl == null
-                    ? _PdfUnavailable(document: document)
-                    : PdfDocumentSurface(url: pdfUrl!),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                  ),
+                  child: pdfUrl == null
+                      ? _PdfUnavailable(document: document)
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadius.medium),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.03),
+                              border: Border.all(
+                                color: AppColors.gold.withValues(alpha: 0.22),
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.medium,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.nightBlueDeep.withValues(
+                                    alpha: 0.42,
+                                  ),
+                                  blurRadius: 28,
+                                  offset: const Offset(0, 14),
+                                ),
+                              ],
+                            ),
+                            child: PdfDocumentSurface(url: pdfUrl!),
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
@@ -80,42 +110,118 @@ class _PdfDocumentToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.nightBlueDeep.withValues(alpha: 0.88),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.nightBlueDeep.withValues(alpha: 0.96),
+            AppColors.legalBlueDark.withValues(alpha: 0.7),
+          ],
+        ),
         border: Border(
           bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.2)),
         ),
       ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.picture_as_pdf_rounded,
-            color: AppColors.gold,
-            size: 18,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Text(
-            'DOCUMENT PDF',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.gold,
-                  letterSpacing: 1.6,
-                  fontWeight: FontWeight.w800,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 640;
+          final identity = Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: AppGradients.goldMetallic,
+                  borderRadius: BorderRadius.circular(AppRadius.small),
                 ),
-          ),
-          const Spacer(),
-          Text(
-            document.officialSourceName ?? 'Bibliothèque JurisIA',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.textDisabled,
+                child: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  color: AppColors.nightBlueDeep,
+                  size: 20,
                 ),
-          ),
-        ],
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LECTURE PDF',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.goldLight,
+                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      document.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+          final source = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(color: AppColors.glassBorder),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.verified_rounded,
+                  size: 13,
+                  color: AppColors.success,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  document.officialSourceName ?? 'Source JurisIA',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          );
+          return compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    identity,
+                    const SizedBox(height: AppSpacing.sm),
+                    source,
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: identity),
+                    const SizedBox(width: AppSpacing.md),
+                    Flexible(child: source),
+                  ],
+                );
+        },
       ),
     );
   }
@@ -131,7 +237,8 @@ class _PdfUnavailable extends StatelessWidget {
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
+        child: GlassContainer(
+          borderColor: AppColors.gold.withValues(alpha: 0.22),
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -146,17 +253,17 @@ class _PdfUnavailable extends StatelessWidget {
                 'PDF non encore rattaché',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Le document « ${document.title} » est bien classé dans son pack, mais son fichier PDF doit être publié dans le stockage documentaire de JurisIA.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.45,
-                    ),
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
               ),
             ],
           ),
@@ -165,4 +272,3 @@ class _PdfUnavailable extends StatelessWidget {
     );
   }
 }
-
