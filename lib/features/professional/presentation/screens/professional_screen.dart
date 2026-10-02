@@ -820,6 +820,7 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    const categories = ProfessionalServiceCategory.primaryValues;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -833,7 +834,7 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Sélectionnez une catégorie, puis le type de service recherché — ou « Autre » si votre besoin est spécifique.',
+          'Quatre pôles, une entrée claire vers la bonne expertise. Sélectionnez ensuite une prestation, recherchez-la ou choisissez « Autre ».',
           style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -850,18 +851,12 @@ class _ProfessionalServiceNavigator extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                for (
-                  var i = 0;
-                  i < ProfessionalServiceCategory.primaryValues.length;
-                  i++
-                )
+                for (var i = 0; i < categories.length; i++)
                   SizedBox(
                     width: width,
                     child: _ServiceCategoryTile(
-                      category: ProfessionalServiceCategory.primaryValues[i],
-                      onTap: () => onSelectCategory(
-                        ProfessionalServiceCategory.primaryValues[i],
-                      ),
+                      category: categories[i],
+                      onTap: () => onSelectCategory(categories[i]),
                     ),
                   ),
               ],

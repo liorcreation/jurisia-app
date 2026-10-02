@@ -84,6 +84,7 @@ class _ProfessionalServiceRequestWizardState
   late ProfessionalServiceCategory _category;
   String? _selectedServiceType;
   bool _isOtherService = false;
+  bool _showAllServiceTypes = false;
   ProfessionalRequestUrgency _urgency = ProfessionalRequestUrgency.standard;
   ProfessionalAppointmentMode _appointmentMode =
       ProfessionalAppointmentMode.video;
@@ -91,6 +92,7 @@ class _ProfessionalServiceRequestWizardState
   int _step = 0;
 
   final _actTypeController = TextEditingController();
+  final _serviceSearchController = TextEditingController();
   final _detailsController = TextEditingController();
   final _attachmentsController = TextEditingController();
   final _nameController = TextEditingController();
@@ -118,6 +120,7 @@ class _ProfessionalServiceRequestWizardState
   @override
   void dispose() {
     _actTypeController.dispose();
+    _serviceSearchController.dispose();
     _detailsController.dispose();
     _attachmentsController.dispose();
     _nameController.dispose();
@@ -299,6 +302,8 @@ class _ProfessionalServiceRequestWizardState
                       selected: _category == category,
                       onTap: () => setState(() {
                         _category = category;
+                        _showAllServiceTypes = false;
+                        _serviceSearchController.clear();
                         if (_selectedServiceType != null &&
                             !category.serviceTypes.contains(
                               _selectedServiceType,
@@ -332,28 +337,21 @@ class _ProfessionalServiceRequestWizardState
               'Ces éléments servent à orienter le dossier et à préparer un devis juste.',
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Quel type de service souhaitez-vous lancer ?',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppColors.goldLight,
-            fontWeight: FontWeight.w700,
-          ),
+        _ServiceTypePicker(
+          category: _category,
+          searchController: _serviceSearchController,
+          selectedServiceType: _selectedServiceType,
+          showOther: _isOtherService,
+          showAll: _showAllServiceTypes,
+          onSearchChanged: (_) => setState(() {}),
+          onToggleShowAll: () =>
+              setState(() => _showAllServiceTypes = !_showAllServiceTypes),
+          onSelect: (serviceType) => setState(() {
+            _selectedServiceType = serviceType;
+            _isOtherService = serviceType == 'Autre';
+            if (!_isOtherService) _actTypeController.clear();
+          }),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        for (final serviceType in [..._category.serviceTypes, 'Autre']) ...[
-          _ServiceTypeChoice(
-            title: serviceType,
-            selected:
-                (_isOtherService && serviceType == 'Autre') ||
-                (!_isOtherService && _selectedServiceType == serviceType),
-            onTap: () => setState(() {
-              _selectedServiceType = serviceType;
-              _isOtherService = serviceType == 'Autre';
-              if (!_isOtherService) _actTypeController.clear();
-            }),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-        ],
         if (_isOtherService) ...[
           const SizedBox(height: AppSpacing.xs),
           TextField(
@@ -761,6 +759,182 @@ class _ServiceCategoryChoice extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ServiceTypePicker extends StatelessWidget {
+  const _ServiceTypePicker({
+    required this.category,
+    required this.searchController,
+    required this.selectedServiceType,
+    required this.showOther,
+    required this.showAll,
+    required this.onSearchChanged,
+    required this.onToggleShowAll,
+    required this.onSelect,
+  });
+
+  final ProfessionalServiceCategory category;
+  final TextEditingController searchController;
+  final String? selectedServiceType;
+  final bool showOther;
+  final bool showAll;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onToggleShowAll;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final query = searchController.text.trim().toLowerCase();
+    final matching = category.serviceTypes
+        .where((type) => type.toLowerCase().contains(query))
+        .toList(growable: false);
+    final visible = query.isNotEmpty || showAll
+        ? matching
+        : matching.take(6).toList(growable: false);
+    final canToggle = query.isEmpty && matching.length > 6;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Quel type de service souhaitez-vous lancer ?',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.goldLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            _ServiceCountPill(count: matching.length),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextField(
+          controller: searchController,
+          onChanged: onSearchChanged,
+          decoration: InputDecoration(
+            hintText:
+                'Rechercher parmi ${category.serviceTypes.length} prestations…',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: query.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Effacer la recherche',
+                    onPressed: () {
+                      searchController.clear();
+                      onSearchChanged('');
+                    },
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        if (visible.isEmpty)
+          const _NoServiceMatches()
+        else
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 520 ? 2 : 1;
+              final gap = AppSpacing.xs;
+              final width =
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final serviceType in visible)
+                    SizedBox(
+                      width: width,
+                      child: _ServiceTypeChoice(
+                        title: serviceType,
+                        selected:
+                            selectedServiceType == serviceType && !showOther,
+                        onTap: () => onSelect(serviceType),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        if (canToggle) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onToggleShowAll,
+              icon: Icon(
+                showAll ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                size: 17,
+              ),
+              label: Text(
+                showAll
+                    ? 'Réduire la liste'
+                    : 'Afficher les ${matching.length} prestations',
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.xs),
+        SizedBox(
+          width: double.infinity,
+          child: _ServiceTypeChoice(
+            title: 'Autre',
+            selected: showOther,
+            onTap: () => onSelect('Autre'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceCountPill extends StatelessWidget {
+  const _ServiceCountPill({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+    decoration: BoxDecoration(
+      color: AppColors.cobalt.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: AppColors.cobaltLight.withValues(alpha: 0.2)),
+    ),
+    child: Text(
+      '$count choix',
+      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+        color: AppColors.cobaltLight,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
+}
+
+class _NoServiceMatches extends StatelessWidget {
+  const _NoServiceMatches();
+
+  @override
+  Widget build(BuildContext context) => PremiumSurface(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    tone: PremiumSurfaceTone.glass,
+    child: Row(
+      children: [
+        const Icon(Icons.manage_search_rounded, color: AppColors.textDisabled),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            'Aucune prestation trouvée. Choisissez « Autre » pour préciser votre besoin.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ServiceTypeChoice extends StatelessWidget {
