@@ -28,6 +28,7 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
   final _messageController = TextEditingController();
+  bool _submitted = false;
 
   @override
   void dispose() {
@@ -51,16 +52,7 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       message: _messageController.text,
     );
     if (!mounted || !success) return;
-
-    Navigator.of(context).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Demande envoyée. Un ${widget.category.label.toLowerCase()} partenaire vous recontactera prochainement.',
-        ),
-        backgroundColor: AppColors.legalBlueDark,
-      ),
-    );
+    setState(() => _submitted = true);
   }
 
   @override
@@ -100,15 +92,42 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Vos coordonnées',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontFamily: 'Libre Caslon Display',
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Vos coordonnées',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(
+                    color: AppColors.gold.withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Text(
+                  '3 REPÈRES',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.goldLight,
+                    letterSpacing: AppLetterSpacing.caps,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Un seul moyen de contact suffit. Nous l’utiliserons uniquement pour le suivi de votre demande.',
+            'Un seul moyen de contact suffit. Ces informations servent uniquement au suivi de votre demande.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
               height: 1.35,
@@ -124,6 +143,7 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
               autofillHints: const [AutofillHints.name],
               maxLength: AppInputLimits.shortField,
               decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.person_outline_rounded),
                 labelText: 'Nom complet',
                 filled: false,
                 counterText: '',
@@ -136,9 +156,10 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
               controller: _contactController,
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.next,
-              keyboardType: TextInputType.emailAddress,
+              keyboardType: TextInputType.text,
               maxLength: AppInputLimits.shortField,
               decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.alternate_email_rounded),
                 labelText: 'Téléphone ou e-mail',
                 filled: false,
                 counterText: '',
@@ -155,6 +176,7 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
               maxLines: 4,
               maxLength: AppInputLimits.contactMessage,
               decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
                 labelText: 'Décrivez brièvement votre besoin',
                 alignLabelWithHint: true,
                 filled: false,
@@ -174,11 +196,98 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
         controller.errorMessage == null) {
       return null;
     }
-    return Text(
-      controller.errorMessage!,
-      style: Theme.of(
-        context,
-      ).textTheme.bodySmall?.copyWith(color: AppColors.error),
+    return GlassContainer(
+      borderColor: AppColors.error.withValues(alpha: 0.6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline_rounded, color: AppColors.error),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              controller.errorMessage!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.error,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _successCard(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return GlassContainer(
+      borderColor: AppColors.success.withValues(alpha: 0.55),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const GradientIconBadge(
+                icon: Icons.check_rounded,
+                size: 48,
+                gradient: LinearGradient(
+                  colors: [AppColors.success, Color(0xFF24704A)],
+                ),
+                iconColor: Colors.white,
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'DEMANDE TRANSMISE',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.success,
+                        letterSpacing: AppLetterSpacing.caps,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Votre demande est bien reçue',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontFamily: 'Libre Caslon Display',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Votre demande de mise en relation avec un ${widget.category.label.toLowerCase()} a été enregistrée. Un partenaire vous recontactera à partir des coordonnées indiquées.',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              const Icon(
+                Icons.verified_user_outlined,
+                size: 17,
+                color: AppColors.gold,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  'Vos informations restent réservées au suivi de cette demande.',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -260,36 +369,46 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                       AppSpacing.md,
                     ),
                     children: [
-                      if (notice != null) ...[
-                        notice,
+                      if (_submitted) ...[
+                        _successCard(context),
+                        const SizedBox(height: AppSpacing.lg),
+                        LuxuryElevatedButton(
+                          onPressed: () => Navigator.of(context).maybePop(),
+                          icon: Icons.check_rounded,
+                          child: const Text('Terminer'),
+                        ),
+                      ] else ...[
+                        if (notice != null) ...[
+                          notice,
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                        _fieldsCard(),
+                        if (error != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          error,
+                        ],
+                        const SizedBox(height: AppSpacing.lg),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 13,
+                              color: AppColors.textDisabled,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(color: AppColors.textDisabled),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        _submitButton(controller, submitting),
                         const SizedBox(height: AppSpacing.md),
                       ],
-                      _fieldsCard(),
-                      if (error != null) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        error,
-                      ],
-                      const SizedBox(height: AppSpacing.lg),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.lock_outline_rounded,
-                            size: 13,
-                            color: AppColors.textDisabled,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(color: AppColors.textDisabled),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _submitButton(controller, submitting),
-                      const SizedBox(height: AppSpacing.md),
                     ],
                   ),
                 ),
@@ -345,14 +464,18 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (notice != null) ...[
-                        notice,
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                      _fieldsCard(),
-                      if (error != null) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        error,
+                      if (_submitted) ...[
+                        _successCard(context),
+                      ] else ...[
+                        if (notice != null) ...[
+                          notice,
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                        _fieldsCard(),
+                        if (error != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          error,
+                        ],
                       ],
                     ],
                   ),
@@ -371,26 +494,34 @@ class _ContactRequestSheetState extends State<ContactRequestSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.lock_outline_rounded,
-                          size: 13,
-                          color: AppColors.textDisabled,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.textDisabled,
+                    if (_submitted)
+                      LuxuryElevatedButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: Icons.check_rounded,
+                        child: const Text('Terminer'),
+                      )
+                    else ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.lock_outline_rounded,
+                            size: 13,
+                            color: AppColors.textDisabled,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend la demande.',
+                              style: textTheme.labelSmall?.copyWith(
+                                color: AppColors.textDisabled,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _submitButton(controller, submitting),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _submitButton(controller, submitting),
+                    ],
                   ],
                 ),
               ),
