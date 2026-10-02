@@ -835,140 +835,131 @@ class _MobileLibrary extends StatelessWidget {
               child: IgnorePointer(child: _LibraryAmbience()),
             ),
             SafeArea(
-              child: Column(
-                children: [
-                  _SelectedCollectionHeader(
-                    collectionTag: controller.selectedCollectionTag!,
-                    count: results.length,
-                    totalCount: collectionDocuments.length,
-                    onBack: onClearAll,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: _RadiantSearchField(
-                      controller: searchController,
-                      onChanged: controller.updateKeyword,
-                      onClear: () {
-                        searchController.clear();
-                        controller.updateKeyword('');
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  SizedBox(
-                    height: 40,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      children: [
-                        _MobileFacet(
-                          gradient: AppGradients.goldMetallic,
-                          icon: Icons.apps_rounded,
-                          label: 'Tous',
-                          count: collectionDocuments.length,
-                          selected: controller.selectedType == null,
-                          onTap: () => controller.selectType(null),
-                        ),
-                        for (final type in LegalDocumentType.values)
-                          _MobileFacet(
-                            gradient: metallicGradientForDocumentType(type),
-                            icon: iconForDocumentType(type),
-                            label: type.label,
-                            count: counts[type] ?? 0,
-                            selected: controller.selectedType == type,
-                            onTap: () => controller.selectType(type),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.xs,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: _CorpusScopeBanner(),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: _ResultsBar(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+                child: Column(
+                  children: [
+                    _SelectedCollectionHeader(
+                      collectionTag: controller.selectedCollectionTag!,
                       count: results.length,
-                      hasFilters: controller.hasActiveFilters,
-                      onClear: onClearAll,
+                      totalCount: collectionDocuments.length,
+                      onBack: onClearAll,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Expanded(
-                    child: results.isEmpty
-                        ? _EmptyResults(onClear: onClearAll)
-                        // Sur téléphone, une colonne ; sur tablette, la
-                        // largeur permet deux cartes de front — la grille
-                        // se replie d'elle-même, jamais figée à 1 colonne.
-                        : LayoutBuilder(
-                            builder: (context, constraints) {
-                              // La largeur utile est celle qui reste une fois
-                              // ôtées les marges du défilement (posées plus
-                              // bas) : sans quoi deux cartes calculées sur la
-                              // largeur pleine débordent du couloir réel et le
-                              // Wrap n'en tient plus qu'une par ligne.
-                              final available =
-                                  constraints.maxWidth - AppSpacing.md * 2;
-                              final cols = available >= 640 ? 2 : 1;
-                              final cardWidth = cols == 1
-                                  ? available
-                                  : (available - AppSpacing.sm) / 2;
-                              return SingleChildScrollView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  AppSpacing.md,
-                                  AppSpacing.xs,
-                                  AppSpacing.md,
-                                  AppSpacing.xl,
-                                ),
-                                child: Wrap(
-                                  spacing: AppSpacing.sm,
-                                  runSpacing: AppSpacing.sm,
-                                  children: [
-                                    for (
-                                      var index = 0;
-                                      index < results.length;
-                                      index++
-                                    )
-                                      SizedBox(
-                                        width: cardWidth,
-                                        child: EntranceFadeSlide(
-                                          index: index,
-                                          child: _LibraryDocCard(
-                                            document: results[index],
-                                            onOpen: () =>
-                                                onOpenDetail(results[index].id),
-                                            onToggleFavorite: () =>
-                                                controller.toggleBookmark(
-                                                  results[index].id,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: _RadiantSearchField(
+                        controller: searchController,
+                        onChanged: controller.updateKeyword,
+                        onClear: () {
+                          searchController.clear();
+                          controller.updateKeyword('');
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(
+                      height: 40,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        children: [
+                          _MobileFacet(
+                            gradient: AppGradients.goldMetallic,
+                            icon: Icons.apps_rounded,
+                            label: 'Tous',
+                            count: collectionDocuments.length,
+                            selected: controller.selectedType == null,
+                            onTap: () => controller.selectType(null),
                           ),
-                  ),
-                ],
+                          for (final type in LegalDocumentType.values)
+                            _MobileFacet(
+                              gradient: metallicGradientForDocumentType(type),
+                              icon: iconForDocumentType(type),
+                              label: type.label,
+                              count: counts[type] ?? 0,
+                              selected: controller.selectedType == type,
+                              onTap: () => controller.selectType(type),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.xs,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: _CorpusScopeBanner(),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        0,
+                      ),
+                      child: _ResultsBar(
+                        count: results.length,
+                        hasFilters: controller.hasActiveFilters,
+                        onClear: onClearAll,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    if (results.isEmpty)
+                      _EmptyResults(onClear: onClearAll)
+                    else
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.xs,
+                          AppSpacing.md,
+                          AppSpacing.xl,
+                        ),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final available = constraints.maxWidth;
+                            final cols = available >= 640 ? 2 : 1;
+                            final cardWidth = cols == 1
+                                ? available
+                                : (available - AppSpacing.sm) / 2;
+                            return Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                for (
+                                  var index = 0;
+                                  index < results.length;
+                                  index++
+                                )
+                                  SizedBox(
+                                    width: cardWidth,
+                                    child: EntranceFadeSlide(
+                                      index: index,
+                                      child: _LibraryDocCard(
+                                        document: results[index],
+                                        onOpen: () =>
+                                            onOpenDetail(results[index].id),
+                                        onToggleFavorite: () => controller
+                                            .toggleBookmark(results[index].id),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
