@@ -164,6 +164,28 @@ void main() {
     },
   );
 
+  testWidgets('iPhone litigation title aligns with the navigation toolbar', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(428, 926);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation(platform: TargetPlatform.iOS));
+    await _settle(tester);
+
+    final title = find.text('Litiges et consultations');
+    final menu = find.byIcon(Icons.menu_rounded);
+    expect(title, findsOneWidget);
+    expect(menu, findsOneWidget);
+    expect(
+      tester.getRect(title).center.dy,
+      closeTo(tester.getRect(menu).center.dy, 2),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'Wide layout: the permanent JurisIA sidebar renders without overflow',
     (WidgetTester tester) async {

@@ -15,7 +15,6 @@ import '../../../../core/widgets/chat_composer.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
-import '../../../../core/widgets/ios_large_title_bar.dart';
 import '../../../../core/widgets/ios_new_consultation_sheet.dart';
 import '../../../../core/widgets/jurisia_mark.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
@@ -212,17 +211,11 @@ class _LitigationViewState extends State<_LitigationView> {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: platformStyle == AppPlatformStyle.ios
-            ? IosLargeTitleBar(
-                title: 'Litiges et consultations',
-                leading: const AppShellMenuButton(),
-                actions: [newConsultationAction],
-              )
-            : AppBar(
-                title: const Text('Litiges et consultations'),
-                leading: const AppShellMenuButton(),
-                actions: [newConsultationAction],
-              ),
+        appBar: AppBar(
+          title: const Text('Litiges et consultations'),
+          leading: const AppShellMenuButton(),
+          actions: [newConsultationAction],
+        ),
         body: SafeArea(child: chatBody),
       ),
     );
