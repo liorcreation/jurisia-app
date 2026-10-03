@@ -421,7 +421,10 @@ class _ReturnToAppButton extends StatelessWidget {
   Future<void> _open(BuildContext context) async {
     final routeName = ModalRoute.of(context)?.settings.name;
     if (routeName == '/admin') {
-      Navigator.of(context).pop();
+      // Sur mobile, le tiroir détient d'abord une LocalHistoryEntry sur la
+      // route `/admin`. Un simple pop() ne fait que fermer le tiroir ;
+      // popUntil continue ensuite jusqu'à sortir réellement de la console.
+      Navigator.of(context).popUntil((route) => route.settings.name != '/admin');
       return;
     }
 
