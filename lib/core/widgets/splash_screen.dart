@@ -56,7 +56,7 @@ class _JurisIASplashScreenState extends State<JurisIASplashScreen>
     super.initState();
     _intro = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 1750),
     );
     _ambient = AnimationController(
       vsync: this,
@@ -64,7 +64,7 @@ class _JurisIASplashScreenState extends State<JurisIASplashScreen>
     )..repeat();
     _outro = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 560),
+      duration: const Duration(milliseconds: 420),
     );
 
     _markOpacity = _seg(0.00, 0.26);
@@ -85,13 +85,20 @@ class _JurisIASplashScreenState extends State<JurisIASplashScreen>
     });
 
     _intro.forward().whenComplete(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 380));
+      await Future<void>.delayed(const Duration(milliseconds: 240));
       if (mounted) _outro.forward();
     });
   }
 
-  Animation<double> _seg(double begin, double end, {Curve curve = Curves.fastOutSlowIn}) {
-    return CurvedAnimation(parent: _intro, curve: Interval(begin, end, curve: curve));
+  Animation<double> _seg(
+    double begin,
+    double end, {
+    Curve curve = Curves.fastOutSlowIn,
+  }) {
+    return CurvedAnimation(
+      parent: _intro,
+      curve: Interval(begin, end, curve: curve),
+    );
   }
 
   @override
@@ -218,7 +225,9 @@ class _Seal extends StatelessWidget {
         if (sheen > 0 && sheen < 1)
           IgnorePointer(child: CustomPaint(painter: _SheenPainter(sheen))),
         IgnorePointer(
-          child: CustomPaint(painter: _DustPainter(t: ambient, opacity: markOpacity * 0.9)),
+          child: CustomPaint(
+            painter: _DustPainter(t: ambient, opacity: markOpacity * 0.9),
+          ),
         ),
       ],
     );
@@ -259,18 +268,20 @@ class _Seal extends StatelessWidget {
   }
 
   Widget _wordmark(BuildContext context) {
-    final spacing = 12.0 * (1 - wordSpacing) + AppLetterSpacing.headline * wordSpacing;
+    final spacing =
+        12.0 * (1 - wordSpacing) + AppLetterSpacing.headline * wordSpacing;
     return Opacity(
       opacity: wordOpacity.clamp(0.0, 1.0),
       child: ShaderMask(
-        shaderCallback: (bounds) => AppGradients.goldMetallic.createShader(bounds),
+        shaderCallback: (bounds) =>
+            AppGradients.goldMetallic.createShader(bounds),
         child: Text(
           'JurisIA',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                letterSpacing: spacing,
-                fontWeight: FontWeight.w700,
-              ),
+            color: Colors.white,
+            letterSpacing: spacing,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );
@@ -291,12 +302,12 @@ class _Seal extends StatelessWidget {
     return Opacity(
       opacity: (tagline * 0.85).clamp(0.0, 1.0),
       child: Text(
-        'ASSISTANT JURIDIQUE',
+        'DROIT BURKINABÈ  ·  ESPACE OHADA',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.goldLight,
-              letterSpacing: AppLetterSpacing.caps,
-              fontWeight: FontWeight.w600,
-            ),
+          color: AppColors.goldLight,
+          letterSpacing: AppLetterSpacing.caps,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -317,24 +328,58 @@ class _AuroraPainter extends CustomPainter {
     final p = t * 2 * math.pi;
     final reach = size.longestSide;
 
-    _blob(canvas, Offset(w * (0.84 + 0.06 * math.sin(p)), h * (0.08 + 0.05 * math.cos(p * 0.8))),
-        reach * 0.55, AppColors.gold, 0.14);
-    _blob(canvas, Offset(w * (0.10 + 0.06 * math.cos(p * 1.1)), h * (0.92 + 0.04 * math.sin(p))),
-        reach * 0.60, AppColors.cobalt, 0.10);
-    _blob(canvas, Offset(w * (0.50 + 0.10 * math.sin(p * 0.6)), h * (0.40 + 0.06 * math.cos(p))),
-        reach * 0.52, AppColors.legalBlueLight, 0.13);
+    _blob(
+      canvas,
+      Offset(
+        w * (0.84 + 0.06 * math.sin(p)),
+        h * (0.08 + 0.05 * math.cos(p * 0.8)),
+      ),
+      reach * 0.55,
+      AppColors.gold,
+      0.14,
+    );
+    _blob(
+      canvas,
+      Offset(
+        w * (0.10 + 0.06 * math.cos(p * 1.1)),
+        h * (0.92 + 0.04 * math.sin(p)),
+      ),
+      reach * 0.60,
+      AppColors.cobalt,
+      0.10,
+    );
+    _blob(
+      canvas,
+      Offset(
+        w * (0.50 + 0.10 * math.sin(p * 0.6)),
+        h * (0.40 + 0.06 * math.cos(p)),
+      ),
+      reach * 0.52,
+      AppColors.legalBlueLight,
+      0.13,
+    );
   }
 
-  void _blob(Canvas canvas, Offset center, double radius, Color color, double maxAlpha) {
+  void _blob(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Color color,
+    double maxAlpha,
+  ) {
     final paint = Paint()
       ..shader = RadialGradient(
-        colors: [color.withValues(alpha: maxAlpha), color.withValues(alpha: 0)],
+        colors: [
+          color.withValues(alpha: maxAlpha),
+          color.withValues(alpha: 0),
+        ],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
     canvas.drawCircle(center, radius, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _AuroraPainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _AuroraPainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 /// La lumière qui émane de la marque : un bassin doré, une gerbe de rayons
@@ -433,7 +478,12 @@ class _SheenPainter extends CustomPainter {
 
     final bandWidth = size.width * 0.6;
     final travel = (progress * 2.3 - 0.65) * size.width;
-    final rect = Rect.fromLTWH(travel - bandWidth / 2, -size.height, bandWidth, size.height * 3);
+    final rect = Rect.fromLTWH(
+      travel - bandWidth / 2,
+      -size.height,
+      bandWidth,
+      size.height * 3,
+    );
     final gradient = LinearGradient(
       begin: Alignment.centerLeft,
       end: Alignment.centerRight,
@@ -461,7 +511,8 @@ class _SheenPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SheenPainter oldDelegate) => oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _SheenPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
 
 /// Poussière d'or en suspension : quelques motes qui remontent lentement en
@@ -492,8 +543,13 @@ class _DustPainter extends CustomPainter {
     for (final mote in _motes) {
       final progress = (mote.phase + t * mote.speed) % 1.0;
       final y = size.height * (1.05 - progress * 1.15);
-      final x = size.width * mote.x + math.sin(progress * 2 * math.pi + mote.drift) * 16;
-      final alpha = (math.sin(progress * math.pi) * 0.5 * opacity).clamp(0.0, 1.0);
+      final x =
+          size.width * mote.x +
+          math.sin(progress * 2 * math.pi + mote.drift) * 16;
+      final alpha = (math.sin(progress * math.pi) * 0.5 * opacity).clamp(
+        0.0,
+        1.0,
+      );
       paint.color = AppColors.goldLight.withValues(alpha: alpha);
       canvas.drawCircle(Offset(x, y), mote.radius, paint);
     }

@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show GoTrueClientSignInProvider, OAuthProvider;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show GoTrueClientSignInProvider, OAuthProvider;
 
 import '../../../../core/legal/legal_document_screen.dart';
 import '../../../../core/legal/legal_documents.dart';
@@ -50,11 +51,11 @@ class _UnconfiguredAuthRepository implements AuthRepository {
     required String password,
     String? fullName,
     String? profession,
-  }) =>
-      _unavailable();
+  }) => _unavailable();
 
   @override
-  Future<void> signIn({required String email, required String password}) => _unavailable();
+  Future<void> signIn({required String email, required String password}) =>
+      _unavailable();
 
   @override
   Future<void> signOut() => _unavailable();
@@ -62,8 +63,11 @@ class _UnconfiguredAuthRepository implements AuthRepository {
   @override
   Future<void> recordTermsAcceptance() async {}
 
-  Future<Never> _unavailable() =>
-      Future.error(StateError('Aucun projet Supabase configuré (SUPABASE_URL / SUPABASE_ANON_KEY).'));
+  Future<Never> _unavailable() => Future.error(
+    StateError(
+      'Aucun projet Supabase configuré (SUPABASE_URL / SUPABASE_ANON_KEY).',
+    ),
+  );
 }
 
 /// Écran de connexion / inscription — porte d'entrée de l'application tant
@@ -124,12 +128,16 @@ class _AuthViewState extends State<_AuthView> {
     try {
       await SupabaseConfig.client.auth.signInWithOAuth(
         provider,
-        redirectTo: kIsWeb ? Uri.base.origin : 'com.jurisia.app://login-callback/',
+        redirectTo: kIsWeb
+            ? Uri.base.origin
+            : 'com.jurisia.app://login-callback/',
       );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connexion impossible pour le moment : $error')),
+          SnackBar(
+            content: Text('Connexion impossible pour le moment : $error'),
+          ),
         );
       }
     } finally {
@@ -140,9 +148,13 @@ class _AuthViewState extends State<_AuthView> {
   @override
   void initState() {
     super.initState();
-    _termsRecognizer = TapGestureRecognizer()..onTap = () => _openDocument('CGU', LegalDocuments.termsOfService);
+    _termsRecognizer = TapGestureRecognizer()
+      ..onTap = () => _openDocument('CGU', LegalDocuments.termsOfService);
     _privacyRecognizer = TapGestureRecognizer()
-      ..onTap = () => _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy);
+      ..onTap = () => _openDocument(
+        'Politique de confidentialité',
+        LegalDocuments.privacyPolicy,
+      );
   }
 
   @override
@@ -157,7 +169,9 @@ class _AuthViewState extends State<_AuthView> {
 
   void _openDocument(String title, String content) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => LegalDocumentScreen(title: title, content: content)),
+      MaterialPageRoute(
+        builder: (_) => LegalDocumentScreen(title: title, content: content),
+      ),
     );
   }
 
@@ -223,22 +237,26 @@ class _AuthViewState extends State<_AuthView> {
                         Text(
                           'JurisIA',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontFamily: 'Libre Caslon Display',
-                              ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(fontFamily: 'Libre Caslon Display'),
                         ),
+                        const SizedBox(height: AppSpacing.sm),
+                        const _AuthContextPill(),
                         if (!isCompact) ...[
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppSpacing.sm),
                           Text(
-                            'L\'assistant juridique du Burkina & de l\'OHADA',
+                            'Votre espace pour comprendre, apprendre et agir en droit.',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: AppColors.textSecondary),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  height: 1.4,
+                                ),
                           ),
                         ],
-                        SizedBox(height: isCompact ? AppSpacing.lg : AppSpacing.xl),
+                        SizedBox(
+                          height: isCompact ? AppSpacing.lg : AppSpacing.xl,
+                        ),
                         _AuthForm(
                           controller: controller,
                           nameController: _nameController,
@@ -255,12 +273,17 @@ class _AuthViewState extends State<_AuthView> {
                           spacing: AppSpacing.sm,
                           children: [
                             TextButton(
-                              onPressed: () => _openDocument('CGU', LegalDocuments.termsOfService),
+                              onPressed: () => _openDocument(
+                                'CGU',
+                                LegalDocuments.termsOfService,
+                              ),
                               child: const Text('CGU'),
                             ),
                             TextButton(
-                              onPressed: () =>
-                                  _openDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
+                              onPressed: () => _openDocument(
+                                'Politique de confidentialité',
+                                LegalDocuments.privacyPolicy,
+                              ),
                               child: const Text('Politique de confidentialité'),
                             ),
                           ],
@@ -273,7 +296,9 @@ class _AuthViewState extends State<_AuthView> {
               Positioned(
                 top: AppSpacing.sm,
                 left: AppSpacing.sm,
-                child: _GlassBackButton(onTap: () => setState(() => _showForm = false)),
+                child: _GlassBackButton(
+                  onTap: () => setState(() => _showForm = false),
+                ),
               ),
             ],
           ),
@@ -307,7 +332,9 @@ class _ConfigWarning extends StatelessWidget {
         "Aucun projet Supabase configuré. Relancez avec "
         '--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=... '
         'pour activer la connexion.',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.warning),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: AppColors.warning),
       ),
     );
   }
@@ -336,7 +363,13 @@ class _MobileThreshold extends StatelessWidget {
   final void Function(OAuthProvider provider) onSignInWithProvider;
   final void Function(String title, String content) onOpenDocument;
 
-  static const _words = ['Comprendre', 'Rédiger', 'Consulter', 'Réviser', 'JurisIA'];
+  static const _words = [
+    'Comprendre',
+    'Rédiger',
+    'Consulter',
+    'Réviser',
+    'JurisIA',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -351,7 +384,9 @@ class _MobileThreshold extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xl,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -453,8 +488,14 @@ class _CyclingHeadlineState extends State<_CyclingHeadline> {
         ),
         children: [
           TextSpan(text: visible),
-          const WidgetSpan(alignment: PlaceholderAlignment.middle, child: SizedBox(width: 8)),
-          const WidgetSpan(alignment: PlaceholderAlignment.middle, child: _PulsingCursorMark()),
+          const WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: SizedBox(width: 8),
+          ),
+          const WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: _PulsingCursorMark(),
+          ),
         ],
       ),
     );
@@ -468,9 +509,12 @@ class _PulsingCursorMark extends StatefulWidget {
   State<_PulsingCursorMark> createState() => _PulsingCursorMarkState();
 }
 
-class _PulsingCursorMarkState extends State<_PulsingCursorMark> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+class _PulsingCursorMarkState extends State<_PulsingCursorMark>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -482,7 +526,8 @@ class _PulsingCursorMarkState extends State<_PulsingCursorMark> with SingleTicke
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _c,
-      builder: (context, child) => Opacity(opacity: 0.55 + 0.45 * _c.value, child: child),
+      builder: (context, child) =>
+          Opacity(opacity: 0.55 + 0.45 * _c.value, child: child),
       child: const JurisIAMark(size: 22),
     );
   }
@@ -514,24 +559,66 @@ class _ThresholdActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: rounded ? const BorderRadius.vertical(top: Radius.circular(28)) : BorderRadius.circular(AppRadius.large),
+        borderRadius: rounded
+            ? const BorderRadius.vertical(top: Radius.circular(28))
+            : BorderRadius.circular(AppRadius.large),
         gradient: AppGradients.smokedGlass,
         border: rounded
-            ? Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.8))
-            : Border.all(color: AppColors.gold.withValues(alpha: 0.18), width: 0.8),
+            ? Border(
+                top: BorderSide(
+                  color: AppColors.gold.withValues(alpha: 0.18),
+                  width: 0.8,
+                ),
+              )
+            : Border.all(
+                color: AppColors.gold.withValues(alpha: 0.18),
+                width: 0.8,
+              ),
         boxShadow: AppShadows.floating,
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.lock_outline_rounded,
+                  size: 14,
+                  color: AppColors.goldLight,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'UN ACCÈS, TOUS VOS ESPACES',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
             _OAuthPillButton(
               label: 'Continuer avec Google',
               tone: _PillTone.light,
               leading: const _GoogleMark(size: 19),
-              onTap: oauthInFlight ? null : () => onSignInWithProvider(OAuthProvider.google),
+              onTap: oauthInFlight
+                  ? null
+                  : () => onSignInWithProvider(OAuthProvider.google),
             ),
             const SizedBox(height: AppSpacing.sm),
             _OAuthPillButton(
@@ -545,12 +632,15 @@ class _ThresholdActions extends StatelessWidget {
               spacing: AppSpacing.sm,
               children: [
                 TextButton(
-                  onPressed: () => onOpenDocument('CGU', LegalDocuments.termsOfService),
+                  onPressed: () =>
+                      onOpenDocument('CGU', LegalDocuments.termsOfService),
                   child: const Text('CGU'),
                 ),
                 TextButton(
-                  onPressed: () =>
-                      onOpenDocument('Politique de confidentialité', LegalDocuments.privacyPolicy),
+                  onPressed: () => onOpenDocument(
+                    'Politique de confidentialité',
+                    LegalDocuments.privacyPolicy,
+                  ),
                   child: const Text('Politique de confidentialité'),
                 ),
               ],
@@ -569,7 +659,12 @@ enum _PillTone { light, dark }
 /// optionnel à gauche, jamais imposé (la pilule « Se connecter ou
 /// s'inscrire » n'en a pas).
 class _OAuthPillButton extends StatelessWidget {
-  const _OAuthPillButton({required this.label, required this.tone, required this.onTap, this.leading});
+  const _OAuthPillButton({
+    required this.label,
+    required this.tone,
+    required this.onTap,
+    this.leading,
+  });
 
   final String label;
   final _PillTone tone;
@@ -594,21 +689,36 @@ class _OAuthPillButton extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
-              color: light ? AppColors.textPrimary : AppColors.legalBlueDark.withValues(alpha: 0.55),
-              border: light ? null : Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 0.8),
+              color: light
+                  ? AppColors.textPrimary
+                  : AppColors.legalBlueDark.withValues(alpha: 0.55),
+              border: light
+                  ? null
+                  : Border.all(
+                      color: AppColors.gold.withValues(alpha: 0.3),
+                      width: 0.8,
+                    ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: AppSpacing.sm)],
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: light ? AppColors.nightBlueDeep : AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leading != null) ...[
+                    leading!,
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: light
+                          ? AppColors.nightBlueDeep
+                          : AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -628,7 +738,11 @@ class _GoogleMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(width: size, height: size, child: CustomPaint(painter: _GoogleMarkPainter()));
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _GoogleMarkPainter()),
+    );
   }
 }
 
@@ -640,7 +754,10 @@ class _GoogleMarkPainter extends CustomPainter {
     final center = size.center(Offset.zero);
     final radius = size.shortestSide / 2;
     final strokeWidth = radius * 0.62;
-    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+    final rect = Rect.fromCircle(
+      center: center,
+      radius: radius - strokeWidth / 2,
+    );
 
     void arc(double startDeg, double sweepDeg, Color color) {
       canvas.drawArc(
@@ -685,9 +802,16 @@ class _GlassBackButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppColors.legalBlueDark.withValues(alpha: 0.55),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.3), width: 0.8),
+            border: Border.all(
+              color: AppColors.gold.withValues(alpha: 0.3),
+              width: 0.8,
+            ),
           ),
-          child: const Icon(Icons.arrow_back_rounded, size: 18, color: AppColors.goldLight),
+          child: const Icon(
+            Icons.arrow_back_rounded,
+            size: 18,
+            color: AppColors.goldLight,
+          ),
         ),
       ),
     );
@@ -743,7 +867,9 @@ class _DesktopAuthView extends StatelessWidget {
                               ? BoxDecoration(
                                   border: Border(
                                     left: BorderSide(
-                                      color: AppColors.gold.withValues(alpha: 0.16),
+                                      color: AppColors.gold.withValues(
+                                        alpha: 0.16,
+                                      ),
                                       width: 1,
                                     ),
                                   ),
@@ -753,21 +879,32 @@ class _DesktopAuthView extends StatelessWidget {
                             child: SingleChildScrollView(
                               padding: const EdgeInsets.all(AppSpacing.xxl),
                               child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 420),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 420,
+                                ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     if (!showBrand) ...[
-                                      const Center(child: JurisIAMark(size: 44)),
+                                      const Center(
+                                        child: JurisIAMark(size: 44),
+                                      ),
                                       const SizedBox(height: AppSpacing.md),
                                       Text(
                                         'JurisIA',
                                         textAlign: TextAlign.center,
-                                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                              fontFamily: 'Libre Caslon Display',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium
+                                            ?.copyWith(
+                                              fontFamily:
+                                                  'Libre Caslon Display',
                                             ),
                                       ),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      const Center(child: _AuthContextPill()),
                                       const SizedBox(height: AppSpacing.xl),
                                     ],
                                     if (showForm) ...[
@@ -778,8 +915,10 @@ class _DesktopAuthView extends StatelessWidget {
                                         spacing: AppSpacing.sm,
                                         children: [
                                           TextButton(
-                                            onPressed: () =>
-                                                onOpenDocument('CGU', LegalDocuments.termsOfService),
+                                            onPressed: () => onOpenDocument(
+                                              'CGU',
+                                              LegalDocuments.termsOfService,
+                                            ),
                                             child: const Text('CGU'),
                                           ),
                                           TextButton(
@@ -787,17 +926,34 @@ class _DesktopAuthView extends StatelessWidget {
                                               'Politique de confidentialité',
                                               LegalDocuments.privacyPolicy,
                                             ),
-                                            child: const Text('Politique de confidentialité'),
+                                            child: const Text(
+                                              'Politique de confidentialité',
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ] else ...[
                                       if (showBrand) ...[
                                         Text(
-                                          'Bienvenue',
+                                          'Votre espace juridique',
                                           textAlign: TextAlign.center,
-                                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                                fontFamily: 'Libre Caslon Display',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge
+                                              ?.copyWith(
+                                                fontFamily:
+                                                    'Libre Caslon Display',
+                                              ),
+                                        ),
+                                        const SizedBox(height: AppSpacing.xs),
+                                        Text(
+                                          'Le droit burkinabè et l’espace OHADA, à portée de main.',
+                                          textAlign: TextAlign.center,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: AppColors.textSecondary,
                                               ),
                                         ),
                                         const SizedBox(height: AppSpacing.lg),
@@ -806,7 +962,8 @@ class _DesktopAuthView extends StatelessWidget {
                                         rounded: false,
                                         oauthInFlight: oauthInFlight,
                                         onOpenForm: onOpenForm,
-                                        onSignInWithProvider: onSignInWithProvider,
+                                        onSignInWithProvider:
+                                            onSignInWithProvider,
                                         onOpenDocument: onOpenDocument,
                                       ),
                                     ],
@@ -840,9 +997,15 @@ class _BrandPanel extends StatelessWidget {
 
   static const _values = <(IconData, String)>[
     (Icons.forum_rounded, 'Comprendre une situation juridique, en confiance'),
-    (Icons.local_library_rounded, 'La bibliothèque des textes du Burkina & de l\'OHADA'),
+    (
+      Icons.local_library_rounded,
+      'La bibliothèque des textes du Burkina & de l\'OHADA',
+    ),
     (Icons.school_rounded, 'Un parcours d\'étude complet, de la L1 au Master'),
-    (Icons.design_services_rounded, 'Rédiger, auditer, obtenir une note de synthèse'),
+    (
+      Icons.design_services_rounded,
+      'Rédiger, auditer, obtenir une note de synthèse',
+    ),
   ];
 
   @override
@@ -853,12 +1016,19 @@ class _BrandPanel extends StatelessWidget {
       children: [
         const Positioned.fill(child: IgnorePointer(child: _BrandAmbience())),
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.xxl + 12, AppSpacing.xxl, AppSpacing.xxl, AppSpacing.xxl),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.xxl + 12,
+            AppSpacing.xxl,
+            AppSpacing.xxl,
+            AppSpacing.xxl,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const _AuthSeal(size: 108),
+              const SizedBox(height: AppSpacing.sm),
+              const _AuthContextPill(),
               const SizedBox(height: AppSpacing.xl),
               Text(
                 'JurisIA',
@@ -873,7 +1043,10 @@ class _BrandPanel extends StatelessWidget {
                 child: Text(
                   'L\'assistant juridique pensé pour le droit burkinabè et l\'espace OHADA — '
                   'confidentiel, et sans jugement.',
-                  style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.5,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xxl),
@@ -889,15 +1062,24 @@ class _BrandPanel extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.gold.withValues(alpha: 0.10),
                           borderRadius: BorderRadius.circular(AppRadius.small),
-                          border: Border.all(color: AppColors.gold.withValues(alpha: 0.28), width: 0.7),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.28),
+                            width: 0.7,
+                          ),
                         ),
-                        child: Icon(entry.$1, size: 16, color: AppColors.goldLight),
+                        child: Icon(
+                          entry.$1,
+                          size: 16,
+                          color: AppColors.goldLight,
+                        ),
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Flexible(
                         child: Text(
                           entry.$2,
-                          style: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -922,9 +1104,12 @@ class _AuthSeal extends StatefulWidget {
   State<_AuthSeal> createState() => _AuthSealState();
 }
 
-class _AuthSealState extends State<_AuthSeal> with SingleTickerProviderStateMixin {
-  late final AnimationController _c =
-      AnimationController(vsync: this, duration: const Duration(seconds: 12))..repeat();
+class _AuthSealState extends State<_AuthSeal>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 12),
+  )..repeat();
 
   @override
   void dispose() {
@@ -952,7 +1137,9 @@ class _AuthSealState extends State<_AuthSeal> with SingleTickerProviderStateMixi
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.gold.withValues(alpha: 0.08 + 0.10 * pulse),
+                      color: AppColors.gold.withValues(
+                        alpha: 0.08 + 0.10 * pulse,
+                      ),
                       blurRadius: 40 + 20 * pulse,
                       spreadRadius: 6,
                     ),
@@ -970,6 +1157,52 @@ class _AuthSealState extends State<_AuthSeal> with SingleTickerProviderStateMixi
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Repère de contexte compact, commun aux écrans d'entrée : la promesse
+/// JurisIA est ancrée dans son périmètre juridique, pas dans un slogan vague.
+class _AuthContextPill extends StatelessWidget {
+  const _AuthContextPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 7,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.24),
+          width: 0.7,
+        ),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.shield_outlined,
+              size: 14,
+              color: AppColors.goldLight,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              'BURKINA FASO  ·  ESPACE OHADA',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.goldLight,
+                letterSpacing: 1.1,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1004,18 +1237,15 @@ class _SealRingPainter extends CustomPainter {
         ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round
         ..shader = const SweepGradient(
-          colors: [
-            Color(0x00E9D48A),
-            Color(0x66C9A227),
-            AppColors.goldLight,
-          ],
+          colors: [Color(0x00E9D48A), Color(0x66C9A227), AppColors.goldLight],
           stops: [0.0, 0.6, 1.0],
         ).createShader(rect),
     );
 
     // Tête lumineuse en bout d'arc.
     final headAngle = -math.pi / 2 + sweep;
-    final head = center + Offset(math.cos(headAngle), math.sin(headAngle)) * radius;
+    final head =
+        center + Offset(math.cos(headAngle), math.sin(headAngle)) * radius;
     canvas.drawCircle(head, 3, Paint()..color = AppColors.goldLight);
     canvas.drawCircle(
       head,
@@ -1035,9 +1265,12 @@ class _BrandAmbience extends StatefulWidget {
   State<_BrandAmbience> createState() => _BrandAmbienceState();
 }
 
-class _BrandAmbienceState extends State<_BrandAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 44))..repeat();
+class _BrandAmbienceState extends State<_BrandAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 44),
+  )..repeat();
 
   @override
   void dispose() {
@@ -1049,7 +1282,8 @@ class _BrandAmbienceState extends State<_BrandAmbience> with SingleTickerProvide
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _BrandAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _BrandAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -1070,14 +1304,16 @@ class _BrandAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.8 + (i % 3) * 0.7;
-      final opacity = 0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _BrandAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _BrandAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }
 
 // ---------------------------------------------------------------------------
@@ -1133,16 +1369,40 @@ class _AuthFormState extends State<_AuthForm> {
                   },
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            isSignIn ? 'Content de vous revoir' : 'Rejoignez JurisIA',
-            style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 240),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) => FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.08),
+                  end: Offset.zero,
+                ).animate(animation),
+                child: child,
+              ),
+            ),
+            child: Text(
+              isSignIn ? 'Content de vous revoir' : 'Rejoignez JurisIA',
+              key: ValueKey(isSignIn),
+              style: textTheme.titleLarge?.copyWith(
+                fontFamily: 'Libre Caslon Display',
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            isSignIn
-                ? 'Connectez-vous pour retrouver vos dossiers.'
-                : 'Quelques informations, et votre espace est prêt.',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          const SizedBox(height: AppSpacing.xs),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(
+              isSignIn
+                  ? 'Retrouvez vos dossiers, favoris et votre progression.'
+                  : 'Créez votre espace personnel en quelques instants.',
+              key: ValueKey('subtitle-$isSignIn'),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           if (!SupabaseConfig.isReady) ...[
@@ -1165,7 +1425,12 @@ class _AuthFormState extends State<_AuthForm> {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text('Vous êtes', style: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary)),
+            Text(
+              'Vous êtes',
+              style: textTheme.labelMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
@@ -1178,8 +1443,8 @@ class _AuthFormState extends State<_AuthForm> {
                     onTap: controller.isSubmitting
                         ? null
                         : () => controller.setProfession(
-                              controller.profession == value ? null : value,
-                            ),
+                            controller.profession == value ? null : value,
+                          ),
                   ),
               ],
             ),
@@ -1191,7 +1456,10 @@ class _AuthFormState extends State<_AuthForm> {
               enabled: enabled,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
-              decoration: const InputDecoration(labelText: 'E-mail', filled: false),
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                filled: false,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1207,7 +1475,9 @@ class _AuthFormState extends State<_AuthForm> {
                 suffixIcon: IconButton(
                   tooltip: _obscure ? 'Afficher' : 'Masquer',
                   icon: Icon(
-                    _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     size: 18,
                   ),
                   onPressed: () => setState(() => _obscure = !_obscure),
@@ -1237,13 +1507,19 @@ class _AuthFormState extends State<_AuthForm> {
                           const TextSpan(text: "J'accepte les "),
                           TextSpan(
                             text: 'CGU',
-                            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              color: AppColors.gold,
+                              fontWeight: FontWeight.w700,
+                            ),
                             recognizer: widget.termsRecognizer,
                           ),
                           const TextSpan(text: ' et la '),
                           TextSpan(
                             text: 'politique de confidentialité',
-                            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700),
+                            style: const TextStyle(
+                              color: AppColors.gold,
+                              fontWeight: FontWeight.w700,
+                            ),
                             recognizer: widget.privacyRecognizer,
                           ),
                           const TextSpan(text: '.'),
@@ -1260,12 +1536,18 @@ class _AuthFormState extends State<_AuthForm> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 14, color: AppColors.error),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 14,
+                  color: AppColors.error,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     controller.errorMessage!,
-                    style: textTheme.bodySmall?.copyWith(color: AppColors.error),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.error,
+                    ),
                   ),
                 ),
               ],
@@ -1279,7 +1561,10 @@ class _AuthFormState extends State<_AuthForm> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.nightBlueDeep),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.nightBlueDeep,
+                    ),
                   )
                 : Text(isSignIn ? 'Se connecter' : 'Créer mon compte'),
           ),
@@ -1302,12 +1587,23 @@ class _ModeToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.legalBlueDark.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.18), width: 0.7),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.18),
+          width: 0.7,
+        ),
       ),
       child: Row(
         children: [
-          _ModeToggleTab(label: 'Connexion', active: isSignIn, onTap: () => onChanged?.call(true)),
-          _ModeToggleTab(label: 'Créer un compte', active: !isSignIn, onTap: () => onChanged?.call(false)),
+          _ModeToggleTab(
+            label: 'Connexion',
+            active: isSignIn,
+            onTap: () => onChanged?.call(true),
+          ),
+          _ModeToggleTab(
+            label: 'Créer un compte',
+            active: !isSignIn,
+            onTap: () => onChanged?.call(false),
+          ),
         ],
       ),
     );
@@ -1315,7 +1611,11 @@ class _ModeToggle extends StatelessWidget {
 }
 
 class _ModeToggleTab extends StatelessWidget {
-  const _ModeToggleTab({required this.label, required this.active, required this.onTap});
+  const _ModeToggleTab({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
   final String label;
   final bool active;
@@ -1343,9 +1643,11 @@ class _ModeToggleTab extends StatelessWidget {
                 label,
                 maxLines: 1,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: active ? AppColors.nightBlueDeep : AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: active
+                      ? AppColors.nightBlueDeep
+                      : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -1356,7 +1658,11 @@ class _ModeToggleTab extends StatelessWidget {
 }
 
 class _AuthProfessionChip extends StatelessWidget {
-  const _AuthProfessionChip({required this.label, required this.selected, required this.onTap});
+  const _AuthProfessionChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -1371,7 +1677,10 @@ class _AuthProfessionChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 7),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 7,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             color: selected
@@ -1388,15 +1697,21 @@ class _AuthProfessionChip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (selected) ...[
-                const Icon(Icons.check_rounded, size: 12, color: AppColors.goldLight),
+                const Icon(
+                  Icons.check_rounded,
+                  size: 12,
+                  color: AppColors.goldLight,
+                ),
                 const SizedBox(width: 5),
               ],
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: selected ? AppColors.textPrimary : AppColors.textSecondary,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
+                  color: selected
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
               ),
             ],
           ),
