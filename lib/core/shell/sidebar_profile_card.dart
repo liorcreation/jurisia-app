@@ -24,9 +24,7 @@ class SidebarProfileCard extends StatelessWidget {
   int _consultationsThisMonth(BuildContext context) {
     final history = context.watch<LitigationChatController>().history;
     final now = DateTime.now();
-    return history
-        .where((c) => c.updatedAt.year == now.year && c.updatedAt.month == now.month)
-        .length;
+    return history.where((c) => c.updatedAt.year == now.year && c.updatedAt.month == now.month).length;
   }
 
   @override
@@ -68,13 +66,19 @@ class SidebarProfileCard extends StatelessWidget {
     return GlassContainer(
       onTap: () => showProfileSheet(context),
       borderRadius: AppRadius.medium,
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      borderColor: AppColors.gold.withValues(alpha: 0.30),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xD9162233), Color(0xE6090E18)],
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
-              ProfileMonogram(profile: profile, size: 40),
+              ProfileMonogram(profile: profile, size: 44),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -85,53 +89,115 @@ class SidebarProfileCard extends StatelessWidget {
                       profile?.displayName ?? 'Mon compte',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                      style: textTheme.titleSmall?.copyWith(
+                        fontFamily: 'Libre Caslon Display',
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: AppGradients.goldSheen,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
                         Flexible(
                           child: Text(
-                            entitlements.definition.name,
+                            profile?.roleLabel ?? 'Compte JurisIA',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight),
+                            style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.gold.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            entitlements.definition.name.replaceFirst('JurisIA ', ''),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: AppColors.goldLight,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    if (count > 0) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        count == 1 ? '1 consultation ce mois' : '$count consultations ce mois',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              const Icon(Icons.unfold_more_rounded, size: 18, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.xs),
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.glassHighlight,
+                  border: Border.all(color: AppColors.glassBorder, width: 0.7),
+                ),
+                child: const Icon(Icons.arrow_outward_rounded, size: 14, color: AppColors.textSecondary),
+              ),
             ],
           ),
-          if (canUpgrade) ...[
-            const SizedBox(height: AppSpacing.sm),
-            _UpgradeButton(entitlements: entitlements),
-          ],
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: _ProfileCardDivider(),
+          ),
+          Row(
+            children: [
+              const Icon(Icons.forum_outlined, size: 14, color: AppColors.cobaltLight),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  'Consultations ce mois',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+              Container(
+                constraints: const BoxConstraints(minWidth: 26),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.cobalt.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: AppColors.cobaltLight.withValues(alpha: 0.28)),
+                ),
+                child: Text(
+                  '$count',
+                  textAlign: TextAlign.center,
+                  style: textTheme.labelSmall?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          if (canUpgrade) ...[const SizedBox(height: AppSpacing.md), _UpgradeButton(entitlements: entitlements)],
         ],
       ),
     );
   }
+}
+
+class _ProfileCardDivider extends StatelessWidget {
+  const _ProfileCardDivider();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 1,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Colors.transparent,
+          AppColors.gold.withValues(alpha: 0.30),
+          AppColors.cobaltLight.withValues(alpha: 0.20),
+          Colors.transparent,
+        ],
+      ),
+    ),
+  );
 }
 
 /// Bouton « Mettre à niveau » — pilule de verre à liseré d'or sur la carte
@@ -227,10 +293,10 @@ class _UpgradeButtonState extends State<_UpgradeButton> {
                 Text(
                   'Mettre à niveau',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.goldLight,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.2,
-                      ),
+                    color: AppColors.goldLight,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
                 ),
               ],
             ),

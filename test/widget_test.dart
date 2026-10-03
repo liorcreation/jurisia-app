@@ -22,9 +22,7 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Narrow layout: the sidebar drawer carries the five spaces', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Narrow layout: the sidebar drawer carries the five spaces', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -43,13 +41,7 @@ void main() {
     await tester.tap(menuButton);
     await _settle(tester);
 
-    for (final label in [
-      'Litiges',
-      'Bibliothèque',
-      'Étudiant',
-      'Service professionnel',
-      'Contacter',
-    ]) {
+    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Service professionnel', 'Contacter']) {
       expect(find.text(label), findsOneWidget);
     }
 
@@ -58,60 +50,14 @@ void main() {
     expect(find.text('Contacter un professionnel'), findsWidgets);
     expect(find.text('Notaire'), findsOneWidget);
     expect(find.text('Juge'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await _settle(tester);
+    expect(find.text('Consultations ce mois'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'Wide layout: the permanent JurisIA sidebar renders without overflow',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(_wrapHomeNavigation());
-      await _settle(tester);
-
-      expect(find.text('JurisIA'), findsOneWidget);
-      for (final label in [
-        'Litiges',
-        'Bibliothèque',
-        'Étudiant',
-        'Service professionnel',
-        'Contacter',
-      ]) {
-        expect(find.text(label), findsOneWidget);
-      }
-
-      // Chaque espace rend sa section contextuelle dans la sidebar sans
-      // exception ni débordement.
-      for (final entry in const {
-        'Bibliothèque': 'Bibliothèque juridique',
-        'Étudiant': 'Espace étudiant',
-        'Service professionnel': 'Service professionnel',
-        'Contacter': 'Contacter un professionnel',
-        'Litiges': 'Litiges et consultations',
-      }.entries) {
-        await tester.tap(find.text(entry.key));
-        await _settle(tester);
-        expect(find.text(entry.value), findsWidgets, reason: entry.key);
-        if (entry.key == 'Service professionnel') {
-          for (final category in [
-            'Services notariaux',
-            'Services d’avocats',
-            'Services d’huissier',
-            'Jurisconsulte',
-          ]) {
-            expect(find.text(category), findsOneWidget);
-          }
-        }
-        expect(tester.takeException(), isNull, reason: entry.key);
-      }
-    },
-  );
-
-  testWidgets('Wide layout: the profile card opens the profile sheet', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Wide layout: the permanent JurisIA sidebar renders without overflow', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -120,6 +66,43 @@ void main() {
     await tester.pumpWidget(_wrapHomeNavigation());
     await _settle(tester);
 
+    expect(find.text('JurisIA'), findsOneWidget);
+    for (final label in ['Litiges', 'Bibliothèque', 'Étudiant', 'Service professionnel', 'Contacter']) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    // Chaque espace rend sa section contextuelle dans la sidebar sans
+    // exception ni débordement.
+    for (final entry in const {
+      'Bibliothèque': 'Bibliothèque juridique',
+      'Étudiant': 'Espace étudiant',
+      'Service professionnel': 'Service professionnel',
+      'Contacter': 'Contacter un professionnel',
+      'Litiges': 'Litiges et consultations',
+    }.entries) {
+      await tester.tap(find.text(entry.key));
+      await _settle(tester);
+      expect(find.text(entry.value), findsWidgets, reason: entry.key);
+      if (entry.key == 'Service professionnel') {
+        for (final category in ['Services notariaux', 'Services d’avocats', 'Services d’huissier', 'Jurisconsulte']) {
+          expect(find.text(category), findsOneWidget);
+        }
+      }
+      expect(tester.takeException(), isNull, reason: entry.key);
+    }
+  });
+
+  testWidgets('Wide layout: the profile card opens the profile sheet', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
+
+    expect(find.text('Consultations ce mois'), findsOneWidget);
+    expect(find.text('Découverte'), findsOneWidget);
     await tester.tap(find.text('Mon compte'));
     await _settle(tester);
 
@@ -128,9 +111,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Library packs open cleanly on phone and desktop', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Collapsed rail keeps the current space and profile reachable', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
+    await tester.tap(find.byTooltip('Replier la navigation'));
+    await _settle(tester);
+
+    expect(find.byTooltip('Litiges'), findsOneWidget);
+    expect(find.byTooltip('Mon compte'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Library packs open cleanly on phone and desktop', (WidgetTester tester) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -147,10 +144,7 @@ void main() {
       await tester.tap(find.text('Bibliothèque'));
       await _settle(tester);
 
-      expect(
-        find.text('Le droit, organisé pour éclairer vos décisions.'),
-        findsOneWidget,
-      );
+      expect(find.text('Le droit, organisé pour éclairer vos décisions.'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'catalogue $size');
 
       await tester.ensureVisible(find.text('DROIT DES OBLIGATIONS'));
@@ -158,17 +152,12 @@ void main() {
       await tester.tap(find.text('DROIT DES OBLIGATIONS'));
       await _settle(tester);
       expect(find.textContaining('COLLECTION'), findsOneWidget);
-      expect(
-        find.text('Obligations, contrats et responsabilité'),
-        findsOneWidget,
-      );
+      expect(find.text('Obligations, contrats et responsabilité'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'pack $size');
     }
   });
 
-  testWidgets('Student journey opens the catalogue and a specialty cleanly', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Student journey opens the catalogue and a specialty cleanly', (WidgetTester tester) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -192,40 +181,30 @@ void main() {
       await tester.tap(find.text('Formations Certifiantes'));
       await _settle(tester);
       expect(find.text('Choisissez votre spécialité.'), findsOneWidget);
-      expect(
-        tester.takeException(),
-        isNull,
-        reason: 'catalogue étudiant $size',
-      );
+      expect(tester.takeException(), isNull, reason: 'catalogue étudiant $size');
 
       await tester.ensureVisible(find.text('Droit de la famille'));
       await tester.tap(find.text('Droit de la famille'));
       await _settle(tester);
-      expect(
-        find.text('Une spécialité pensée pour la pratique.'),
-        findsOneWidget,
-      );
+      expect(find.text('Une spécialité pensée pour la pratique.'), findsOneWidget);
       expect(find.text('Architecture du parcours'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'spécialité $size');
     }
   });
 
-  testWidgets(
-    'Tablet layout: a permanent compact rail preserves content space',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('Tablet layout: a permanent compact rail preserves content space', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_wrapHomeNavigation());
-      await _settle(tester);
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
 
-      // La tablette garde un rail permanent ; le tiroir mobile et la barre
-      // inférieure ne doivent pas revenir sur cette largeur intermédiaire.
-      expect(find.byTooltip('Rechercher'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    // La tablette garde un rail permanent ; le tiroir mobile et la barre
+    // inférieure ne doivent pas revenir sur cette largeur intermédiaire.
+    expect(find.byTooltip('Rechercher'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }
