@@ -10,6 +10,9 @@ import '../../../../core/entitlements/entitlements_controller.dart';
 import '../../../../core/entitlements/plan.dart';
 import '../../../../core/entitlements/quota_state.dart';
 import '../../../../core/platform/app_platform_style.dart';
+import '../../../../core/legal/ai_disclaimer_screen.dart';
+import '../../../../core/legal/legal_document_screen.dart';
+import '../../../../core/legal/legal_documents.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
@@ -53,7 +56,9 @@ class _SubscriptionView extends StatelessWidget {
     if (message != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
         billing.clearMessages();
       });
     }
@@ -71,7 +76,10 @@ class _SubscriptionView extends StatelessWidget {
     case PlanCode.decouverte:
       return (icon: Icons.explore_rounded, tint: AppColors.metalSilver);
     case PlanCode.plus:
-      return (icon: Icons.workspace_premium_rounded, tint: AppColors.metalDeepGold);
+      return (
+        icon: Icons.workspace_premium_rounded,
+        tint: AppColors.metalDeepGold,
+      );
     case PlanCode.etudiant:
       return (icon: Icons.school_rounded, tint: AppColors.metalEmerald);
     case PlanCode.pro:
@@ -86,15 +94,28 @@ const _recommendedPlan = PlanCode.plus;
 
 String _nextResetLabel(DateTime now) {
   const months = [
-    'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-    'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+    'janvier',
+    'février',
+    'mars',
+    'avril',
+    'mai',
+    'juin',
+    'juillet',
+    'août',
+    'septembre',
+    'octobre',
+    'novembre',
+    'décembre',
   ];
   final month = now.month == 12 ? 0 : now.month;
   return '1er ${months[month]}';
 }
 
 class _SubscriptionScaffold extends StatelessWidget {
-  const _SubscriptionScaffold({required this.entitlements, required this.billing});
+  const _SubscriptionScaffold({
+    required this.entitlements,
+    required this.billing,
+  });
 
   final EntitlementsController entitlements;
   final BillingController billing;
@@ -110,7 +131,9 @@ class _SubscriptionScaffold extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(child: IgnorePointer(child: _PlansAmbience())),
+              const Positioned.fill(
+                child: IgnorePointer(child: _PlansAmbience()),
+              ),
               Column(
                 children: [
                   const _DesktopSubscriptionHeader(),
@@ -120,7 +143,12 @@ class _SubscriptionScaffold extends StatelessWidget {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 1180),
                           child: Padding(
-                            padding: EdgeInsets.fromLTRB(pad, pad, pad, AppSpacing.xxl),
+                            padding: EdgeInsets.fromLTRB(
+                              pad,
+                              pad,
+                              pad,
+                              AppSpacing.xxl,
+                            ),
                             child: _SubscriptionBody(
                               entitlements: entitlements,
                               billing: billing,
@@ -151,10 +179,18 @@ class _DesktopSubscriptionHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.smokedGlass,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(
+            color: AppColors.gold.withValues(alpha: 0.18),
+            width: 0.6,
+          ),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           IconButton(
@@ -163,9 +199,20 @@ class _DesktopSubscriptionHeader extends StatelessWidget {
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           const SizedBox(width: AppSpacing.xs),
-          const Icon(Icons.workspace_premium_rounded, size: 18, color: AppColors.gold),
+          const Icon(
+            Icons.workspace_premium_rounded,
+            size: 18,
+            color: AppColors.gold,
+          ),
           const SizedBox(width: AppSpacing.sm),
-          Text('Mon abonnement', style: textTheme.headlineSmall),
+          Expanded(
+            child: Text(
+              'Mon abonnement',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.headlineSmall,
+            ),
+          ),
         ],
       ),
     );
@@ -192,7 +239,9 @@ class _SubscriptionBody extends StatelessWidget {
               children: [
                 for (var i = 0; i < plans.length; i++)
                   Padding(
-                    padding: EdgeInsets.only(bottom: i == plans.length - 1 ? 0 : AppSpacing.md),
+                    padding: EdgeInsets.only(
+                      bottom: i == plans.length - 1 ? 0 : AppSpacing.md,
+                    ),
                     // `IntrinsicHeight` borne la hauteur : la carte contient
                     // un `Spacer` (alignement des boutons en rangée desktop)
                     // qui planterait sinon dans un défilement libre.
@@ -244,7 +293,9 @@ class _SubscriptionBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Passez à la vitesse supérieure',
-          style: textTheme.displaySmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+          style: textTheme.displaySmall?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         ConstrainedBox(
@@ -252,7 +303,10 @@ class _SubscriptionBody extends StatelessWidget {
           child: Text(
             'Votre offre actuelle, votre consommation du mois, et le catalogue complet. '
             'Le changement d\'offre est immédiat ; vous gardez tout votre historique.',
-            style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary, height: 1.5),
+            style: textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
@@ -260,7 +314,11 @@ class _SubscriptionBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.xxl),
         const _Eyebrow('Pour vous'),
         const SizedBox(height: AppSpacing.md),
-        planRow(const [PlanCatalog.decouverte, PlanCatalog.plus, PlanCatalog.etudiant]),
+        planRow(const [
+          PlanCatalog.decouverte,
+          PlanCatalog.plus,
+          PlanCatalog.etudiant,
+        ]),
         const SizedBox(height: AppSpacing.xl),
         const _Eyebrow('Pour les praticiens et les cabinets'),
         const SizedBox(height: AppSpacing.md),
@@ -273,7 +331,196 @@ class _SubscriptionBody extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
         const _PaymentNote(),
+        const SizedBox(height: AppSpacing.xxl),
+        const _SubscriptionLegalAccess(),
       ],
+    );
+  }
+}
+
+class _SubscriptionLegalAccess extends StatelessWidget {
+  const _SubscriptionLegalAccess();
+
+  void _openDocument(BuildContext context, String title, String content) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => LegalDocumentScreen(title: title, content: content),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final documents =
+        <
+          ({
+            IconData icon,
+            String title,
+            String subtitle,
+            VoidCallback Function(BuildContext) open,
+          })
+        >[
+          (
+            icon: Icons.description_outlined,
+            title: "Conditions générales d'utilisation",
+            subtitle: 'Règles d’accès, offres et utilisation du service',
+            open: (context) =>
+                () => _openDocument(
+                  context,
+                  'CGU',
+                  LegalDocuments.termsOfService,
+                ),
+          ),
+          (
+            icon: Icons.shield_outlined,
+            title: 'Politique de confidentialité',
+            subtitle: 'Traitement des données et droits des utilisateurs',
+            open: (context) =>
+                () => _openDocument(
+                  context,
+                  'Politique de confidentialité',
+                  LegalDocuments.privacyPolicy,
+                ),
+          ),
+          (
+            icon: Icons.auto_awesome_outlined,
+            title: 'Assistance par intelligence artificielle',
+            subtitle: 'Limites, vérifications et précautions utiles',
+            open: (context) =>
+                () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AiDisclaimerScreen(),
+                  ),
+                ),
+          ),
+        ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _Eyebrow('Cadre et transparence'),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Les informations essentielles, à portée de main.',
+          style: textTheme.titleLarge?.copyWith(
+            fontFamily: 'Libre Caslon Display',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final horizontal = constraints.maxWidth >= 760;
+            final cards = [
+              for (final document in documents)
+                _LegalAccessCard(
+                  icon: document.icon,
+                  title: document.title,
+                  subtitle: document.subtitle,
+                  onTap: document.open(context),
+                ),
+            ];
+            if (!horizontal) {
+              return Column(
+                children: [
+                  for (var i = 0; i < cards.length; i++) ...[
+                    if (i > 0) const SizedBox(height: AppSpacing.sm),
+                    cards[i],
+                  ],
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < cards.length; i++) ...[
+                  if (i > 0) const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: cards[i]),
+                ],
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Consultez ces documents avant de choisir ou de modifier votre formule.',
+          style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+        ),
+      ],
+    );
+  }
+}
+
+class _LegalAccessCard extends StatefulWidget {
+  const _LegalAccessCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  State<_LegalAccessCard> createState() => _LegalAccessCardState();
+}
+
+class _LegalAccessCardState extends State<_LegalAccessCard> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 170),
+        transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+        child: GlassContainer(
+          onTap: widget.onTap,
+          borderColor: _hovered
+              ? AppColors.gold.withValues(alpha: 0.48)
+              : AppColors.glassBorder,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              GradientIconBadge(icon: widget.icon, size: 38),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.title,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      widget.subtitle,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(
+                Icons.arrow_outward_rounded,
+                size: 17,
+                color: AppColors.goldLight,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -315,7 +562,9 @@ class _AccountBand extends StatelessWidget {
                     ),
                     Text(
                       plan.name,
-                      style: textTheme.titleMedium?.copyWith(fontFamily: 'Libre Caslon Display'),
+                      style: textTheme.titleMedium?.copyWith(
+                        fontFamily: 'Libre Caslon Display',
+                      ),
                     ),
                   ],
                 ),
@@ -325,7 +574,9 @@ class _AccountBand extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             plan.tagline,
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const Spacer(),
           const SizedBox(height: AppSpacing.sm),
@@ -376,7 +627,9 @@ class _AccountBand extends StatelessWidget {
             children: [
               for (var i = 0; i < children.length; i++)
                 Padding(
-                  padding: EdgeInsets.only(bottom: i == children.length - 1 ? 0 : AppSpacing.md),
+                  padding: EdgeInsets.only(
+                    bottom: i == children.length - 1 ? 0 : AppSpacing.md,
+                  ),
                   // Chaque tuile contient un `Spacer` : `IntrinsicHeight`
                   // borne la hauteur pour un empilement en défilement libre.
                   child: IntrinsicHeight(child: children[i]),
@@ -436,7 +689,11 @@ class _DesktopUsageMeter extends StatelessWidget {
           if (state.isUnlimited)
             Row(
               children: [
-                const Icon(Icons.all_inclusive_rounded, size: 20, color: AppColors.goldLight),
+                const Icon(
+                  Icons.all_inclusive_rounded,
+                  size: 20,
+                  color: AppColors.goldLight,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   'Illimité',
@@ -450,12 +707,16 @@ class _DesktopUsageMeter extends StatelessWidget {
           else ...[
             RichText(
               text: TextSpan(
-                style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display'),
+                style: textTheme.headlineSmall?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
                 children: [
                   TextSpan(text: '${state.used}'),
                   TextSpan(
                     text: '  /  ${state.limit}',
-                    style: textTheme.titleSmall?.copyWith(color: AppColors.textSecondary),
+                    style: textTheme.titleSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -471,9 +732,7 @@ class _DesktopUsageMeter extends StatelessWidget {
                     child: Container(
                       height: 7,
                       decoration: BoxDecoration(
-                        gradient: nearLimit
-                            ? null
-                            : AppGradients.goldMetallic,
+                        gradient: nearLimit ? null : AppGradients.goldMetallic,
                         color: nearLimit ? meterColor : null,
                       ),
                     ),
@@ -488,7 +747,9 @@ class _DesktopUsageMeter extends StatelessWidget {
                   : '${state.remaining} restante${(state.remaining ?? 0) > 1 ? 's' : ''} · '
                         'réinitialisation le $resetLabel',
               style: textTheme.labelSmall?.copyWith(
-                color: state.isExhausted ? AppColors.warning : AppColors.textDisabled,
+                color: state.isExhausted
+                    ? AppColors.warning
+                    : AppColors.textDisabled,
               ),
             ),
           ],
@@ -497,7 +758,9 @@ class _DesktopUsageMeter extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Aucune limite mensuelle sur votre offre.',
-              style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+              ),
             ),
           ],
         ],
@@ -564,7 +827,10 @@ class _DesktopPlanCardState extends State<_DesktopPlanCard> {
     if (featured) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: ShimmerSweep(duration: const Duration(milliseconds: 2000), child: badge),
+        child: ShimmerSweep(
+          duration: const Duration(milliseconds: 2000),
+          child: badge,
+        ),
       );
     }
 
@@ -593,29 +859,43 @@ class _DesktopPlanCardState extends State<_DesktopPlanCard> {
                     if (widget.isCurrent)
                       _Pill(label: 'Offre actuelle', color: AppColors.goldLight)
                     else if (widget.recommended)
-                      _Pill(label: 'Recommandé', color: AppColors.gold, filled: true),
+                      _Pill(
+                        label: 'Recommandé',
+                        color: AppColors.gold,
+                        filled: true,
+                      ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   plan.name,
-                  style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'),
+                  style: textTheme.titleLarge?.copyWith(
+                    fontFamily: 'Libre Caslon Display',
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   plan.tagline,
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35),
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   plan.priceLabel,
                   style: textTheme.headlineSmall?.copyWith(
                     fontFamily: 'Libre Caslon Display',
-                    color: plan.isFree ? AppColors.textPrimary : AppColors.goldLight,
+                    color: plan.isFree
+                        ? AppColors.textPrimary
+                        : AppColors.goldLight,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Divider(color: AppColors.gold.withValues(alpha: 0.15), height: 1),
+                Divider(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  height: 1,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 for (final line in plan.highlights)
                   Padding(
@@ -625,7 +905,11 @@ class _DesktopPlanCardState extends State<_DesktopPlanCard> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(top: 2.5),
-                          child: Icon(Icons.check_rounded, size: 13, color: style.tint),
+                          child: Icon(
+                            Icons.check_rounded,
+                            size: 13,
+                            color: style.tint,
+                          ),
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
@@ -639,7 +923,10 @@ class _DesktopPlanCardState extends State<_DesktopPlanCard> {
                   ),
                 const Spacer(),
                 const SizedBox(height: AppSpacing.md),
-                SizedBox(width: double.infinity, child: _PlanAction(widget: widget)),
+                SizedBox(
+                  width: double.infinity,
+                  child: _PlanAction(widget: widget),
+                ),
               ],
             ),
           ),
@@ -680,14 +967,18 @@ class _PlanAction extends StatelessWidget {
     if (widget.isCurrent) {
       return OutlinedButton(
         onPressed: null,
-        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13)),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+        ),
         child: const Text('Votre offre'),
       );
     }
     if (!widget.plan.isPurchasable) {
       return OutlinedButton.icon(
         onPressed: widget.anyBusy ? null : () => _contactSales(context),
-        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13)),
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 13),
+        ),
         icon: const Icon(Icons.mail_outline_rounded, size: 16),
         label: const Text('Nous contacter'),
       );
@@ -704,7 +995,10 @@ class _PlanAction extends StatelessWidget {
           ? const SizedBox(
               width: 16,
               height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.nightBlueDeep),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.nightBlueDeep,
+              ),
             )
           : const Icon(Icons.arrow_forward_rounded, size: 17),
       label: Text(widget.busy ? 'Redirection…' : 'Choisir cette offre'),
@@ -722,19 +1016,25 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: filled ? color : color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: color.withValues(alpha: filled ? 1 : 0.45), width: 0.8),
+        border: Border.all(
+          color: color.withValues(alpha: filled ? 1 : 0.45),
+          width: 0.8,
+        ),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: filled ? AppColors.nightBlueDeep : color,
-              fontWeight: FontWeight.w800,
-              letterSpacing: AppLetterSpacing.label,
-            ),
+          color: filled ? AppColors.nightBlueDeep : color,
+          fontWeight: FontWeight.w800,
+          letterSpacing: AppLetterSpacing.label,
+        ),
       ),
     );
   }
@@ -752,17 +1052,27 @@ class _PaymentNote extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 0.7),
+        border: Border.all(
+          color: AppColors.gold.withValues(alpha: 0.2),
+          width: 0.7,
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.payments_rounded, size: 16, color: AppColors.goldLight),
+          const Icon(
+            Icons.payments_rounded,
+            size: 16,
+            color: AppColors.goldLight,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'Paiement par Mobile Money (Orange, Moov) ou carte bancaire. Résiliable à tout '
               'moment. JurisIA Cabinet se souscrit sur devis, avec facture OHADA.',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.4),
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -781,16 +1091,20 @@ class _Eyebrow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 16, height: 1, color: AppColors.gold.withValues(alpha: 0.6)),
+        Container(
+          width: 16,
+          height: 1,
+          color: AppColors.gold.withValues(alpha: 0.6),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Flexible(
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: AppColors.goldLight,
-                  letterSpacing: AppLetterSpacing.caps,
-                  fontWeight: FontWeight.w700,
-                ),
+              color: AppColors.goldLight,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ],
@@ -807,9 +1121,12 @@ class _PlansAmbience extends StatefulWidget {
   State<_PlansAmbience> createState() => _PlansAmbienceState();
 }
 
-class _PlansAmbienceState extends State<_PlansAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 34))..repeat();
+class _PlansAmbienceState extends State<_PlansAmbience>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 34),
+  )..repeat();
 
   @override
   void dispose() {
@@ -821,7 +1138,8 @@ class _PlansAmbienceState extends State<_PlansAmbience> with SingleTickerProvide
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, _) => CustomPaint(painter: _PlansAmbiencePainter(_controller.value)),
+      builder: (context, _) =>
+          CustomPaint(painter: _PlansAmbiencePainter(_controller.value)),
     );
   }
 }
@@ -842,12 +1160,14 @@ class _PlansAmbiencePainter extends CustomPainter {
       final x = (baseX + drift) % size.width;
       final y = (size.height * ((i / _count) + t) % 1.0);
       final radius = 0.8 + (i % 3) * 0.7;
-      final opacity = 0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
+      final opacity =
+          0.05 + 0.09 * (0.5 + 0.5 * math.sin((t * 2 * math.pi) + seed * 1.7));
       paint.color = AppColors.goldLight.withValues(alpha: opacity);
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _PlansAmbiencePainter oldDelegate) => oldDelegate.t != t;
+  bool shouldRepaint(covariant _PlansAmbiencePainter oldDelegate) =>
+      oldDelegate.t != t;
 }
