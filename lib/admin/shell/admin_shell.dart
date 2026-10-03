@@ -410,18 +410,18 @@ class _BrandHeader extends StatelessWidget {
   }
 }
 
-/// Retour à l'application grand public. Quand la console est ouverte depuis
-/// l'app, on dépile simplement sa route ; sur le déploiement admin autonome,
-/// on conserve le lien vers l'app publique comme solution de repli.
+/// Retour à l'application grand public. La route `/admin` est celle utilisée
+/// lorsque la console est intégrée à l'app ; le déploiement admin autonome
+/// doit naviguer vers l'app publique, même si son tiroir mobile est ouvert.
 class _ReturnToAppButton extends StatelessWidget {
   const _ReturnToAppButton();
 
   static const _appUrl = 'https://jurisia-app.pages.dev/';
 
   Future<void> _open(BuildContext context) async {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
+    final routeName = ModalRoute.of(context)?.settings.name;
+    if (routeName == '/admin') {
+      Navigator.of(context).pop();
       return;
     }
 
