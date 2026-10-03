@@ -7,7 +7,12 @@ import '../../theme/app_theme.dart';
 /// Barre de titre iOS : le grand titre descend sur un fond en flou de vraie
 /// vibrance plutôt qu'une barre pleine — le registre « Verre glacé ».
 class IosLargeTitleBar extends StatelessWidget implements PreferredSizeWidget {
-  const IosLargeTitleBar({super.key, required this.title, this.actions, this.leading});
+  const IosLargeTitleBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.leading,
+  });
 
   final String title;
   final List<Widget>? actions;
@@ -34,29 +39,44 @@ class IosLargeTitleBar extends StatelessWidget implements PreferredSizeWidget {
                 AppColors.nightBlue.withValues(alpha: 0.52),
               ],
             ),
-            border: const Border(bottom: BorderSide(color: Colors.white10, width: 0.5)),
+            border: const Border(
+              bottom: BorderSide(color: Colors.white10, width: 0.5),
+            ),
           ),
           child: SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, 8, AppSpacing.sm, 12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                4,
+                AppSpacing.sm,
+                8,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (leading != null || actions != null)
-                    Row(
-                      children: [
-                        ?leading,
-                        const Spacer(),
-                        ...?actions,
-                      ],
-                    ),
+                    Row(children: [?leading, const Spacer(), ...?actions]),
                   Padding(
                     padding: const EdgeInsets.only(left: AppSpacing.xs),
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: 25),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SizedBox(
+                        width: constraints.maxWidth,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            title,
+                            maxLines: 1,
+                            softWrap: false,
+                            semanticsLabel: title,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall?.copyWith(fontSize: 25),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],

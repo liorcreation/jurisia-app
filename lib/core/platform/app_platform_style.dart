@@ -21,11 +21,13 @@ enum AppPlatformStyle {
   ///
   /// Le mobile conserve le tiroir, la tablette affiche un rail permanent
   /// pour ne pas sacrifier la largeur utile au contenu, et le desktop expose
-  /// la sidebar complète repliable.
+  /// la sidebar complète repliable. Le côté le plus court évite qu'un
+  /// téléphone en paysage soit classé comme une tablette.
   static AppViewportClass viewportOf(BuildContext context) {
-    final width = MediaQuery.sizeOf(context).width;
+    final size = MediaQuery.sizeOf(context);
+    final width = size.width;
     if (width >= wideBreakpoint) return AppViewportClass.desktop;
-    if (width >= 600) return AppViewportClass.tablet;
+    if (size.shortestSide >= 600) return AppViewportClass.tablet;
     return AppViewportClass.mobile;
   }
 

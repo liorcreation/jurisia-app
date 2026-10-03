@@ -15,12 +15,14 @@ class ChatComposer extends StatefulWidget {
     required this.enabled,
     required this.onSend,
     this.hintText = 'Écrivez votre message…',
+    this.compact = false,
   });
 
   final TextEditingController controller;
   final bool enabled;
   final VoidCallback onSend;
   final String hintText;
+  final bool compact;
 
   @override
   State<ChatComposer> createState() => _ChatComposerState();
@@ -51,7 +53,12 @@ class _ChatComposerState extends State<ChatComposer> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.md),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        widget.compact ? AppSpacing.xs : AppSpacing.md,
+      ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.fastOutSlowIn,
@@ -71,7 +78,10 @@ class _ChatComposerState extends State<ChatComposer> {
           borderRadius: AppRadius.pill,
           borderColor: _focused ? AppColors.cobalt : AppColors.glassBorder,
           borderWidth: _focused ? 1.1 : 0.5,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: widget.compact ? 2 : AppSpacing.xs,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -82,7 +92,9 @@ class _ChatComposerState extends State<ChatComposer> {
                   minLines: 1,
                   maxLines: 5,
                   maxLength: AppInputLimits.chatMessage,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: widget.hintText,
@@ -102,7 +114,9 @@ class _ChatComposerState extends State<ChatComposer> {
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_upward_rounded,
-                    color: widget.enabled ? AppColors.nightBlueDeep : AppColors.textDisabled,
+                    color: widget.enabled
+                        ? AppColors.nightBlueDeep
+                        : AppColors.textDisabled,
                   ),
                   onPressed: widget.enabled ? widget.onSend : null,
                 ),

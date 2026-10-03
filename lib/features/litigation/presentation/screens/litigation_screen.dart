@@ -204,6 +204,7 @@ class _LitigationViewState extends State<_LitigationView> {
           enabled: !controller.isSending,
           onSend: () => _handleSend(controller),
           hintText: 'Décrivez votre situation…',
+          compact: MediaQuery.sizeOf(context).height < 500,
         ),
       ],
     );
@@ -825,7 +826,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
       offset: const Offset(0, 0.04),
       child: Container(
         constraints: BoxConstraints(minHeight: compact ? 0 : 384),
-        padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
+        padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.xl),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.large),
           gradient: const LinearGradient(
@@ -860,12 +861,12 @@ class _WelcomeIdentityPane extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    _HeroMark(size: compact ? 54 : 68),
+                    _HeroMark(size: compact ? 46 : 68),
                     const Spacer(),
                     const _LiveStatusPill(),
                   ],
                 ),
-                SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
+                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.xl),
                 Text(
                   'VOTRE ESPACE\nJURIDIQUE',
                   style: textTheme.labelSmall?.copyWith(
@@ -875,12 +876,12 @@ class _WelcomeIdentityPane extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: compact ? 6 : AppSpacing.sm),
                 Text(
                   'Faisons le point\nsur votre situation.',
                   style:
                       (compact
-                              ? textTheme.headlineMedium
+                              ? textTheme.headlineSmall
                               : textTheme.headlineLarge)
                           ?.copyWith(
                             color: AppColors.textPrimary,
@@ -888,12 +889,12 @@ class _WelcomeIdentityPane extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                           ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
                 Text(
                   'Expliquez les faits simplement. JurisIA vous aide à les organiser et à comprendre les prochaines pistes possibles.',
                   style: textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
-                    height: 1.55,
+                    height: compact ? 1.45 : 1.55,
                   ),
                 ),
               ],
@@ -1142,16 +1143,17 @@ class _StarterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final compact = MediaQuery.sizeOf(context).width < 380;
 
     return GlassContainer(
       onTap: onTap,
       borderRadius: AppRadius.medium,
       borderColor: AppColors.gold.withValues(alpha: 0.18),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GradientIconBadge(icon: starter.icon, size: 42),
+          GradientIconBadge(icon: starter.icon, size: compact ? 38 : 42),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
