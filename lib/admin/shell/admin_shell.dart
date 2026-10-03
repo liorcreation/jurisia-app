@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -419,8 +420,21 @@ class _ReturnToAppButton extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final navigator = Navigator.of(context);
-    if (await navigator.maybePop()) return;
-    await launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    // La console est autonome : quitte sa page courante dans le même onglet
+    // web (les nouveaux onglets sont souvent bloqués sur mobile). Sur natif,
+    // ouvre l'app publique dans le navigateur système.
+    await launchUrl(
+      Uri.parse(_appUrl),
+      mode: kIsWeb
+          ? LaunchMode.platformDefault
+          : LaunchMode.externalApplication,
+      webOnlyWindowName: '_self',
+    );
   }
 
   @override
