@@ -430,14 +430,16 @@ class _SubscriptionLegalAccess extends StatelessWidget {
                 ],
               );
             }
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < cards.length; i++) ...[
-                  if (i > 0) const SizedBox(width: AppSpacing.sm),
-                  Expanded(child: cards[i]),
+            return IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (var i = 0; i < cards.length; i++) ...[
+                    if (i > 0) const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: cards[i]),
+                  ],
                 ],
-              ],
+              ),
             );
           },
         ),

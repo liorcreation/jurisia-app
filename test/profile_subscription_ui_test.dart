@@ -6,6 +6,7 @@ import 'package:jurisia_app/core/entitlements/entitlements_controller.dart';
 import 'package:jurisia_app/core/entitlements/entitlements_repository.dart';
 import 'package:jurisia_app/core/entitlements/plan.dart';
 import 'package:jurisia_app/core/shell/profile_sheet.dart';
+import 'package:jurisia_app/features/subscription/presentation/screens/subscription_screen.dart';
 import 'package:jurisia_app/features/auth/domain/entities/auth_user.dart';
 import 'package:jurisia_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:jurisia_app/features/profile/domain/entities/user_profile.dart';
@@ -64,6 +65,37 @@ class _AuthRepository implements AuthRepository {
 }
 
 void main() {
+  testWidgets(
+    'le catalogue abonnement desktop affiche le contenu sans overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final entitlements = EntitlementsController(
+        repository: _EntitlementsRepository(),
+        usageScope: null,
+      );
+      addTearDown(entitlements.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<EntitlementsController>.value(
+          value: entitlements,
+          child: MaterialApp(
+            theme: AppTheme.darkTheme,
+            home: const SubscriptionScreen(),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 450));
+
+      expect(find.text('Passez à la vitesse supérieure'), findsOneWidget);
+      expect(find.text('JurisIA Découverte'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('le profil mène aux offres et à ses documents juridiques', (
     tester,
   ) async {
