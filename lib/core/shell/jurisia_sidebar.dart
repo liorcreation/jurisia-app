@@ -118,7 +118,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
           _RailIconButton(icon: Icons.search_rounded, tooltip: 'Rechercher', onTap: shell.openNav),
           const SizedBox(height: AppSpacing.xs),
           _RailNewConsultationButton(onTap: () => _startNewConsultation(context)),
-          const _AdminPortalEntry(compact: true),
+          const _AdminPortalEntry(compact: true, closeDrawerOnReturn: false),
           const SizedBox(height: AppSpacing.md),
           for (var i = 0; i < kNavDestinations.length; i++)
             _RailModuleButton(
@@ -162,7 +162,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
             child: const Text('Nouvelle consultation'),
           ),
         ),
-        const _AdminPortalEntry(compact: false),
+        _AdminPortalEntry(compact: false, closeDrawerOnReturn: isDrawer),
         AnimatedSize(
           duration: const Duration(milliseconds: 220),
           curve: Curves.fastOutSlowIn,
@@ -250,9 +250,13 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
 /// (vécu : il masquait le bouton « Nouvelle consultation »). La sidebar est
 /// la seule surface de l'app garantie libre de tout contenu d'écran.
 class _AdminPortalEntry extends StatefulWidget {
-  const _AdminPortalEntry({required this.compact});
+  const _AdminPortalEntry({
+    required this.compact,
+    required this.closeDrawerOnReturn,
+  });
 
   final bool compact;
+  final bool closeDrawerOnReturn;
 
   @override
   State<_AdminPortalEntry> createState() => _AdminPortalEntryState();
@@ -293,7 +297,7 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
       );
     } finally {
       if (mounted) {
-        if (widget.variant == SidebarVariant.drawer) {
+        if (widget.closeDrawerOnReturn) {
           Scaffold.maybeOf(context)?.closeDrawer();
         }
         setState(() => _opening = false);
