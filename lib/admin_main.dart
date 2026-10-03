@@ -16,9 +16,9 @@ import 'theme/app_theme.dart';
 /// flutter build web -t lib/admin_main.dart
 /// ```
 ///
-/// Elle partage le projet Supabase, le design system et les modèles, mais
-/// jamais son code n'entre dans le bundle grand public (`lib/main.dart` ne
-/// l'importe pas). L'accès est filtré par un rôle de personnel (table
+/// Elle partage le projet Supabase, le design system et les modèles. La même
+/// porte d'accès est aussi montée dans l'app grand public pour permettre une
+/// navigation interne ; l'accès reste filtré par le rôle de personnel (table
 /// `staff_roles`, voir `server/supabase/migration_006_roles_and_audit.sql`).
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

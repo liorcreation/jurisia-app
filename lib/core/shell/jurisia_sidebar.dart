@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/litigation/presentation/controllers/litigation_chat_controller.dart';
+import '../../admin/auth/admin_auth_gate.dart';
+import '../../admin/theme/admin_theme.dart';
 import '../../theme/app_theme.dart';
-import '../auth/admin_console_launcher.dart';
 import '../auth/staff_status.dart';
 import '../navigation/nav_destinations.dart';
 import '../supabase/supabase_config.dart';
@@ -280,7 +281,16 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
     if (_opening) return;
     setState(() => _opening = true);
     try {
-      await openAdminConsole();
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: '/admin'),
+          builder: (_) => Theme(
+            data: AdminTheme.dark,
+            child: const AdminAuthGate(),
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _opening = false);
     }

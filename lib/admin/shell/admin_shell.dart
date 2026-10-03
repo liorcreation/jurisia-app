@@ -409,18 +409,19 @@ class _BrandHeader extends StatelessWidget {
   }
 }
 
-/// Le chemin retour vers l'application grand public — en or, jamais en
-/// cobalt, pour que la couleur elle-même annonce la destination (le
-/// registre doré du grand public) avant même de lire le texte. Aucun aller-
-/// retour réseau avant l'ouverture : un simple lien externe, jamais bloqué
-/// par un navigateur.
+/// Retour à l'application grand public. Quand la console est ouverte depuis
+/// l'app, on dépile simplement sa route ; sur le déploiement admin autonome,
+/// on conserve le lien vers l'app publique comme solution de repli.
 class _ReturnToAppButton extends StatelessWidget {
   const _ReturnToAppButton();
 
   static const _appUrl = 'https://jurisia-app.pages.dev/';
 
-  Future<void> _open() =>
-      launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
+  Future<void> _open(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    if (await navigator.maybePop()) return;
+    await launchUrl(Uri.parse(_appUrl), webOnlyWindowName: '_blank');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,7 +429,7 @@ class _ReturnToAppButton extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          onTap: _open,
+          onTap: () => _open(context),
           borderRadius: BorderRadius.circular(AppRadius.medium),
           child: Container(
             padding: const EdgeInsets.symmetric(

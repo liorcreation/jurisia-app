@@ -95,8 +95,8 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
       - run: flutter pub get
-      # Console d'administration : point d'entrée séparé, jamais dans le
-      # bundle grand public (lib/main.dart ne l'importe pas).
+      # Console d'administration : point d'entrée autonome pour son
+      # déploiement dédié ; l'app principale propose aussi une route interne.
       - run: flutter build web --release -t lib/admin_main.dart --dart-define=SENTRY_DSN=${{ env.SENTRY_DSN }}
       # web/ est un dossier UNIQUE partagé par les deux cibles de build : sans
       # ce patch, l'onglet de l'admin afficherait le même titre que l'app
