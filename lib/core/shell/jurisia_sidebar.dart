@@ -292,7 +292,12 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
         ),
       );
     } finally {
-      if (mounted) setState(() => _opening = false);
+      if (mounted) {
+        if (widget.variant == SidebarVariant.drawer) {
+          Scaffold.maybeOf(context)?.closeDrawer();
+        }
+        setState(() => _opening = false);
+      }
     }
   }
 
