@@ -269,6 +269,18 @@ class _Sidebar extends StatelessWidget {
                     ),
                     child: _ReturnToAppButton(),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.sm,
+                      0,
+                      AppSpacing.sm,
+                      AppSpacing.xs,
+                    ),
+                    child: _WorkspaceCard(
+                      destination: destinations[selectedIndex],
+                      roleCount: identity.roles.length,
+                    ),
+                  ),
                   Expanded(
                     child: ListView(
                       padding: const EdgeInsets.symmetric(
@@ -538,6 +550,105 @@ class _GroupLabel extends StatelessWidget {
                   colors: [AppColors.divider, AppColors.divider.withValues(alpha: 0)],
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkspaceCard extends StatelessWidget {
+  const _WorkspaceCard({required this.destination, required this.roleCount});
+
+  final _AdminDestination destination;
+  final int roleCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xCC102E55), Color(0xB80B0F19)],
+        ),
+        border: Border.all(color: AdminTheme.accentLight.withValues(alpha: 0.20)),
+        boxShadow: [
+          BoxShadow(
+            color: AdminTheme.accent.withValues(alpha: 0.10),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: AdminGradients.cobaltMetallic,
+              boxShadow: AdminGradients.cobaltGlowSoft,
+            ),
+            child: Icon(destination.icon, size: 19, color: AppColors.textPrimary),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'ESPACE ACTIF',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AdminTheme.accentLight,
+                        letterSpacing: 1.3,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: AppColors.success, blurRadius: 7)],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  child: Text(
+                    destination.label,
+                    key: ValueKey(destination.label),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$roleCount rôle${roleCount > 1 ? 's' : ''} d’accès actif${roleCount > 1 ? 's' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                ),
+              ],
             ),
           ),
         ],
