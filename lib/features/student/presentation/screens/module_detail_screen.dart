@@ -792,7 +792,7 @@ class _DesktopModuleHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Espace étudiant · ${module.level.shortLabel} · Module ${module.order}',
+                  'Formations · ${module.level.shortLabel} · Module ${module.order}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(

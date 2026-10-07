@@ -498,10 +498,10 @@ class _AtelierBody extends StatelessWidget {
     final templatesColumn = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _Eyebrow('Modèles prêts à l\'emploi'),
+        const _Eyebrow('Obtenir un acte juridique'),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Renseignez quelques informations, l\'acte est rédigé au fil de l\'eau.',
+          'Décrivez votre besoin : votre projet d’acte est préparé par des juristes professionnels.',
           style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.md),

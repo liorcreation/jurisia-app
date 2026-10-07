@@ -56,6 +56,12 @@ const libraryCollections = <LibraryCollection>[
     subtitle: 'Banque, assurances et réglementation UMOA/CIMA',
     icon: 'banking',
   ),
+  LibraryCollection(
+    tag: 'pack-modeles-actes',
+    title: 'Modèle neutre d’acte juridique',
+    subtitle: 'Trames à compléter et à adapter à votre situation',
+    icon: 'legal_template',
+  ),
 ];
 
 /// Le pack famille est historiquement identifié par son domaine dans le
@@ -70,4 +76,3 @@ bool documentBelongsToLibraryCollection(
   }
   return document.tags.contains(collectionTag);
 }
-

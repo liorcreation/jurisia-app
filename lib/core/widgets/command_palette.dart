@@ -25,7 +25,7 @@ const _actions = [
     shortcutLabel: 'B',
     moduleIndex: 1,
   ),
-  _PaletteAction(icon: Icons.school_rounded, label: 'Espace étudiant', shortcutLabel: 'E', moduleIndex: 2),
+  _PaletteAction(icon: Icons.school_rounded, label: 'Formations', shortcutLabel: 'E', moduleIndex: 2),
   _PaletteAction(
     icon: Icons.edit_document,
     label: 'Nouveau brouillon professionnel',
@@ -37,6 +37,12 @@ const _actions = [
     label: 'Contacter un professionnel',
     shortcutLabel: 'C',
     moduleIndex: 4,
+  ),
+  _PaletteAction(
+    icon: Icons.work_rounded,
+    label: 'Stages et emploi',
+    shortcutLabel: 'S',
+    moduleIndex: 5,
   ),
 ];
 

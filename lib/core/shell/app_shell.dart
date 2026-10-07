@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/contact_professional/presentation/contact_professional_providers.dart';
 import '../../features/contact_professional/presentation/controllers/contact_professional_controller.dart';
 import '../../features/contact_professional/presentation/screens/contact_professional_screen.dart';
+import '../../features/careers/presentation/screens/career_opportunities_screen.dart';
 import '../../features/library/presentation/controllers/library_controller.dart';
 import '../../features/library/presentation/library_providers.dart';
 import '../../features/library/presentation/screens/library_screen.dart';
@@ -90,7 +91,7 @@ class AppShellScope extends InheritedWidget {
 }
 
 /// Coquille de navigation principale de JurisIA. Une **sidebar unifiée**
-/// (marque, « Nouvelle consultation », recherche, les cinq espaces, contenu
+/// (marque, « Nouvelle consultation », recherche, les six espaces, contenu
 /// contextuel de l'espace actif, carte profil) — permanente et repliable sur
 /// desktop/macOS, tiroir coulissant sur Android/iOS. Plus aucune barre de
 /// navigation inférieure : toute la navigation passe par la sidebar, comme
@@ -151,6 +152,7 @@ class _AppShellState extends State<AppShell> implements AppShellController {
     StudentScreen(),
     ProfessionalScreen(),
     ContactProfessionalScreen(),
+    CareerOpportunitiesScreen(),
   ];
 
   bool get _isDesktop =>
@@ -307,6 +309,7 @@ const List<LogicalKeyboardKey> _digitKeys = [
   LogicalKeyboardKey.digit3,
   LogicalKeyboardKey.digit4,
   LogicalKeyboardKey.digit5,
+  LogicalKeyboardKey.digit6,
 ];
 
 /// Enveloppe de la sidebar permanente sur desktop : **largeur fixe** (dépliée

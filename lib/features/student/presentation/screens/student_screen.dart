@@ -18,7 +18,7 @@ import '../widgets/module_status_badge.dart';
 import 'module_detail_screen.dart';
 import 'training_catalog_screen.dart';
 
-/// Section 3 — Espace étudiant : orientation vers le catalogue certifiant.
+/// Section 3 — Formations : orientation vers le catalogue certifiant.
 /// Le parcours universitaire LMD reste isolé derrière son statut « bientôt
 /// disponible » ; ses composants de progression sont conservés pour son
 /// activation ultérieure sans polluer l'accueil actuel.
@@ -66,7 +66,7 @@ class _StudentView extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            selectedLevel == null ? 'Espace étudiant' : selectedLevel.fullLabel,
+            selectedLevel == null ? 'Formations' : selectedLevel.fullLabel,
           ),
           leading: selectedLevel == null
               ? const AppShellMenuButton()
@@ -249,7 +249,7 @@ class _DesktopStudentHeader extends StatelessWidget {
         children: [
           const Icon(Icons.school_rounded, size: 18, color: AppColors.gold),
           const SizedBox(width: AppSpacing.sm),
-          Text('Espace étudiant', style: textTheme.headlineSmall),
+          Text('Formations', style: textTheme.headlineSmall),
           if (level != null) ...[
             const SizedBox(width: AppSpacing.sm),
             const Icon(
@@ -340,7 +340,7 @@ class _LevelWorkspace extends StatelessWidget {
     final main = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Eyebrow('Espace étudiant — ${level.shortLabel}'),
+        _Eyebrow('Formations — ${level.shortLabel}'),
         const SizedBox(height: AppSpacing.sm),
         Text(
           level.fullLabel,

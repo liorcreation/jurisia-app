@@ -20,9 +20,9 @@ class NavDestination {
   final String screenTitle;
 }
 
-/// Les cinq espaces de JurisIA, dans l'ordre de l'`IndexedStack` de
+/// Les six espaces de JurisIA, dans l'ordre de l'`IndexedStack` de
 /// [AppShell] : Litiges et consultations, Bibliothèque juridique, Espace
-/// étudiant, Espace professionnel, Contacter un professionnel.
+/// Formations, Espace professionnel, Contacter un professionnel, Stages et emploi.
 const List<NavDestination> kNavDestinations = [
   NavDestination(
     label: 'Litiges',
@@ -37,10 +37,10 @@ const List<NavDestination> kNavDestinations = [
     screenTitle: 'Bibliothèque juridique',
   ),
   NavDestination(
-    label: 'Étudiant',
+    label: 'Formations',
     icon: Icons.school_outlined,
     selectedIcon: Icons.school_rounded,
-    screenTitle: 'Espace étudiant',
+    screenTitle: 'Formations',
   ),
   NavDestination(
     label: 'Service professionnel',
@@ -53,5 +53,11 @@ const List<NavDestination> kNavDestinations = [
     icon: Icons.support_agent_outlined,
     selectedIcon: Icons.support_agent_rounded,
     screenTitle: 'Contacter un professionnel',
+  ),
+  NavDestination(
+    label: 'Stages et emploi',
+    icon: Icons.work_outline_rounded,
+    selectedIcon: Icons.work_rounded,
+    screenTitle: 'Stages et emploi',
   ),
 ];

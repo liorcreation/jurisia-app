@@ -9,8 +9,9 @@ import 'sidebar_sections/student_progress_section.dart';
 
 /// Section contextuelle de la sidebar : son contenu dépend de l'espace
 /// actif — historique des consultations pour Litiges, favoris pour la
-/// Bibliothèque, progression pour l'Étudiant, documents récents pour le
-/// Professionnel, demandes en cours pour Contacter.
+/// Bibliothèque, progression pour Formations, documents récents pour le
+/// Professionnel, demandes en cours pour Contacter. La page Stages et emploi
+/// n'a pas de contenu contextuel tant qu'aucune offre n'est publiée.
 class SidebarContextSection extends StatelessWidget {
   const SidebarContextSection({super.key, required this.query});
 
@@ -29,6 +30,8 @@ class SidebarContextSection extends StatelessWidget {
         return const ProfessionalDocumentsSection();
       case 4:
         return const ContactRequestsSection();
+      case 5:
+        return const SizedBox.shrink();
       default:
         return const SizedBox.shrink();
     }

@@ -24,7 +24,7 @@ class TrainingCatalogScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           leading: IconButton(
-            tooltip: 'Retour à l’espace étudiant',
+            tooltip: 'Retour aux formations',
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
             onPressed: () => Navigator.of(context).maybePop(),
           ),
@@ -98,7 +98,7 @@ class TrainingCatalogScreen extends StatelessWidget {
   }
 }
 
-/// Deux cartes d'orientation de l'accueil Étudiant.
+/// Deux cartes d'orientation de l'accueil Formations.
 class TrainingOrientationSection extends StatelessWidget {
   const TrainingOrientationSection({super.key, required this.onOpenCatalog});
 
@@ -1509,5 +1509,19 @@ IconData _iconFor(String icon) => switch (icon) {
   'business_center' => Icons.business_center_rounded,
   'verified_user' => Icons.verified_user_rounded,
   'domain' => Icons.domain_rounded,
+  'work' => Icons.work_rounded,
+  'account_tree' => Icons.account_tree_rounded,
+  'business' => Icons.business_rounded,
+  'diversity_3' => Icons.diversity_3_rounded,
+  'storefront' => Icons.storefront_rounded,
+  'public' => Icons.public_rounded,
+  'language' => Icons.language_rounded,
+  'travel_explore' => Icons.travel_explore_rounded,
+  'gavel' => Icons.gavel_rounded,
+  'devices' => Icons.devices_rounded,
+  'balance' => Icons.balance_rounded,
+  'edit_document' => Icons.edit_document,
+  'eco' => Icons.eco_rounded,
+  'lightbulb' => Icons.lightbulb_rounded,
   _ => Icons.school_rounded,
 };
