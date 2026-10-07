@@ -338,24 +338,30 @@ class _BrandHeader extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 46,
+            height: 46,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: AdminTheme.accent.withValues(alpha: 0.55),
-                width: 0.9,
+                color: AppColors.gold.withValues(alpha: 0.36),
+                width: 0.8,
               ),
-              gradient: RadialGradient(
-                center: const Alignment(-0.3, -0.4),
-                radius: 1.1,
-                colors: [AppColors.nightBlue, AppColors.nightBlueDeep],
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF18345B), AppColors.deepSlateDeep],
               ),
-              boxShadow: AdminGradients.cobaltGlowSoft,
+              boxShadow: [
+                BoxShadow(
+                  color: AdminTheme.accent.withValues(alpha: 0.25),
+                  blurRadius: 18,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: JurisIAMark(
-              size: 24,
+              size: 27,
               gradient: AdminGradients.cobaltMetallic,
             ),
           ),
@@ -369,15 +375,13 @@ class _BrandHeader extends StatelessWidget {
                   'JurisIA',
                   style: textTheme.titleMedium?.copyWith(
                     fontFamily: 'Libre Caslon Display',
+                    fontSize: 21,
                   ),
                 ),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1.5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
                         gradient: AppGradients.goldSheen,
                         borderRadius: BorderRadius.circular(AppRadius.small),
@@ -394,9 +398,11 @@ class _BrandHeader extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Console',
+                      'ESPACE SÉCURISÉ',
                       style: textTheme.labelSmall?.copyWith(
                         color: AppColors.textDisabled,
+                        fontSize: 9,
+                        letterSpacing: 0.8,
                       ),
                     ),
                   ],
@@ -502,20 +508,39 @@ class _GroupLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.sm,
-        AppSpacing.sm,
-        AppSpacing.sm,
-        6,
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.textDisabled,
-          letterSpacing: AppLetterSpacing.caps,
-          fontWeight: FontWeight.w700,
-          fontSize: 10,
-        ),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.md, AppSpacing.sm, 7),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 12,
+            decoration: BoxDecoration(
+              color: AdminTheme.accentLight.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppColors.textDisabled,
+              letterSpacing: AppLetterSpacing.caps,
+              fontWeight: FontWeight.w800,
+              fontSize: 9,
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.divider, AppColors.divider.withValues(alpha: 0)],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -556,9 +581,12 @@ class _NavItemState extends State<_NavItem> {
         gradient: selected
             ? LinearGradient(
                 colors: [
-                  AdminTheme.accent.withValues(alpha: 0.28),
-                  AdminTheme.accent.withValues(alpha: 0.10),
+                  AdminTheme.accent.withValues(alpha: 0.30),
+                  AdminTheme.accent.withValues(alpha: 0.13),
+                  AppColors.deepSlate.withValues(alpha: 0.08),
                 ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               )
             : null,
         color: selected
@@ -576,19 +604,30 @@ class _NavItemState extends State<_NavItem> {
       child: Row(
         children: [
           Container(
-            width: 3,
-            height: 16,
+          width: 3,
+          height: 20,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(2),
               color: selected ? AdminTheme.accentLight : Colors.transparent,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Icon(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: selected ? AdminTheme.accent.withValues(alpha: 0.20) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: selected ? AdminTheme.accentLight.withValues(alpha: 0.20) : Colors.transparent),
+          ),
+          child: Icon(
             widget.destination.icon,
-            size: 18,
+            size: 17,
             color: selected ? AdminTheme.accentLight : AppColors.textSecondary,
           ),
+        ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
@@ -669,33 +708,68 @@ class _ProfileCard extends StatelessWidget {
     final email = SupabaseConfig.isReady
         ? SupabaseConfig.client.auth.currentUser?.email
         : null;
-    final initial = (email?.isNotEmpty ?? false)
-        ? email!.substring(0, 1).toUpperCase()
-        : '?';
+    final initial = _profileInitials(email);
     final roleLabel = identity.primary?.label ?? 'Personnel';
 
     return GlassContainer(
       borderRadius: AppRadius.medium,
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      borderColor: AdminTheme.accent.withValues(alpha: 0.32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Text(
+                'SESSION ADMIN',
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.textDisabled,
+                  letterSpacing: AppLetterSpacing.caps,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 9,
+                ),
+              ),
+              const Spacer(),
               Container(
-                width: 38,
-                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.22)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(width: 5, height: 5, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
+                    const SizedBox(width: 5),
+                    Text('SÉCURISÉE', style: textTheme.labelSmall?.copyWith(color: AppColors.success, fontSize: 8, fontWeight: FontWeight.w800, letterSpacing: 0.6)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: AdminGradients.cobaltMetallic,
-                  boxShadow: AdminGradients.cobaltGlowSoft,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.goldLight, AppColors.goldDark, AdminTheme.accent],
+                  ),
+                  border: Border.all(color: AppColors.goldLight.withValues(alpha: 0.48), width: 1.2),
+                  boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.17), blurRadius: 14, offset: const Offset(0, 3))],
                 ),
                 child: Text(
                   initial,
-                  style: textTheme.titleSmall?.copyWith(
-                    color: AppColors.textPrimary,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.deepSlateDeep,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -711,7 +785,8 @@ class _ProfileCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -733,6 +808,7 @@ class _ProfileCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.labelSmall?.copyWith(
                               color: AdminTheme.accentLight,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
@@ -744,41 +820,46 @@ class _ProfileCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          if (identity.roles.length > 1) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+              decoration: BoxDecoration(
+                color: AdminTheme.accent.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(AppRadius.small),
+                border: Border.all(color: AdminTheme.accent.withValues(alpha: 0.20)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.key_rounded, size: 14, color: AdminTheme.accentLight),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text('${identity.roles.length} rôles actifs dans la console', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary))),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           TapScale(
             child: Material(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
               child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
+                borderRadius: BorderRadius.circular(AppRadius.medium),
                 onTap: onSignOut,
                 child: Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    color: AppColors.error.withValues(alpha: 0.10),
-                    border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.35),
-                      width: 0.8,
-                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.medium),
+                    color: Colors.white.withValues(alpha: 0.035),
+                    border: Border.all(color: AppColors.divider.withValues(alpha: 0.8), width: 0.8),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.logout_rounded,
-                        size: 14,
-                        color: AppColors.error,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Se déconnecter',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      const Icon(Icons.logout_rounded, size: 15, color: AppColors.error),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text('Se déconnecter', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w700))),
+                      const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textDisabled),
                     ],
                   ),
                 ),
@@ -789,4 +870,12 @@ class _ProfileCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _profileInitials(String? email) {
+  if (email == null || email.trim().isEmpty) return 'J';
+  final localPart = email.split('@').first;
+  final pieces = localPart.split(RegExp(r'[._-]+')).where((part) => part.isNotEmpty).toList();
+  if (pieces.length > 1) return '${pieces.first[0]}${pieces[1][0]}'.toUpperCase();
+  return localPart.substring(0, 1).toUpperCase();
 }
