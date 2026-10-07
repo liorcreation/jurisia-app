@@ -16,6 +16,7 @@ import '../../widgets/admin_ambience.dart';
 import '../../widgets/admin_empty_state.dart';
 import '../../widgets/admin_filter_chip.dart';
 import '../../widgets/admin_page_header.dart';
+import '../../widgets/admin_section_card.dart';
 import '../../widgets/admin_status_chip.dart';
 import 'admin_document_draft.dart';
 import 'admin_document_draft_controller.dart';
@@ -61,87 +62,100 @@ class _View extends StatelessWidget {
               AdminPageHeader(
                 icon: Icons.menu_book_rounded,
                 title: 'CMS Bibliothèque',
-                subtitle: 'La file des brouillons de textes et leur circuit de relecture.',
+                subtitle: 'Pilotez les textes, les validations et la publication de la base juridique.',
                 actions: [
                   IconButton(
-                    tooltip: 'Rafraîchir',
+                    tooltip: 'Actualiser le CMS',
                     onPressed: controller.isLoading ? null : controller.load,
                     icon: const Icon(Icons.refresh_rounded),
                   ),
                   if (identity.canEditContent)
-                    IconButton(
-                      tooltip: 'Nouveau brouillon',
-                      onPressed: () => _openEditor(context, controller),
-                      icon: const Icon(Icons.add_rounded),
+                    Padding(
+                      padding: const EdgeInsets.only(left: AppSpacing.xs),
+                      child: FilledButton.icon(
+                        onPressed: () => _openEditor(context, controller),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: const Text('Nouveau texte'),
+                      ),
                     ),
                 ],
               ),
-              _FilterBar(controller: controller),
-              if (controller.error != null)
-                AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
               Expanded(
                 child: Stack(
                   children: [
                     const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
-                    controller.isLoading && controller.drafts.isEmpty
-                        ? const Center(child: CircularProgressIndicator())
-                        : controller.drafts.isEmpty
-                            ? const AdminEmptyState(icon: Icons.description_outlined, message: 'Aucun brouillon.')
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final columns = constraints.maxWidth >= 1100 ? 2 : 1;
-                                  final children = [
-                                    for (var i = 0; i < controller.drafts.length; i++)
-                                      EntranceFadeSlide(
-                                        index: i,
-                                        child: _DraftCard(
-                                          draft: controller.drafts[i],
-                                          identity: identity,
-                                          busy: controller.isMutating,
-                                          onEdit: () => _openEditor(context, controller, draft: controller.drafts[i]),
-                                          onSubmit: () => controller.submit(controller.drafts[i].id),
-                                          onApprove: () => controller.approve(controller.drafts[i].id),
-                                          onRequestChanges: () => _promptReason(
-                                            context,
-                                            title: 'Renvoyer en correction',
-                                            label: 'Motif (obligatoire)',
-                                            onConfirm: (reason) =>
-                                                controller.requestChanges(controller.drafts[i].id, reason),
-                                          ),
-                                          onArchive: () => _promptReason(
-                                            context,
-                                            title: 'Archiver ce texte',
-                                            label: 'Motif (facultatif)',
-                                            requireReason: false,
-                                            onConfirm: (reason) => controller.archiveDocument(
-                                              controller.drafts[i].documentId,
-                                              reason.isEmpty ? null : reason,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ];
-                                  if (columns == 1) {
-                                    return ListView.separated(
-                                      padding: const EdgeInsets.all(AppSpacing.md),
-                                      itemCount: children.length,
-                                      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-                                      itemBuilder: (context, index) => children[index],
-                                    );
-                                  }
-                                  return SingleChildScrollView(
-                                    padding: const EdgeInsets.all(AppSpacing.md),
-                                    child: Wrap(
-                                      spacing: AppSpacing.sm,
-                                      runSpacing: AppSpacing.sm,
-                                      children: [
-                                        for (final child in children)
-                                          SizedBox(width: (constraints.maxWidth - AppSpacing.md * 2 - AppSpacing.sm) / 2, child: child),
-                                      ],
-                                    ),
-                                  );
-                                },
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 1180;
+                        return ListView(
+                          padding: EdgeInsets.fromLTRB(
+                            wide ? AppSpacing.xl : AppSpacing.md,
+                            AppSpacing.lg,
+                            wide ? AppSpacing.xl : AppSpacing.md,
+                            AppSpacing.xl,
+                          ),
+                          children: [
+                            _CmsHero(
+                              total: controller.totalCount,
+                              published: controller.countFor(DocumentDraftStatus.published),
+                              inReview: controller.countFor(DocumentDraftStatus.inReview),
+                              canCreate: identity.canEditContent,
+                              onCreate: () => _openEditor(context, controller),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            _CmsStatsStrip(controller: controller),
+                            const SizedBox(height: AppSpacing.lg),
+                            if (controller.error != null)
+                              AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                            _WorkflowCard(
+                              controller: controller,
+                              identity: identity,
+                              onRefresh: controller.load,
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            if (controller.isLoading && controller.drafts.isEmpty)
+                              const SizedBox(
+                                height: 260,
+                                child: Center(child: CircularProgressIndicator()),
+                              )
+                            else if (controller.drafts.isEmpty)
+                              const SizedBox(
+                                height: 280,
+                                child: AdminEmptyState(
+                                  icon: Icons.description_outlined,
+                                  message: 'Aucun texte dans cette vue.',
+                                ),
+                              )
+                            else
+                              _DraftWorkspace(
+                                drafts: controller.drafts,
+                                identity: identity,
+                                busy: controller.isMutating,
+                                wide: wide,
+                                onEdit: (draft) => _openEditor(context, controller, draft: draft),
+                                onSubmit: controller.submit,
+                                onApprove: controller.approve,
+                                onRequestChanges: (draft) => _promptReason(
+                                  context,
+                                  title: 'Renvoyer en correction',
+                                  label: 'Motif (obligatoire)',
+                                  onConfirm: (reason) => controller.requestChanges(draft.id, reason),
+                                ),
+                                onArchive: (draft) => _promptReason(
+                                  context,
+                                  title: 'Archiver ce texte',
+                                  label: 'Motif (facultatif)',
+                                  requireReason: false,
+                                  onConfirm: (reason) => controller.archiveDocument(
+                                    draft.documentId,
+                                    reason.isEmpty ? null : reason,
+                                  ),
+                                ),
                               ),
+                          ],
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -196,46 +210,286 @@ class _View extends StatelessWidget {
   }
 }
 
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({required this.controller});
+class _CmsHero extends StatelessWidget {
+  const _CmsHero({
+    required this.total,
+    required this.published,
+    required this.inReview,
+    required this.canCreate,
+    required this.onCreate,
+  });
 
-  final AdminDocumentDraftController controller;
+  final int total;
+  final int published;
+  final int inReview;
+  final bool canCreate;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(String label, DocumentDraftStatus? status) {
-      final count = status == null ? controller.totalCount : controller.countFor(status);
-      return Padding(
-        padding: const EdgeInsets.only(right: AppSpacing.sm),
-        child: AdminFilterChip(
-          label: label,
-          count: count,
-          selected: controller.filter == status,
-          onTap: () => controller.setFilter(status),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            chip('Tous', null),
-            for (final status in DocumentDraftStatus.values) chip(status.label, status),
+    final textTheme = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.large),
+        gradient: LinearGradient(
+          colors: [
+            AdminTheme.accentDark.withValues(alpha: 0.88),
+            AppColors.nightBlue.withValues(alpha: 0.86),
+            AppColors.deepSlateDeep.withValues(alpha: 0.94),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        border: Border.all(color: AdminTheme.accentLight.withValues(alpha: 0.30)),
+        boxShadow: [
+          BoxShadow(color: AdminTheme.accent.withValues(alpha: 0.16), blurRadius: 32, spreadRadius: -10),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 680;
+          final intro = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.42)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, size: 15, color: AppColors.gold),
+                        const SizedBox(width: 7),
+                        Text(
+                          'ATELIER ÉDITORIAL',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.gold,
+                            letterSpacing: AppLetterSpacing.caps,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: Text(
+                      'SOURCE JURIDIQUE',
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        letterSpacing: AppLetterSpacing.caps,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'La bibliothèque,\navec une ligne éditoriale.',
+                style: (compact ? textTheme.headlineSmall : textTheme.headlineMedium)?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                  color: AppColors.textPrimary,
+                  height: 1.05,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 590),
+                child: Text(
+                  'Préparez des contenus fiables, orchestrez la relecture et publiez chaque référence avec une traçabilité claire.',
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.45),
+                ),
+              ),
+              if (compact) ...[
+                const SizedBox(height: AppSpacing.md),
+                if (canCreate)
+                  FilledButton.icon(
+                    onPressed: onCreate,
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Créer un brouillon'),
+                  ),
+              ],
+            ],
+          );
+          final signal = Container(
+            constraints: BoxConstraints(minWidth: compact ? 0 : 235, maxWidth: 290),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.055),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('SIGNAL DE PUBLICATION', style: textTheme.labelSmall?.copyWith(color: AdminTheme.accentLight, letterSpacing: AppLetterSpacing.caps, fontWeight: FontWeight.w700)),
+                const SizedBox(height: AppSpacing.sm),
+                _HeroMetric(label: 'Textes suivis', value: '$total', icon: Icons.library_books_rounded),
+                const SizedBox(height: AppSpacing.sm),
+                _HeroMetric(label: 'En ligne', value: '$published', icon: Icons.public_rounded, color: AppColors.success),
+                const SizedBox(height: AppSpacing.sm),
+                _HeroMetric(label: 'À relire', value: '$inReview', icon: Icons.rate_review_rounded, color: AppColors.warning),
+              ],
+            ),
+          );
+          return compact ? intro : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: intro), const SizedBox(width: AppSpacing.lg), signal]);
+        },
       ),
     );
   }
 }
 
-class _DraftCard extends StatelessWidget {
-  const _DraftCard({
-    required this.draft,
+class _HeroMetric extends StatelessWidget {
+  const _HeroMetric({required this.label, required this.value, required this.icon, this.color = AdminTheme.accentLight});
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: color),
+        const SizedBox(width: 9),
+        Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary))),
+        Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
+}
+
+class _CmsStatsStrip extends StatelessWidget {
+  const _CmsStatsStrip({required this.controller});
+  final AdminDocumentDraftController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 680;
+        final cards = [
+          _CmsStat(label: 'Total', value: controller.totalCount, icon: Icons.layers_rounded, color: AdminTheme.accentLight, hint: 'textes suivis'),
+          _CmsStat(label: 'Brouillons', value: controller.countFor(DocumentDraftStatus.draft), icon: Icons.edit_note_rounded, color: AppColors.textSecondary, hint: 'à préparer'),
+          _CmsStat(label: 'En relecture', value: controller.countFor(DocumentDraftStatus.inReview), icon: Icons.rate_review_rounded, color: AppColors.warning, hint: 'à arbitrer'),
+          _CmsStat(label: 'Publié', value: controller.countFor(DocumentDraftStatus.published), icon: Icons.verified_rounded, color: AppColors.success, hint: 'visible au public'),
+        ];
+        return compact
+            ? Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [for (final card in cards) SizedBox(width: (constraints.maxWidth - AppSpacing.sm) / 2, child: card)])
+            : Row(children: [for (var i = 0; i < cards.length; i++) Expanded(child: Padding(padding: EdgeInsets.only(right: i == cards.length - 1 ? 0 : AppSpacing.sm), child: cards[i]))]);
+      },
+    );
+  }
+}
+
+class _CmsStat extends StatelessWidget {
+  const _CmsStat({required this.label, required this.value, required this.icon, required this.color, required this.hint});
+  final String label;
+  final int value;
+  final IconData icon;
+  final Color color;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(9),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label.toUpperCase(), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled, letterSpacing: AppLetterSpacing.caps, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text('$value', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display', color: AppColors.textPrimary)),
+              Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary)),
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WorkflowCard extends StatelessWidget {
+  const _WorkflowCard({required this.controller, required this.identity, required this.onRefresh});
+  final AdminDocumentDraftController controller;
+  final StaffIdentity identity;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminSectionCard(
+      title: 'File éditoriale',
+      icon: Icons.tune_rounded,
+      trailing: IconButton(tooltip: 'Actualiser la file', onPressed: controller.isLoading ? null : onRefresh, icon: const Icon(Icons.sync_rounded, size: 19)),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Organisez votre prochain geste éditorial.', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+              if (identity.canReviewDocuments)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(AppRadius.pill)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [const Icon(Icons.verified_user_outlined, size: 14, color: AppColors.success), const SizedBox(width: 6), Text('Droits de revue actifs', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700))]),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Chaque filtre conserve le circuit de validation et les actions autorisées par votre rôle.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          _FilterBar(controller: controller),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({required this.controller});
+  final AdminDocumentDraftController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget chip(String label, DocumentDraftStatus? status, IconData icon) {
+      final count = status == null ? controller.totalCount : controller.countFor(status);
+      return Padding(
+        padding: const EdgeInsets.only(right: AppSpacing.sm),
+        child: AdminFilterChip(label: label, count: count, selected: controller.filter == status, onTap: () => controller.setFilter(status)),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(children: [
+        chip('Toutes les vues', null, Icons.layers_rounded),
+        for (final status in DocumentDraftStatus.values) chip(status.label, status, Icons.circle_rounded),
+      ]),
+    );
+  }
+}
+
+class _DraftWorkspace extends StatelessWidget {
+  const _DraftWorkspace({
+    required this.drafts,
     required this.identity,
     required this.busy,
+    required this.wide,
     required this.onEdit,
     required this.onSubmit,
     required this.onApprove,
@@ -243,6 +497,50 @@ class _DraftCard extends StatelessWidget {
     required this.onArchive,
   });
 
+  final List<AdminDocumentDraft> drafts;
+  final StaffIdentity identity;
+  final bool busy;
+  final bool wide;
+  final ValueChanged<AdminDocumentDraft> onEdit;
+  final Future<bool> Function(String id) onSubmit;
+  final Future<bool> Function(String id) onApprove;
+  final ValueChanged<AdminDocumentDraft> onRequestChanges;
+  final ValueChanged<AdminDocumentDraft> onArchive;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      for (var i = 0; i < drafts.length; i++)
+        EntranceFadeSlide(
+          index: i,
+          child: _DraftCard(
+            draft: drafts[i],
+            identity: identity,
+            busy: busy,
+            onEdit: () => onEdit(drafts[i]),
+            onSubmit: () => onSubmit(drafts[i].id),
+            onApprove: () => onApprove(drafts[i].id),
+            onRequestChanges: () => onRequestChanges(drafts[i]),
+            onArchive: () => onArchive(drafts[i]),
+          ),
+        ),
+    ];
+    final content = wide
+        ? Wrap(spacing: AppSpacing.md, runSpacing: AppSpacing.md, children: [for (final card in cards) SizedBox(width: 420, child: card)])
+        : Column(children: [for (var i = 0; i < cards.length; i++) Padding(padding: EdgeInsets.only(bottom: i == cards.length - 1 ? 0 : AppSpacing.md), child: cards[i])]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [Expanded(child: Text('Textes à piloter', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display'))), Text('${drafts.length} résultat${drafts.length > 1 ? 's' : ''}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary))]),
+        const SizedBox(height: AppSpacing.sm),
+        content,
+      ],
+    );
+  }
+}
+
+class _DraftCard extends StatelessWidget {
+  const _DraftCard({required this.draft, required this.identity, required this.busy, required this.onEdit, required this.onSubmit, required this.onApprove, required this.onRequestChanges, required this.onArchive});
   final AdminDocumentDraft draft;
   final StaffIdentity identity;
   final bool busy;
@@ -255,114 +553,77 @@ class _DraftCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
+    final statusColor = draftStatusColor(draft.status);
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              AdminStatusChip(label: draft.status.label, color: draftStatusColor(draft.status)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  draft.documentId,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(draft.title, style: textTheme.titleSmall),
-          const SizedBox(height: 4),
-          Wrap(
-            spacing: 6,
-            runSpacing: 4,
-            children: [
-              _MiniTag(draft.type),
-              _MiniTag(draft.domain),
-              if (draft.articleCount > 0)
-                _MiniTag('${draft.articleCount} article${draft.articleCount > 1 ? "s" : ""}'),
-            ],
-          ),
-          if (draft.summary.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              draft.summary,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-          if (draft.status == DocumentDraftStatus.changesRequested && draft.reviewReason != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(AppRadius.small),
-              ),
-              child: Text(
-                'Motif : ${draft.reviewReason}',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.warning),
-              ),
-            ),
-          ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(AppRadius.medium)), child: Icon(_draftIcon(draft.status), color: statusColor, size: 21)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [AdminStatusChip(label: draft.status.label, color: statusColor), const Spacer(), Text(_formatCmsDate(draft.updatedAt), style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled))]),
+            const SizedBox(height: 7),
+            Text(draft.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          ])),
+        ]),
+        const SizedBox(height: AppSpacing.sm),
+        Wrap(spacing: 6, runSpacing: 6, children: [_MiniTag(draft.type), _MiniTag(draft.domain), if (draft.articleCount > 0) _MiniTag('${draft.articleCount} article${draft.articleCount > 1 ? 's' : ''}')]),
+        if (draft.reference.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            [
-              if (draft.createdByEmail != null) 'Créé par ${draft.createdByEmail}',
-              if (draft.reviewedByEmail != null) 'relu par ${draft.reviewedByEmail}',
-            ].join(' · '),
-            style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.xs,
-            children: [
-              if (draft.canEdit && identity.canEditContent) ...[
-                OutlinedButton.icon(
-                  onPressed: busy ? null : onEdit,
-                  icon: const Icon(Icons.edit_rounded, size: 15),
-                  label: const Text('Modifier'),
-                ),
-                FilledButton.icon(
-                  onPressed: busy ? null : onSubmit,
-                  style: FilledButton.styleFrom(backgroundColor: AdminTheme.accent),
-                  icon: const Icon(Icons.send_rounded, size: 15),
-                  label: const Text('Soumettre à la relecture'),
-                ),
-              ],
-              if (draft.status == DocumentDraftStatus.inReview && identity.canReviewDocuments) ...[
-                OutlinedButton.icon(
-                  onPressed: busy ? null : onRequestChanges,
-                  icon: const Icon(Icons.undo_rounded, size: 15),
-                  label: const Text('Demander des corrections'),
-                ),
-                FilledButton.icon(
-                  onPressed: busy ? null : onApprove,
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.success),
-                  icon: const Icon(Icons.check_rounded, size: 15),
-                  label: const Text('Approuver'),
-                ),
-              ],
-              if (draft.status == DocumentDraftStatus.published && identity.canReviewDocuments)
-                OutlinedButton.icon(
-                  onPressed: busy ? null : onArchive,
-                  icon: const Icon(Icons.archive_outlined, size: 15),
-                  label: const Text('Archiver ce texte'),
-                ),
-            ],
-          ),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [const Icon(Icons.bookmark_border_rounded, size: 15, color: AdminTheme.accentLight), const SizedBox(width: 6), Expanded(child: Text(draft.reference, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)))])
         ],
-      ),
+        if (draft.summary.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(draft.summary, maxLines: 3, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.35)),
+        ],
+        if (draft.status == DocumentDraftStatus.changesRequested && draft.reviewReason != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Container(width: double.infinity, padding: const EdgeInsets.all(AppSpacing.sm), decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.09), borderRadius: BorderRadius.circular(AppRadius.small), border: Border.all(color: AppColors.warning.withValues(alpha: 0.18))), child: Text('Correction demandée · ${draft.reviewReason}', style: textTheme.bodySmall?.copyWith(color: AppColors.warning, height: 1.3))),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Row(children: [Icon(Icons.person_outline_rounded, size: 15, color: AppColors.textDisabled), const SizedBox(width: 6), Expanded(child: Text(_draftOwnerLabel(draft), maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled)))]),
+        const SizedBox(height: AppSpacing.md),
+        Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.xs, children: [
+          if (draft.canEdit && identity.canEditContent) ...[
+            OutlinedButton.icon(onPressed: busy ? null : onEdit, icon: const Icon(Icons.edit_rounded, size: 15), label: const Text('Modifier')),
+            FilledButton.icon(onPressed: busy ? null : onSubmit, style: FilledButton.styleFrom(backgroundColor: AdminTheme.accent), icon: const Icon(Icons.send_rounded, size: 15), label: const Text('Soumettre')),
+          ],
+          if (draft.status == DocumentDraftStatus.inReview && identity.canReviewDocuments) ...[
+            OutlinedButton.icon(onPressed: busy ? null : onRequestChanges, icon: const Icon(Icons.undo_rounded, size: 15), label: const Text('Corrections')),
+            FilledButton.icon(onPressed: busy ? null : onApprove, style: FilledButton.styleFrom(backgroundColor: AppColors.success), icon: const Icon(Icons.check_rounded, size: 15), label: const Text('Approuver')),
+          ],
+          if (draft.status == DocumentDraftStatus.published && identity.canReviewDocuments) OutlinedButton.icon(onPressed: busy ? null : onArchive, icon: const Icon(Icons.archive_outlined, size: 15), label: const Text('Archiver')),
+        ]),
+      ]),
     );
   }
+}
+
+IconData _draftIcon(DocumentDraftStatus status) {
+  switch (status) {
+    case DocumentDraftStatus.draft:
+      return Icons.edit_note_rounded;
+    case DocumentDraftStatus.inReview:
+      return Icons.rate_review_rounded;
+    case DocumentDraftStatus.changesRequested:
+      return Icons.warning_amber_rounded;
+    case DocumentDraftStatus.published:
+      return Icons.public_rounded;
+    case DocumentDraftStatus.archived:
+      return Icons.inventory_2_outlined;
+  }
+}
+
+String _draftOwnerLabel(AdminDocumentDraft draft) {
+  if (draft.reviewedByEmail != null) return 'Relu par ${draft.reviewedByEmail}';
+  if (draft.createdByEmail != null) return 'Créé par ${draft.createdByEmail}';
+  return 'Auteur non renseigné';
+}
+
+String _formatCmsDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
 }
 
 class _MiniTag extends StatelessWidget {
@@ -372,12 +633,13 @@ class _MiniTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadius.small),
+        color: AppColors.legalBlueDark.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.divider.withValues(alpha: 0.8)),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+      child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary)),
     );
   }
 }
