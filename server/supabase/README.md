@@ -83,6 +83,14 @@
    `migration_028_jurisia_banking_insurance_pack.sql` ajoute trois cours
    complets sur le droit bancaire, la réglementation bancaire UMOA et le droit
    des assurances CIMA.
+   `migration_029_library_pdf_urls.sql` et
+   `migration_030_library_integral_pdf_catalog.sql` associent les PDF source
+   aux fiches de la bibliothèque. Les fichiers doivent être présents dans le
+   bucket public `legal-source-pdfs` avant l’exécution de ces migrations.
+   `migration_031_administrative_law_pdf_corpus.sql` ajoute les références
+   PDF du pack administratif. Les doublons binaires sont dédupliqués; le PDF
+   de 260 pages trop volumineux pour la limite de 50 Mo du bucket est scindé en
+   deux volumes consécutifs, sans perte de pages.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
