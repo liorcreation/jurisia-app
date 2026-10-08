@@ -4,7 +4,7 @@ import '../../../../models/legal_document/legal_domain.dart';
 /// Collection éditoriale affichée dans la bibliothèque JurisIA.
 ///
 /// L'ordre de cette liste est contractuel : il correspond à la navigation
-/// principale souhaitée pour les six packs juridiques.
+/// principale souhaitée pour les packs juridiques.
 class LibraryCollection {
   const LibraryCollection({
     required this.tag,
@@ -55,6 +55,12 @@ const libraryCollections = <LibraryCollection>[
     title: 'DROIT BANCAIRE ET DES ASSURANCES',
     subtitle: 'Banque, assurances et réglementation UMOA/CIMA',
     icon: 'banking',
+  ),
+  LibraryCollection(
+    tag: 'pack-droit-commercial-societes',
+    title: 'DROIT COMMERCIAL ET DES SOCIÉTÉS COMMERCIALES',
+    subtitle: 'Commerce, sociétés commerciales et droit OHADA',
+    icon: 'commercial',
   ),
   LibraryCollection(
     tag: 'pack-modeles-actes',
