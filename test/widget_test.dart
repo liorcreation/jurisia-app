@@ -58,7 +58,7 @@ Future<void> _settle(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Narrow layout: the sidebar drawer carries the five spaces', (
+  testWidgets('Narrow layout: the sidebar drawer carries the six spaces', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(400, 900);
@@ -82,9 +82,10 @@ void main() {
     for (final label in [
       'Litiges',
       'Bibliothèque',
-      'Étudiant',
+      'Formations',
       'Service professionnel',
       'Contacter',
+      'Stages et emploi',
     ]) {
       expect(find.text(label), findsOneWidget);
     }
@@ -201,9 +202,10 @@ void main() {
       for (final label in [
         'Litiges',
         'Bibliothèque',
-        'Étudiant',
+        'Formations',
         'Service professionnel',
         'Contacter',
+        'Stages et emploi',
       ]) {
         expect(find.text(label), findsOneWidget);
       }
@@ -212,9 +214,10 @@ void main() {
       // exception ni débordement.
       for (final entry in const {
         'Bibliothèque': 'Bibliothèque juridique',
-        'Étudiant': 'Espace étudiant',
+        'Formations': 'Formations',
         'Service professionnel': 'Service professionnel',
         'Contacter': 'Contacter un professionnel',
+        'Stages et emploi': 'Stages et emploi',
         'Litiges': 'Litiges et consultations',
       }.entries) {
         await tester.tap(find.text(entry.key));
@@ -330,7 +333,7 @@ void main() {
         await tester.tap(find.byIcon(Icons.menu_rounded));
         await _settle(tester);
       }
-      await tester.tap(find.text('Étudiant'));
+      await tester.tap(find.text('Formations'));
       await _settle(tester);
       expect(find.textContaining('Votre progression'), findsOneWidget);
 

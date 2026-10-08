@@ -169,7 +169,7 @@ class _OpportunityChooser extends StatelessWidget {
               );
             }
             return Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: internship),
                 const SizedBox(width: AppSpacing.md),

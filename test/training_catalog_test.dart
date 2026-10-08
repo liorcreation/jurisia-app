@@ -16,7 +16,7 @@ void main() {
         (category) => category.trainingType == TrainingType.lmd,
       );
 
-      expect(certifying, hasLength(5));
+      expect(certifying, hasLength(21));
       expect(certifying.every((category) => category.isAvailable), isTrue);
       expect(lmd.isAvailable, isFalse);
     },
