@@ -2,6 +2,7 @@ import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
 import 'obligations_pack_local_datasource.dart';
 import 'jurisia_penal_pack_local_datasource.dart';
+import 'jurisia_penal_source_documents.dart';
 import 'jurisia_private_judicial_law_pack_local_datasource.dart';
 import 'jurisia_administrative_law_pack_local_datasource.dart';
 import 'jurisia_banking_insurance_pack_local_datasource.dart';
@@ -34,20 +35,22 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
   final bool officialOnly;
 
   @override
-  List<LegalDocument> getAll() => [
-        ..._documents,
-        ...obligationsPackLocalDocuments,
-        ...jurisiaPenalPackLocalDocuments,
-        ...jurisiaPrivateJudicialLawPackLocalDocuments,
-        ...jurisiaAdministrativeLawPackLocalDocuments,
-        ...jurisiaBankingInsurancePackLocalDocuments,
-      ]
-      .where(
-        (document) =>
-            (!familyOnly || document.domain == LegalDomain.famille) &&
-            (!officialOnly || _isOfficialLibraryDocument(document)),
-      )
-      .toList(growable: false);
+  List<LegalDocument> getAll() =>
+      [
+            ..._documents,
+            ...obligationsPackLocalDocuments,
+            ...jurisiaPenalPackLocalDocuments,
+            ...jurisiaPenalSourceDocuments,
+            ...jurisiaPrivateJudicialLawPackLocalDocuments,
+            ...jurisiaAdministrativeLawPackLocalDocuments,
+            ...jurisiaBankingInsurancePackLocalDocuments,
+          ]
+          .where(
+            (document) =>
+                (!familyOnly || document.domain == LegalDomain.famille) &&
+                (!officialOnly || _isOfficialLibraryDocument(document)),
+          )
+          .toList(growable: false);
 }
 
 bool _isOfficialLibraryDocument(LegalDocument document) {
@@ -1532,8 +1535,8 @@ final List<LegalDocument> _documents = [
     tags: const ['bail', 'habitation', 'modèle'],
     relatedDocumentIds: const ['doc-code-civil'],
   ),
-      LegalDocument(
-        id: 'doc-modele-cdd',
+  LegalDocument(
+    id: 'doc-modele-cdd',
     title: 'Modèle de contrat de travail à durée déterminée',
     type: LegalDocumentType.modeleActe,
     domain: LegalDomain.travail,
@@ -1629,62 +1632,62 @@ final List<LegalDocument> _documents = [
       ),
     ],
     tags: const ['contrat de travail', 'CDD', 'modèle'],
-        relatedDocumentIds: const ['doc-code-travail'],
-      ),
-      LegalDocument(
-        id: 'doc-modele-neutre-acte-juridique',
-        title: 'Modèle neutre d’acte juridique',
-        type: LegalDocumentType.modeleActe,
-        domain: LegalDomain.autre,
-        reference: 'Trame générale à personnaliser',
-        datePublication: DateTime(2026, 10, 7),
-        summary:
-            'Structure vierge destinée à organiser les éléments essentiels d’un acte. À adapter à la nature de l’opération, au droit applicable et aux exigences de forme.',
-        fullContent:
-            'MODÈLE NEUTRE D’ACTE JURIDIQUE\n\n'
-            'Avertissement : cette trame constitue un support de préparation. Elle ne remplace pas la vérification du droit applicable ni, lorsque la loi l’exige, l’intervention d’un professionnel habilité. Supprimez les rubriques inutiles et faites relire le document avant signature.\n\n'
-            'ENTRE LES SOUSSIGNÉS\n\n'
-            '1. [Nom ou dénomination de la première partie], [forme / qualité], demeurant ou ayant son siège à [adresse], représenté(e) par [nom et qualité du représentant, le cas échéant], ci-après « Partie 1 ».\n\n'
-            '2. [Nom ou dénomination de la seconde partie], [forme / qualité], demeurant ou ayant son siège à [adresse], représenté(e) par [nom et qualité du représentant, le cas échéant], ci-après « Partie 2 ».\n\n'
-            'PRÉAMBULE\n'
-            '[Exposer le contexte, l’objet de l’opération et les éléments utiles. Le préambule ne doit pas contredire les clauses de l’acte.]\n\n'
-            'IL A ÉTÉ CONVENU CE QUI SUIT\n\n'
-            'Article 1 — Objet\n'
-            '[Décrire précisément l’opération, les biens, services, droits ou obligations concernés.]\n\n'
-            'Article 2 — Engagements des parties\n'
-            '2.1 La Partie 1 s’engage à : [obligations, modalités et échéances].\n'
-            '2.2 La Partie 2 s’engage à : [obligations, modalités et échéances].\n\n'
-            'Article 3 — Prix, contrepartie et paiement (si applicable)\n'
-            '[Montant et devise, échéancier, mode de paiement, justificatifs et conséquences d’un retard.]\n\n'
-            'Article 4 — Durée, prise d’effet et fin\n'
-            '[Date d’effet, durée, renouvellement éventuel, préavis et modalités de résiliation.]\n\n'
-            'Article 5 — Déclarations et garanties\n'
-            '[Déclarations utiles de chaque partie et garanties expressément convenues.]\n\n'
-            'Article 6 — Confidentialité et données (si applicable)\n'
-            '[Informations concernées, personnes autorisées, durée et mesures de protection.]\n\n'
-            'Article 7 — Force majeure et inexécution\n'
-            '[Procédure de notification, délai de remède et conséquences, selon le droit applicable.]\n\n'
-            'Article 8 — Règlement des différends et droit applicable\n'
-            '[Droit applicable et mécanisme de règlement, sous réserve des règles impératives de compétence.]\n\n'
-            'Article 9 — Dispositions finales\n'
-            '[Notifications, modification, divisibilité, intégralité de l’accord et nombre d’exemplaires.]\n\n'
-            'Fait à [lieu], le [date], en [nombre] exemplaires.\n\n'
-            'PARTIE 1\n'
-            '[Nom, qualité, signature précédée de la mention requise]\n\n'
-            'PARTIE 2\n'
-            '[Nom, qualité, signature précédée de la mention requise]',
-        outline: const [
-          'Identification des parties',
-          'Contexte et objet',
-          'Engagements et contreparties',
-          'Durée et fin',
-          'Dispositions finales et signatures',
-        ],
-        summaryOnly: false,
-        officialSourceName: 'JurisIA — trame générique',
-        fileUrl: jurisiaCoursePdfUrl(
-          'course-modele-neutre-acte-juridique-jurisia.pdf',
-        ),
-        tags: const ['pack-modeles-actes', 'modèle', 'acte juridique'],
-      ),
+    relatedDocumentIds: const ['doc-code-travail'],
+  ),
+  LegalDocument(
+    id: 'doc-modele-neutre-acte-juridique',
+    title: 'Modèle neutre d’acte juridique',
+    type: LegalDocumentType.modeleActe,
+    domain: LegalDomain.autre,
+    reference: 'Trame générale à personnaliser',
+    datePublication: DateTime(2026, 10, 7),
+    summary:
+        'Structure vierge destinée à organiser les éléments essentiels d’un acte. À adapter à la nature de l’opération, au droit applicable et aux exigences de forme.',
+    fullContent:
+        'MODÈLE NEUTRE D’ACTE JURIDIQUE\n\n'
+        'Avertissement : cette trame constitue un support de préparation. Elle ne remplace pas la vérification du droit applicable ni, lorsque la loi l’exige, l’intervention d’un professionnel habilité. Supprimez les rubriques inutiles et faites relire le document avant signature.\n\n'
+        'ENTRE LES SOUSSIGNÉS\n\n'
+        '1. [Nom ou dénomination de la première partie], [forme / qualité], demeurant ou ayant son siège à [adresse], représenté(e) par [nom et qualité du représentant, le cas échéant], ci-après « Partie 1 ».\n\n'
+        '2. [Nom ou dénomination de la seconde partie], [forme / qualité], demeurant ou ayant son siège à [adresse], représenté(e) par [nom et qualité du représentant, le cas échéant], ci-après « Partie 2 ».\n\n'
+        'PRÉAMBULE\n'
+        '[Exposer le contexte, l’objet de l’opération et les éléments utiles. Le préambule ne doit pas contredire les clauses de l’acte.]\n\n'
+        'IL A ÉTÉ CONVENU CE QUI SUIT\n\n'
+        'Article 1 — Objet\n'
+        '[Décrire précisément l’opération, les biens, services, droits ou obligations concernés.]\n\n'
+        'Article 2 — Engagements des parties\n'
+        '2.1 La Partie 1 s’engage à : [obligations, modalités et échéances].\n'
+        '2.2 La Partie 2 s’engage à : [obligations, modalités et échéances].\n\n'
+        'Article 3 — Prix, contrepartie et paiement (si applicable)\n'
+        '[Montant et devise, échéancier, mode de paiement, justificatifs et conséquences d’un retard.]\n\n'
+        'Article 4 — Durée, prise d’effet et fin\n'
+        '[Date d’effet, durée, renouvellement éventuel, préavis et modalités de résiliation.]\n\n'
+        'Article 5 — Déclarations et garanties\n'
+        '[Déclarations utiles de chaque partie et garanties expressément convenues.]\n\n'
+        'Article 6 — Confidentialité et données (si applicable)\n'
+        '[Informations concernées, personnes autorisées, durée et mesures de protection.]\n\n'
+        'Article 7 — Force majeure et inexécution\n'
+        '[Procédure de notification, délai de remède et conséquences, selon le droit applicable.]\n\n'
+        'Article 8 — Règlement des différends et droit applicable\n'
+        '[Droit applicable et mécanisme de règlement, sous réserve des règles impératives de compétence.]\n\n'
+        'Article 9 — Dispositions finales\n'
+        '[Notifications, modification, divisibilité, intégralité de l’accord et nombre d’exemplaires.]\n\n'
+        'Fait à [lieu], le [date], en [nombre] exemplaires.\n\n'
+        'PARTIE 1\n'
+        '[Nom, qualité, signature précédée de la mention requise]\n\n'
+        'PARTIE 2\n'
+        '[Nom, qualité, signature précédée de la mention requise]',
+    outline: const [
+      'Identification des parties',
+      'Contexte et objet',
+      'Engagements et contreparties',
+      'Durée et fin',
+      'Dispositions finales et signatures',
+    ],
+    summaryOnly: false,
+    officialSourceName: 'JurisIA — trame générique',
+    fileUrl: jurisiaCoursePdfUrl(
+      'course-modele-neutre-acte-juridique-jurisia.pdf',
+    ),
+    tags: const ['pack-modeles-actes', 'modèle', 'acte juridique'],
+  ),
 ];
