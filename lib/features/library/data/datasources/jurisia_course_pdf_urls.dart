@@ -1,8 +1,9 @@
-/// URL publique des éditions PDF des cours originaux JurisIA.
-/// Les mêmes fichiers sont suivis dans output/pdf et publiés dans le bucket
-/// Supabase `legal-source-pdfs`.
-const jurisiaCoursePdfBaseUrl =
+/// Racine des PDF de la bibliothèque publique JurisIA.
+const jurisiaLibraryPdfBaseUrl =
     'https://gfpguuuzzyqoxjkhlhli.supabase.co/storage/v1/object/public/legal-source-pdfs/';
 
-String jurisiaCoursePdfUrl(String filename) =>
-    '$jurisiaCoursePdfBaseUrl$filename';
+String jurisiaLibraryPdfUrl(String filename) =>
+    '$jurisiaLibraryPdfBaseUrl${Uri.encodeComponent(filename)}';
+
+/// URL des éditions PDF générées à partir des cours originaux JurisIA.
+String jurisiaCoursePdfUrl(String filename) => jurisiaLibraryPdfUrl(filename);

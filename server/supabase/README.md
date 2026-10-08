@@ -96,6 +96,11 @@
    rendus en PDF. Appliquer d'abord les migrations 024 à 028, puis téléverser
    les quatorze fichiers `course-*-jurisia.pdf` dans `legal-source-pdfs` avant
    d'exécuter 032.
+   `migration_033_obligations_pdf_additions.sql` ajoute huit documents
+   distincts au pack Obligations. Les PDF déjà présents ou strictement
+   identiques sont réutilisés; les huit nouveaux fichiers sources téléversés
+   dans `legal-source-pdfs` sont référencés par leur nom d'origine encodé dans
+   la migration.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la
