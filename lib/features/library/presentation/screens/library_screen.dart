@@ -1796,6 +1796,8 @@ IconData _iconForCollection(String icon) {
       return Icons.business_center_rounded;
     case 'fiscal':
       return Icons.account_balance_rounded;
+    case 'public_finance':
+      return Icons.savings_rounded;
     case 'suretes':
       return Icons.shield_rounded;
     case 'legal_template':

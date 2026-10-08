@@ -69,6 +69,12 @@ const libraryCollections = <LibraryCollection>[
     icon: 'fiscal',
   ),
   LibraryCollection(
+    tag: 'pack-finances-publiques',
+    title: 'FINANCES PUBLIQUES',
+    subtitle: 'Budget public, finances UEMOA et droit public économique',
+    icon: 'public_finance',
+  ),
+  LibraryCollection(
     tag: 'pack-droit-suretes',
     title: 'DROIT DES SÛRETÉS',
     subtitle: 'Garanties personnelles et réelles dans l’espace OHADA',

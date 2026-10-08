@@ -8,6 +8,7 @@ import 'jurisia_administrative_law_pack_local_datasource.dart';
 import 'jurisia_banking_insurance_pack_local_datasource.dart';
 import 'jurisia_commercial_law_source_documents.dart';
 import 'jurisia_fiscal_law_source_documents.dart';
+import 'jurisia_public_finance_source_documents.dart';
 import 'jurisia_security_law_source_documents.dart';
 import 'jurisia_course_pdf_urls.dart';
 
@@ -49,6 +50,7 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
             ...jurisiaBankingInsurancePackLocalDocuments,
             ...jurisiaCommercialLawSourceDocuments,
             ...jurisiaFiscalLawSourceDocuments,
+            ...jurisiaPublicFinanceSourceDocuments,
             ...jurisiaSecurityLawSourceDocuments,
           ]
           .where(
