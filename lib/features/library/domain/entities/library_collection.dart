@@ -69,6 +69,12 @@ const libraryCollections = <LibraryCollection>[
     icon: 'fiscal',
   ),
   LibraryCollection(
+    tag: 'pack-droit-suretes',
+    title: 'DROIT DES SÛRETÉS',
+    subtitle: 'Garanties personnelles et réelles dans l’espace OHADA',
+    icon: 'suretes',
+  ),
+  LibraryCollection(
     tag: 'pack-modeles-actes',
     title: 'Modèle neutre d’acte juridique',
     subtitle: 'Trames à compléter et à adapter à votre situation',
