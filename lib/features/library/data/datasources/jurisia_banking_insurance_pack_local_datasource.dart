@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_course_pdf_urls.dart';
 
 /// Cours originaux JurisIA construits à partir des thèmes des supports
 /// transmis sur le droit bancaire UMOA et le droit des assurances CIMA.
@@ -31,6 +32,7 @@ final jurisiaBankingInsurancePackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-droit-bancaire-jurisia.pdf'),
     tags: const [
       'pack-droit-bancaire-assurances',
       'droit bancaire',
@@ -61,6 +63,7 @@ final jurisiaBankingInsurancePackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-reglementation-umoa-jurisia.pdf'),
     tags: const [
       'pack-droit-bancaire-assurances',
       'droit bancaire UMOA',
@@ -91,6 +94,7 @@ final jurisiaBankingInsurancePackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-assurances-cima-jurisia.pdf'),
     tags: const [
       'pack-droit-bancaire-assurances',
       'droit des assurances',

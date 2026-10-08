@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_course_pdf_urls.dart';
 
 /// Cours originaux JurisIA construits à partir des thèmes des ressources
 /// transmises sur le droit judiciaire privé et la procédure civile.
@@ -31,6 +32,7 @@ final jurisiaPrivateJudicialLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-droit-judiciaire-prive-jurisia.pdf'),
     tags: const [
       'pack-droit-judiciaire-prive',
       'droit judiciaire privé',
@@ -61,6 +63,7 @@ final jurisiaPrivateJudicialLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-procedure-civile-jurisia.pdf'),
     tags: const [
       'pack-droit-judiciaire-prive',
       'procédure civile',
@@ -91,6 +94,7 @@ final jurisiaPrivateJudicialLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-execution-civile-jurisia.pdf'),
     tags: const [
       'pack-droit-judiciaire-prive',
       'juridictions civiles',

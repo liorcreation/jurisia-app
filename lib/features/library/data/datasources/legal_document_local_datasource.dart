@@ -5,6 +5,7 @@ import 'jurisia_penal_pack_local_datasource.dart';
 import 'jurisia_private_judicial_law_pack_local_datasource.dart';
 import 'jurisia_administrative_law_pack_local_datasource.dart';
 import 'jurisia_banking_insurance_pack_local_datasource.dart';
+import 'jurisia_course_pdf_urls.dart';
 
 /// Frontière data vers la source des documents juridiques. Permet de
 /// substituer une source distante (Supabase, alimentée par le pipeline
@@ -1681,6 +1682,9 @@ final List<LegalDocument> _documents = [
         ],
         summaryOnly: false,
         officialSourceName: 'JurisIA — trame générique',
+        fileUrl: jurisiaCoursePdfUrl(
+          'course-modele-neutre-acte-juridique-jurisia.pdf',
+        ),
         tags: const ['pack-modeles-actes', 'modèle', 'acte juridique'],
       ),
 ];

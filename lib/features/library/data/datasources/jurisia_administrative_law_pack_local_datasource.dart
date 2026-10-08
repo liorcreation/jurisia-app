@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_course_pdf_urls.dart';
 
 /// Cours originaux JurisIA construits à partir des thèmes des supports
 /// transmis sur l'action administrative, les contrats et le contentieux.
@@ -31,6 +32,7 @@ final jurisiaAdministrativeLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-action-administrative-jurisia.pdf'),
     tags: const [
       'pack-droit-administratif',
       'droit administratif',
@@ -61,6 +63,7 @@ final jurisiaAdministrativeLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-contrats-administratifs-jurisia.pdf'),
     tags: const [
       'pack-droit-administratif',
       'contrats administratifs',
@@ -91,6 +94,7 @@ final jurisiaAdministrativeLawPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-contentieux-administratif-jurisia.pdf'),
     tags: const [
       'pack-droit-administratif',
       'contentieux administratif',

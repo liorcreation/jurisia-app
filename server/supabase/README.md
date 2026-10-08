@@ -91,6 +91,11 @@
    PDF du pack administratif. Les doublons binaires sont dédupliqués; le PDF
    de 260 pages trop volumineux pour la limite de 50 Mo du bucket est scindé en
    deux volumes consécutifs, sans perte de pages.
+   `migration_032_library_pdf_coverage.sql` relie les neuf PDF sources du pack
+   Obligations, les cours originaux JurisIA et le modèle neutre d'acte juridique
+   rendus en PDF. Appliquer d'abord les migrations 024 à 028, puis téléverser
+   les quatorze fichiers `course-*-jurisia.pdf` dans `legal-source-pdfs` avant
+   d'exécuter 032.
 
 4. Dans **Authentication → Providers**, l'e-mail/mot de passe est activé par
    défaut — rien à faire pour démarrer. Vous pouvez désactiver la

@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_course_pdf_urls.dart';
 
 /// Cours originaux JurisIA construits à partir des thèmes des ressources
 /// pénales transmises : droit pénal général, spécial et procédure pénale.
@@ -30,6 +31,7 @@ final jurisiaPenalPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-penal-general-jurisia.pdf'),
     tags: const [
       'pack-penal',
       'droit pénal général',
@@ -60,6 +62,7 @@ final jurisiaPenalPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-penal-special-jurisia.pdf'),
     tags: const [
       'pack-penal',
       'droit pénal spécial',
@@ -90,6 +93,7 @@ final jurisiaPenalPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-procedure-penale-jurisia.pdf'),
     tags: const [
       'pack-penal',
       'procédure pénale',

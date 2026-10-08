@@ -1,5 +1,6 @@
 import '../../../../models/legal_document/legal_document_model.dart';
 import '../../../../models/legal_document/legal_domain.dart';
+import 'jurisia_course_pdf_urls.dart';
 import 'jurisia_obligations_course.dart';
 
 /// Références pédagogiques du pack « Droit des obligations ».
@@ -31,6 +32,7 @@ final obligationsPackLocalDocuments = <LegalDocument>[
     ],
     summaryOnly: false,
     officialSourceName: 'JurisIA — contenu pédagogique original',
+    fileUrl: jurisiaCoursePdfUrl('course-obligations-jurisia.pdf'),
     tags: const [
       'pack-obligations',
       'cours complet',
