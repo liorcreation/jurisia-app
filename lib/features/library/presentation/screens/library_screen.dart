@@ -1794,6 +1794,8 @@ IconData _iconForCollection(String icon) {
       return Icons.account_balance_wallet_rounded;
     case 'commercial':
       return Icons.business_center_rounded;
+    case 'fiscal':
+      return Icons.account_balance_rounded;
     case 'legal_template':
       return Icons.edit_document;
     default:

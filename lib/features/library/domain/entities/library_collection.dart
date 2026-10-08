@@ -63,6 +63,12 @@ const libraryCollections = <LibraryCollection>[
     icon: 'commercial',
   ),
   LibraryCollection(
+    tag: 'pack-droit-fiscal-international',
+    title: 'DROIT FISCAL ET FISCALITÉ INTERNATIONALE',
+    subtitle: 'Impôts, procédures fiscales, entreprises et fiscalité africaine',
+    icon: 'fiscal',
+  ),
+  LibraryCollection(
     tag: 'pack-modeles-actes',
     title: 'Modèle neutre d’acte juridique',
     subtitle: 'Trames à compléter et à adapter à votre situation',
