@@ -3,6 +3,7 @@ import '../../../../models/legal_document/legal_domain.dart';
 import 'obligations_pack_local_datasource.dart';
 import 'jurisia_penal_pack_local_datasource.dart';
 import 'jurisia_penal_source_documents.dart';
+import 'jurisia_labor_social_security_source_documents.dart';
 import 'jurisia_private_judicial_law_pack_local_datasource.dart';
 import 'jurisia_administrative_law_pack_local_datasource.dart';
 import 'jurisia_banking_insurance_pack_local_datasource.dart';
@@ -47,6 +48,7 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
             ...obligationsPackLocalDocuments,
             ...jurisiaPenalPackLocalDocuments,
             ...jurisiaPenalSourceDocuments,
+            ...jurisiaLaborSocialSecuritySourceDocuments,
             ...jurisiaPrivateJudicialLawPackLocalDocuments,
             ...jurisiaAdministrativeLawPackLocalDocuments,
             ...jurisiaBankingInsurancePackLocalDocuments,

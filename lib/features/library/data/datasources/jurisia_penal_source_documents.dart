@@ -128,6 +128,7 @@ final jurisiaPenalSourceDocuments = <LegalDocument>[
     ),
     tags: const [
       'pack-penal',
+      'pack-droit-travail-securite-sociale',
       'droit pénal du travail',
       'sécurité sociale',
       'droit social',

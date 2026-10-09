@@ -39,6 +39,12 @@ const libraryCollections = <LibraryCollection>[
     icon: 'penal',
   ),
   LibraryCollection(
+    tag: 'pack-droit-travail-securite-sociale',
+    title: 'DROIT DU TRAVAIL ET DE LA SÉCURITÉ SOCIALE',
+    subtitle: 'Relations de travail, emploi et protection sociale',
+    icon: 'administrative',
+  ),
+  LibraryCollection(
     tag: 'pack-droit-judiciaire-prive',
     title: 'DROIT JUDICIAIRE PRIVÉ',
     subtitle: 'Procédure civile et organisation judiciaire',
