@@ -81,6 +81,12 @@ const libraryCollections = <LibraryCollection>[
     icon: 'suretes',
   ),
   LibraryCollection(
+    tag: 'pack-sciences-politiques',
+    title: 'SCIENCES POLITIQUES',
+    subtitle: 'Science politique, institutions et théorie du droit',
+    icon: 'political_science',
+  ),
+  LibraryCollection(
     tag: 'pack-modeles-actes',
     title: 'Modèle neutre d’acte juridique',
     subtitle: 'Trames à compléter et à adapter à votre situation',

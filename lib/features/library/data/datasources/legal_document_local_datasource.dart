@@ -10,6 +10,7 @@ import 'jurisia_commercial_law_source_documents.dart';
 import 'jurisia_fiscal_law_source_documents.dart';
 import 'jurisia_public_finance_source_documents.dart';
 import 'jurisia_security_law_source_documents.dart';
+import 'jurisia_political_science_source_documents.dart';
 import 'jurisia_course_pdf_urls.dart';
 
 /// Frontière data vers la source des documents juridiques. Permet de
@@ -52,6 +53,7 @@ class LocalLegalDocumentDataSource implements LegalDocumentDataSource {
             ...jurisiaFiscalLawSourceDocuments,
             ...jurisiaPublicFinanceSourceDocuments,
             ...jurisiaSecurityLawSourceDocuments,
+            ...jurisiaPoliticalScienceSourceDocuments,
           ]
           .where(
             (document) =>

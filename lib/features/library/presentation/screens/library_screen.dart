@@ -1802,6 +1802,8 @@ IconData _iconForCollection(String icon) {
       return Icons.shield_rounded;
     case 'legal_template':
       return Icons.edit_document;
+    case 'political_science':
+      return Icons.account_balance_rounded;
     default:
       return Icons.menu_book_rounded;
   }
