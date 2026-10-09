@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 /// Fondu + glissement d'entrée, joué une seule fois à l'apparition du
@@ -31,20 +33,25 @@ class EntranceFadeSlide extends StatefulWidget {
   State<EntranceFadeSlide> createState() => _EntranceFadeSlideState();
 }
 
-class _EntranceFadeSlideState extends State<EntranceFadeSlide> with SingleTickerProviderStateMixin {
+class _EntranceFadeSlideState extends State<EntranceFadeSlide>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+  Timer? _staggerTimer;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
 
-    final effectiveIndex = widget.index.clamp(0, EntranceFadeSlide._maxStaggerIndex);
+    final effectiveIndex = widget.index.clamp(
+      0,
+      EntranceFadeSlide._maxStaggerIndex,
+    );
     final delay = widget.stagger * effectiveIndex;
     if (delay == Duration.zero) {
       _controller.forward();
     } else {
-      Future.delayed(delay, () {
+      _staggerTimer = Timer(delay, () {
         if (mounted) _controller.forward();
       });
     }
@@ -52,18 +59,25 @@ class _EntranceFadeSlideState extends State<EntranceFadeSlide> with SingleTicker
 
   @override
   void dispose() {
+    _staggerTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final curved = CurvedAnimation(parent: _controller, curve: Curves.fastOutSlowIn);
+    final curved = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.fastOutSlowIn,
+    );
 
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(begin: widget.offset, end: Offset.zero).animate(curved),
+        position: Tween<Offset>(
+          begin: widget.offset,
+          end: Offset.zero,
+        ).animate(curved),
         child: widget.child,
       ),
     );
