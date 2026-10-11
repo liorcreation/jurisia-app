@@ -308,9 +308,17 @@ class _ProfessionalServiceRequestWizardState
                             !category.serviceTypes.contains(
                               _selectedServiceType,
                             )) {
-                          _selectedServiceType = null;
-                          _isOtherService = false;
-                          _actTypeController.clear();
+                          if (_isOtherService &&
+                              _actTypeController.text.trim().isNotEmpty) {
+                            // Conserver le modèle choisi depuis la carte même
+                            // si l'utilisateur oriente ensuite la demande
+                            // vers un autre pôle professionnel.
+                            _selectedServiceType = 'Autre';
+                          } else {
+                            _selectedServiceType = null;
+                            _isOtherService = false;
+                            _actTypeController.clear();
+                          }
                         }
                       }),
                     ),

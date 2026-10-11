@@ -19,6 +19,7 @@ import '../../domain/entities/drafting_request.dart';
 import '../../domain/entities/legal_drafting_result.dart';
 import '../../domain/entities/professional_template.dart';
 import '../../domain/entities/professional_service_category.dart';
+import '../../domain/entities/professional_service_request.dart';
 import '../controllers/professional_documents_controller.dart';
 import '../widgets/drafting_intake_sheet.dart';
 import '../widgets/professional_service_request_wizard.dart';
@@ -38,6 +39,17 @@ class ProfessionalScreen extends StatelessWidget {
     DraftingMode mode, {
     ProfessionalTemplate? template,
   }) {
+    // Les actes sont préparés par des experts : ce parcours transmet une
+    // demande professionnelle au lieu d'ouvrir la génération par IA.
+    if (mode == DraftingMode.redaction) {
+      showProfessionalServiceRequestWizard(
+        context,
+        initialKind: ProfessionalRequestKind.legalAct,
+        initialActType: template?.title,
+      );
+      return;
+    }
+
     final sheet = DraftingIntakeSheet(
       mode: mode,
       templates: _templateDataSource.getAll(),
@@ -202,7 +214,7 @@ String _modeTitle(DraftingMode mode) {
 String _modeShort(DraftingMode mode) {
   switch (mode) {
     case DraftingMode.redaction:
-      return 'Acte rédigé';
+      return 'Acte par expert';
     case DraftingMode.audit:
       return 'Audit de contrat';
     case DraftingMode.consultation:
@@ -213,7 +225,7 @@ String _modeShort(DraftingMode mode) {
 String _modeDescription(DraftingMode mode) {
   switch (mode) {
     case DraftingMode.redaction:
-      return 'Un acte complet généré à partir d\'un modèle et du contexte que vous renseignez.';
+      return 'Transmettez votre besoin : un professionnel du droit préparera votre projet d’acte.';
     case DraftingMode.audit:
       return 'Collez un contrat existant : l\'IA en isole les clauses fragiles et les réécrit.';
     case DraftingMode.consultation:
@@ -225,9 +237,9 @@ List<String> _modeDeliverables(DraftingMode mode) {
   switch (mode) {
     case DraftingMode.redaction:
       return const [
-        'Acte structuré, prêt à personnaliser',
-        'Clauses calées sur le droit burkinabè & OHADA',
-        'Ajustements rapides en un clic',
+        'Demande transmise au professionnel compétent',
+        'Projet préparé à partir des informations fournies',
+        'Échanges et suivi de votre dossier',
       ];
     case DraftingMode.audit:
       return const [
@@ -372,7 +384,7 @@ class _DesktopProfessionalHeader extends StatelessWidget {
                 Text('Service professionnel', style: textTheme.headlineSmall),
                 const SizedBox(height: 3),
                 Text(
-                  'Atelier d\'ingénierie juridique — actes, audits et notes de synthèse',
+                  'Expertise juridique — actes, audits et accompagnement',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
@@ -688,7 +700,7 @@ class _ProfessionalHero extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Des services structurés, des modèles prêts à l’emploi et une IA qui vous aide à passer de la question au document.',
+                      'Des professionnels du droit vous accompagnent pour vos actes, consultations et démarches juridiques.',
                       style: textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                         height: 1.5,
@@ -725,7 +737,7 @@ class _ProfessionalHero extends StatelessWidget {
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 700),
                             child: Text(
-                              'Des services structurés, des modèles prêts à l’emploi et une IA qui vous aide à passer de la question au document.',
+                              'Des professionnels du droit vous accompagnent pour vos actes, consultations et démarches juridiques.',
                               style: textTheme.bodyLarge?.copyWith(
                                 color: AppColors.textSecondary,
                                 height: 1.55,
@@ -762,9 +774,9 @@ class _ProfessionalHeroStats extends StatelessWidget {
           label: 'pôles métier',
         ),
         _ProfessionalStat(
-          icon: Icons.auto_awesome_rounded,
+          icon: Icons.support_agent_rounded,
           value: '01',
-          label: 'atelier assisté',
+          label: 'parcours expert',
         ),
       ],
     );
@@ -776,9 +788,9 @@ class _ProfessionalJourneyRail extends StatelessWidget {
 
   static const _steps = [
     (Icons.explore_rounded, 'Choisir', 'Un service ou un modèle.'),
-    (Icons.tune_rounded, 'Renseigner', 'Le contexte utile au dossier.'),
-    (Icons.auto_awesome_rounded, 'Générer', 'Une première version structurée.'),
-    (Icons.verified_rounded, 'Finaliser', 'Ajuster, copier ou exporter.'),
+    (Icons.tune_rounded, 'Décrire', 'Les éléments utiles à votre dossier.'),
+    (Icons.support_agent_rounded, 'Transmettre', 'Votre demande à un professionnel.'),
+    (Icons.verified_rounded, 'Suivre', 'La prise en charge et les échanges.'),
   ];
 
   @override
@@ -1162,7 +1174,9 @@ class _InstrumentCardState extends State<_InstrumentCard> {
                 children: [
                   Flexible(
                     child: Text(
-                      'Ouvrir l\'atelier',
+                      widget.mode == DraftingMode.redaction
+                          ? 'Demander cet acte'
+                          : 'Ouvrir l\'atelier',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelLarge?.copyWith(
@@ -1322,8 +1336,8 @@ class _TemplateCardState extends State<_TemplateCard> {
                     label: '${template.requiredFields.length} informations',
                   ),
                   const _TemplateMeta(
-                    icon: Icons.auto_awesome_rounded,
-                    label: 'Assisté par IA',
+                    icon: Icons.verified_user_rounded,
+                    label: 'Préparé par un professionnel',
                   ),
                 ],
               ),
@@ -1332,7 +1346,7 @@ class _TemplateCardState extends State<_TemplateCard> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Configurer cet acte',
+                      'Demander cet acte',
                       style: textTheme.labelMedium?.copyWith(
                         color: AppColors.goldLight,
                         fontWeight: FontWeight.w700,
@@ -1496,12 +1510,9 @@ class _HowItWorks extends StatelessWidget {
   const _HowItWorks();
 
   static const _steps = <(IconData, String)>[
-    (Icons.tune_rounded, 'Choisissez un instrument et renseignez le contexte'),
-    (
-      Icons.auto_awesome_rounded,
-      'L\'IA rédige au fil de l\'eau, sources à l\'appui',
-    ),
-    (Icons.done_all_rounded, 'Ajustez en un clic, copiez ou exportez'),
+    (Icons.tune_rounded, 'Choisissez un service et décrivez votre besoin'),
+    (Icons.support_agent_rounded, 'Votre demande est transmise à un professionnel'),
+    (Icons.done_all_rounded, 'Recevez un accusé et suivez les échanges'),
   ];
 
   @override

@@ -162,7 +162,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'Le document généré doit être relu par un professionnel avant utilisation.',
+                              'Votre demande sera transmise à un professionnel du droit pour préparer le projet d’acte.',
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
@@ -242,7 +242,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Le document généré doit être relu par un professionnel avant utilisation.',
+                            'Votre demande sera transmise à un professionnel du droit pour préparer le projet d’acte.',
                             style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
                           ),
                         ),
@@ -267,7 +267,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
   String _sheetTitle() {
     switch (widget.mode) {
       case DraftingMode.redaction:
-        return 'Rédiger un acte';
+        return 'Demander un acte';
       case DraftingMode.audit:
         return 'Auditer un contrat';
       case DraftingMode.consultation:
@@ -278,7 +278,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
   String _submitLabel() {
     switch (widget.mode) {
       case DraftingMode.redaction:
-        return 'Générer le document';
+        return 'Transmettre la demande';
       case DraftingMode.audit:
         return 'Analyser le contrat';
       case DraftingMode.consultation:
@@ -440,7 +440,7 @@ class _DraftingIntakeSheetState extends State<DraftingIntakeSheet> {
         icon: Icons.draw_rounded,
         tint: AppColors.metalDeepGold,
         eyebrow: 'RÉDACTION D\'ACTE',
-        subtitle: 'Renseignez le contexte, l\'IA rédige l\'acte au fil de l\'eau.',
+        subtitle: 'Décrivez votre besoin : un professionnel préparera le projet d’acte.',
       );
     case DraftingMode.audit:
       return (
