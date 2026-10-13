@@ -7,8 +7,8 @@ import 'package:jurisia_app/theme/app_theme.dart';
 void main() {
   test('JurisIA light tokens stay aligned with the visual brief', () {
     expect(AppColors.deepSlate, const Color(0xFFF4F6FA));
-    expect(AppColors.cobalt, const Color(0xFF1E56A0));
-    expect(AppColors.gold, const Color(0xFFD4AF37));
+    expect(AppColors.cobalt, const Color(0xFF24558B));
+    expect(AppColors.gold, const Color(0xFFB58A24));
     expect(AppColors.textPrimary, const Color(0xFF172235));
     expect(AppMotion.standard, const Duration(milliseconds: 300));
     expect(AppBreakpoints.contentMaxWidth, 1200);
