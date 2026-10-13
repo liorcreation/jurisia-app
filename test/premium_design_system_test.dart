@@ -5,11 +5,11 @@ import 'package:jurisia_app/core/widgets/premium_surface.dart';
 import 'package:jurisia_app/theme/app_theme.dart';
 
 void main() {
-  test('Royal Legal Dark tokens stay aligned with the visual brief', () {
-    expect(AppColors.deepSlate, const Color(0xFF0B0F19));
+  test('JurisIA light tokens stay aligned with the visual brief', () {
+    expect(AppColors.deepSlate, const Color(0xFFF4F6FA));
     expect(AppColors.cobalt, const Color(0xFF1E56A0));
     expect(AppColors.gold, const Color(0xFFD4AF37));
-    expect(AppColors.textPrimary, const Color(0xFFF8FAFC));
+    expect(AppColors.textPrimary, const Color(0xFF172235));
     expect(AppMotion.standard, const Duration(milliseconds: 300));
     expect(AppBreakpoints.contentMaxWidth, 1200);
   });
