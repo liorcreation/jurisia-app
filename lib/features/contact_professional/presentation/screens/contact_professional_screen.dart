@@ -310,15 +310,7 @@ class _ContactHero extends StatelessWidget {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.legalBlueDark.withValues(alpha: 0.94),
-              AppColors.nightBlueDeep.withValues(alpha: 0.98),
-              const Color(0xFF111827).withValues(alpha: 0.96),
-            ],
-          ),
+          gradient: AppGradients.heroCard,
           borderRadius: BorderRadius.circular(AppRadius.large),
           border: Border.all(
             color: AppColors.gold.withValues(alpha: 0.32),

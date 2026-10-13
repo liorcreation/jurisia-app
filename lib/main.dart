@@ -18,9 +18,9 @@ void main() async {
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppColors.nightBlueDeep,
-        systemNavigationBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: AppColors.deepSlate,
+        systemNavigationBarIconBrightness: Brightness.dark,
       ),
     );
     runApp(const JurisIAApp());
@@ -38,9 +38,9 @@ class JurisIAApp extends StatelessWidget {
     return MaterialApp(
       title: 'JurisIA',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.lightTheme,
+      themeMode: ThemeMode.light,
       home: const JurisIASplashScreen(child: AuthGate()),
     );
   }

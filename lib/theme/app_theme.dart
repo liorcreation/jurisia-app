@@ -1,53 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Palette officielle de la charte graphique JurisIA — « Royal Legal Dark ».
-/// Le Deep Slate pose le fond, le Cobalt Métallique structure les surfaces et
-/// les états de focus, l'Or Sablé signe les actions à forte valeur, et le
-/// Blanc Titane porte la hiérarchie de lecture.
+/// Palette JurisIA : cabinet numérique clair, bleu nuit et or sablé.
 class AppColors {
   const AppColors._();
 
-  /// Palette de référence « Royal Legal Dark ».
-  ///
-  /// Les alias historiques ([nightBlue], [legalBlue], etc.) sont conservés
-  /// pour permettre une migration progressive des features existantes sans
-  /// multiplier les régressions visuelles lors de la refonte.
-  static const Color deepSlate = Color(0xFF0B0F19);
-  static const Color deepSlateDeep = Color(0xFF070A12);
-  static const Color deepSlateElevated = Color(0xFF111827);
+  /// Surfaces de travail claires : blanc cassé, blanc pur et bleu-gris léger.
+  static const Color deepSlate = Color(0xFFF4F6FA);
+  static const Color deepSlateDeep = Color(0xFFEDF1F6);
+  static const Color deepSlateElevated = Color(0xFFFFFFFF);
 
-  static const Color cobalt = Color(0xFF1E56A0);
-  static const Color cobaltLight = Color(0xFF4F88D4);
-  static const Color cobaltDeep = Color(0xFF102E55);
+  static const Color cobalt = Color(0xFF24558B);
+  static const Color cobaltLight = Color(0xFF527CA7);
+  static const Color cobaltDeep = Color(0xFFE4ECF5);
 
-  static const Color gold = Color(0xFFD4AF37);
-  static const Color goldLight = Color(0xFFFFD978);
-  static const Color goldDark = Color(0xFF9A7A1E);
+  static const Color gold = Color(0xFFB58A24);
+  static const Color goldLight = Color(0xFF9B7419);
+  static const Color goldDark = Color(0xFF795A12);
   static const Color roseGold = Color(0xFFD9A98A);
   static const Color agedGold = Color(0xFF7C6122);
 
   // Compatibilité avec les composants déjà livrés.
-  static const Color nightBlue = deepSlate;
-  static const Color nightBlueDeep = deepSlateDeep;
-  static const Color legalBlue = deepSlateElevated;
+  static const Color nightBlue = Color(0xFF0B0F19);
+  static const Color nightBlueDeep = Color(0xFF070A12);
+  static const Color legalBlue = Color(0xFF111827);
   static const Color legalBlueLight = cobalt;
-  static const Color legalBlueDark = cobaltDeep;
+  // Ancien nom conservé pour limiter les changements d'API ; ces surfaces
+  // de cartes sont désormais bleu-gris clair. Le vrai fond nuit est ci-dessus.
+  static const Color legalBlueDark = Color(0xFFE6EDF5);
 
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFFAAB8CC);
-  static const Color textDisabled = Color(0xFF718096);
+  static const Color textPrimary = Color(0xFF172235);
+  static const Color textSecondary = Color(0xFF59677A);
+  static const Color textDisabled = Color(0xFF7C8796);
+  static const Color textOnDark = Color(0xFFF8FAFC);
+  static const Color textSecondaryOnDark = Color(0xFFAAB8CC);
 
   /// Verre à 10 % : suffisamment présent pour séparer les surfaces, sans
   /// transformer l'interface en succession de panneaux opaques.
-  static const Color glassFill = Color(0x1A1E56A0);
-  static const Color glassBorder = Color(0x29F8FAFC);
-  static const Color glassHighlight = Color(0x1AFFFFFF);
+  static const Color glassFill = Color(0xDFFFFFFF);
+  static const Color glassBorder = Color(0xFFDCE3EC);
+  static const Color glassHighlight = Color(0xFFFFFFFF);
 
   /// Surface « verre fumé » des barres de navigation.
   static const Color smokedGlass = Color(0xE60B0F19);
 
-  static const Color divider = Color(0x33B7C3D6);
+  static const Color divider = Color(0xFFDCE3EC);
 
   static const Color success = Color(0xFF3FA772);
   static const Color warning = Color(0xFFE0A93E);
@@ -74,7 +71,7 @@ class AppGradients {
   static const LinearGradient background = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [AppColors.deepSlateDeep, AppColors.deepSlate],
+    colors: [Color(0xFFFCFDFE), AppColors.deepSlate],
   );
 
   /// Or brossé : dégradé à bandes multiples simulant le passage de la
@@ -115,13 +112,13 @@ class AppGradients {
   static const LinearGradient glassCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0x241E56A0), Color(0x12111827)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFF7F9FC)],
   );
 
   static const LinearGradient heroCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [AppColors.cobalt, AppColors.cobaltDeep],
+    colors: [Color(0xFFEAF1F8), Color(0xFFDCE7F2)],
   );
 
   /// Surface de verre fumé des barres de navigation.
@@ -193,26 +190,26 @@ class AppBreakpoints {
   static const double contentMaxWidth = 1200;
 }
 
-/// Ombres portées cohérentes avec l'ambiance nocturne et dorée.
+/// Ombres bleutées légères pour détacher les surfaces blanches du canevas.
 class AppShadows {
   const AppShadows._();
 
   static List<BoxShadow> card = [
     BoxShadow(
-      color: AppColors.nightBlueDeep.withValues(alpha: 0.45),
-      blurRadius: 24,
-      offset: const Offset(0, 12),
+      color: const Color(0xFF18314D).withValues(alpha: 0.08),
+      blurRadius: 22,
+      offset: const Offset(0, 8),
     ),
   ];
 
   static List<BoxShadow> cardElevated = [
     BoxShadow(
-      color: AppColors.nightBlueDeep.withValues(alpha: 0.55),
-      blurRadius: 32,
-      offset: const Offset(0, 18),
+      color: const Color(0xFF18314D).withValues(alpha: 0.11),
+      blurRadius: 28,
+      offset: const Offset(0, 14),
     ),
     BoxShadow(
-      color: AppColors.nightBlueDeep.withValues(alpha: 0.35),
+      color: const Color(0xFF18314D).withValues(alpha: 0.06),
       blurRadius: 6,
       offset: const Offset(0, 2),
     ),
@@ -229,12 +226,12 @@ class AppShadows {
   /// surface, et une lueur or très douce qui la distingue du fond.
   static List<BoxShadow> floating = [
     BoxShadow(
-      color: AppColors.nightBlueDeep.withValues(alpha: 0.6),
-      blurRadius: 40,
-      offset: const Offset(0, 22),
+      color: const Color(0xFF18314D).withValues(alpha: 0.12),
+      blurRadius: 36,
+      offset: const Offset(0, 18),
     ),
     BoxShadow(
-      color: AppColors.nightBlueDeep.withValues(alpha: 0.4),
+      color: const Color(0xFF18314D).withValues(alpha: 0.07),
       blurRadius: 8,
       offset: const Offset(0, 3),
     ),
@@ -266,15 +263,15 @@ class AppShadows {
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
+  static ThemeData get lightTheme {
+    final base = ThemeData.light(useMaterial3: true);
     final textTheme = _buildTextTheme(base.textTheme);
 
     return base.copyWith(
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.deepSlate,
       canvasColor: AppColors.deepSlate,
-      primaryColor: AppColors.gold,
+      primaryColor: AppColors.cobalt,
       splashColor: AppColors.gold.withValues(alpha: 0.10),
       highlightColor: AppColors.gold.withValues(alpha: 0.06),
       hoverColor: AppColors.gold.withValues(alpha: 0.05),
@@ -294,44 +291,44 @@ class AppTheme {
           TargetPlatform.linux: _LuxuryFadeThroughTransitionsBuilder(),
         },
       ),
-      colorScheme: const ColorScheme.dark(
-        brightness: Brightness.dark,
-        primary: AppColors.gold,
-        onPrimary: AppColors.deepSlateDeep,
-        primaryContainer: AppColors.goldDark,
+      colorScheme: const ColorScheme.light(
+        brightness: Brightness.light,
+        primary: AppColors.cobalt,
+        onPrimary: Colors.white,
+        primaryContainer: AppColors.cobaltDeep,
         onPrimaryContainer: AppColors.textPrimary,
         secondary: AppColors.cobalt,
-        onSecondary: AppColors.textPrimary,
-        secondaryContainer: AppColors.cobaltDeep,
+        onSecondary: Colors.white,
+        secondaryContainer: Color(0xFFE9EFF6),
         onSecondaryContainer: AppColors.textPrimary,
-        surface: AppColors.deepSlateElevated,
+        surface: Colors.white,
         onSurface: AppColors.textPrimary,
-        surfaceContainerHighest: AppColors.cobaltDeep,
+        surfaceContainerHighest: Color(0xFFE9EFF6),
         error: AppColors.error,
-        onError: AppColors.textPrimary,
+        onError: Colors.white,
         outline: AppColors.divider,
         outlineVariant: AppColors.glassBorder,
-        shadow: AppColors.nightBlueDeep,
+        shadow: Color(0x1A18314D),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.gold),
+        iconTheme: const IconThemeData(color: AppColors.cobalt),
         titleTextStyle: textTheme.headlineSmall?.copyWith(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.deepSlateElevated.withValues(alpha: 0.72),
-        elevation: 0,
+        color: Colors.white,
+        elevation: 1,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          side: BorderSide(color: AppColors.glassBorder, width: 0.6),
+          side: BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
       ),
       dividerTheme: const DividerThemeData(
@@ -339,12 +336,12 @@ class AppTheme {
         thickness: 0.6,
         space: AppSpacing.lg,
       ),
-      iconTheme: const IconThemeData(color: AppColors.textSecondary, size: 22),
+      iconTheme: const IconThemeData(color: AppColors.cobalt, size: 22),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.deepSlateDeep,
-          disabledBackgroundColor: AppColors.goldDark.withValues(alpha: 0.3),
+          backgroundColor: AppColors.cobalt,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.cobalt.withValues(alpha: 0.28),
           disabledForegroundColor: AppColors.textDisabled,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
@@ -362,8 +359,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.goldLight,
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.7), width: 1),
+          foregroundColor: AppColors.cobalt,
+          side: BorderSide(color: AppColors.cobalt.withValues(alpha: 0.45), width: 1),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.xl,
             vertical: AppSpacing.md,
@@ -376,13 +373,13 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.goldLight,
+          foregroundColor: AppColors.cobalt,
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.deepSlateElevated.withValues(alpha: 0.78),
+        fillColor: Colors.white,
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textDisabled),
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         contentPadding: const EdgeInsets.symmetric(
@@ -391,15 +388,15 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
+          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.6),
+          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          borderSide: const BorderSide(color: AppColors.cobalt, width: 1),
+          borderSide: const BorderSide(color: AppColors.cobalt, width: 1.2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
@@ -414,24 +411,24 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelSmall?.copyWith(
-            color: selected ? AppColors.gold : AppColors.textSecondary,
+            color: selected ? AppColors.cobalt : AppColors.textSecondary,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? AppColors.gold : AppColors.textSecondary,
+            color: selected ? AppColors.cobalt : AppColors.textSecondary,
             size: 24,
           );
         }),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: Colors.transparent,
-        selectedIconTheme: const IconThemeData(color: AppColors.gold, size: 24),
+        selectedIconTheme: const IconThemeData(color: AppColors.cobalt, size: 24),
         unselectedIconTheme: const IconThemeData(color: AppColors.textSecondary, size: 24),
         selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
-          color: AppColors.gold,
+          color: AppColors.cobalt,
           fontWeight: FontWeight.w700,
         ),
         unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(
@@ -441,10 +438,10 @@ class AppTheme {
         useIndicator: true,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.deepSlateElevated.withValues(alpha: 0.82),
-        selectedColor: AppColors.gold.withValues(alpha: 0.2),
+        backgroundColor: const Color(0xFFF0F4F8),
+        selectedColor: AppColors.cobalt.withValues(alpha: 0.12),
         labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.gold),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.cobalt),
         side: BorderSide(color: AppColors.glassBorder.withValues(alpha: 0.8), width: 0.6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -452,40 +449,40 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColors.deepSlateElevated,
+        backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.large),
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.35), width: 0.5),
+          side: BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
         titleTextStyle: textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
         contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: AppColors.legalBlueDark,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
-        actionTextColor: AppColors.gold,
+        backgroundColor: AppColors.legalBlue,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textOnDark),
+        actionTextColor: AppColors.goldLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          side: BorderSide(color: AppColors.gold.withValues(alpha: 0.35), width: 0.5),
+          side: BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.gold,
+        labelColor: AppColors.cobalt,
         unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.gold,
+        indicatorColor: AppColors.cobalt,
         labelStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         unselectedLabelStyle: textTheme.labelLarge,
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.gold,
-        linearTrackColor: AppColors.legalBlueDark,
-        circularTrackColor: AppColors.legalBlueDark,
+        color: AppColors.cobalt,
+        linearTrackColor: Color(0xFFE1E7EF),
+        circularTrackColor: Color(0xFFE1E7EF),
       ),
       dividerColor: AppColors.divider,
       listTileTheme: ListTileThemeData(
-        iconColor: AppColors.gold,
+        iconColor: AppColors.cobalt,
         textColor: AppColors.textPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
@@ -497,20 +494,23 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
-              ? AppColors.gold.withValues(alpha: 0.4)
-              : AppColors.legalBlueDark;
+              ? AppColors.cobalt.withValues(alpha: 0.4)
+              : const Color(0xFFE1E7EF);
         }),
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: AppColors.nightBlueDeep,
+          color: AppColors.legalBlue,
           borderRadius: BorderRadius.circular(AppRadius.small),
           border: Border.all(color: AppColors.glassBorder),
         ),
-        textStyle: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary),
+        textStyle: textTheme.bodySmall?.copyWith(color: AppColors.textOnDark),
       ),
     );
   }
+
+  /// Alias conservé pour les anciens points d'entrée du thème.
+  static ThemeData get darkTheme => lightTheme;
 
   static TextTheme _buildTextTheme(TextTheme base) {
     final serif = base.apply(fontFamily: 'Libre Caslon Display');

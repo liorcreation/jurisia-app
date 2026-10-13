@@ -651,12 +651,7 @@ class _ProfessionalHero extends StatelessWidget {
           padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.large + 4),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF173B60), Color(0xFF111E31), Color(0xFF0A1019)],
-              stops: [0, 0.55, 1],
-            ),
+            gradient: AppGradients.heroCard,
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
             boxShadow: [
               BoxShadow(

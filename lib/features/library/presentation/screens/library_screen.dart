@@ -217,12 +217,7 @@ class _LibraryLandingHero extends StatelessWidget {
           padding: EdgeInsets.all(compact ? 22 : 34),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.large + 4),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF17385E), Color(0xFF101C30), Color(0xFF0B101A)],
-              stops: [0, 0.54, 1],
-            ),
+            gradient: AppGradients.heroCard,
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(

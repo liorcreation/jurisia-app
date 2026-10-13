@@ -74,17 +74,25 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
   Widget build(BuildContext context) {
     final rounded = widget.variant != SidebarVariant.drawer;
     final radius = BorderRadius.circular(AppRadius.large);
+    final baseTheme = Theme.of(context);
+    final sidebarTextTheme = baseTheme.textTheme.apply(
+      bodyColor: AppColors.textOnDark,
+      displayColor: AppColors.textOnDark,
+    );
 
-    return DecoratedBox(
-      decoration: BoxDecoration(borderRadius: rounded ? radius : null, boxShadow: rounded ? AppShadows.floating : null),
-      child: SmokedGlassSurface(
-        borderRadius: rounded ? radius : null,
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.22), width: 0.7),
-        child: Stack(
-          children: [
-            const Positioned.fill(child: IgnorePointer(child: _SidebarAmbience())),
-            SafeArea(right: false, child: _isRail ? _buildRail(context) : _buildExpanded(context)),
-          ],
+    return Theme(
+      data: baseTheme.copyWith(textTheme: sidebarTextTheme),
+      child: DecoratedBox(
+        decoration: BoxDecoration(borderRadius: rounded ? radius : null, boxShadow: rounded ? AppShadows.floating : null),
+        child: SmokedGlassSurface(
+          borderRadius: rounded ? radius : null,
+          border: Border.all(color: AppColors.gold.withValues(alpha: 0.22), width: 0.7),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: IgnorePointer(child: _SidebarAmbience())),
+              SafeArea(right: false, child: _isRail ? _buildRail(context) : _buildExpanded(context)),
+            ],
+          ),
         ),
       ),
     );
@@ -203,7 +211,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
             controller: _searchController,
             focusNode: _searchFocus,
             onChanged: (value) => _query.value = value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textPrimary),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textOnDark),
             decoration: InputDecoration(
               isDense: true,
               filled: true,
@@ -211,6 +219,9 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.goldLight),
               prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               hintText: 'Rechercher une consultation…',
+              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondaryOnDark,
+              ),
               contentPadding: const EdgeInsets.symmetric(vertical: 11),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -372,7 +383,7 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cobalt),
                       )
                     else
-                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textDisabled),
+                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textSecondaryOnDark),
                   ],
                 ),
               ),
@@ -426,7 +437,7 @@ class _FacetedTile extends StatelessWidget {
             ? AppColors.nightBlueDeep
             : hovered
             ? AppColors.goldLight
-            : AppColors.textSecondary,
+            : AppColors.textSecondaryOnDark,
       ),
     );
 
@@ -529,8 +540,8 @@ class _ModuleRowState extends State<_ModuleRow> {
                           color: selected
                               ? AppColors.goldLight
                               : _hovered
-                              ? AppColors.textPrimary
-                              : AppColors.textSecondary,
+                              ? AppColors.textOnDark
+                              : AppColors.textSecondaryOnDark,
                           fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                         ),
                       ),
@@ -635,7 +646,7 @@ class _HeaderControl extends StatelessWidget {
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: Icon(icon, size: 18, color: active ? AppColors.goldLight : AppColors.textSecondary),
+              child: Icon(icon, size: 18, color: active ? AppColors.goldLight : AppColors.textSecondaryOnDark),
             ),
           ),
         ),
@@ -888,7 +899,7 @@ class _RailIconButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.medium),
               child: Padding(
                 padding: const EdgeInsets.all(10),
-                child: Icon(icon, size: 20, color: AppColors.textSecondary),
+                child: Icon(icon, size: 20, color: AppColors.textSecondaryOnDark),
               ),
             ),
           ),

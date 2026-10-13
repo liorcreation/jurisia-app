@@ -15,7 +15,6 @@ import '../widgets/glow_focus_field.dart';
 import '../widgets/glass_container.dart';
 import '../widgets/gradient_icon_badge.dart';
 import '../widgets/luxury_elevated_button.dart';
-import '../widgets/smoked_glass_surface.dart';
 import '../../theme/app_theme.dart';
 import 'profile_monogram.dart';
 
@@ -49,12 +48,12 @@ Future<void> showProfileSheet(BuildContext context) {
             maxWidth: 500,
             maxHeight: MediaQuery.sizeOf(context).height * 0.88,
           ),
-          child: SmokedGlassSurface(
-            borderRadius: BorderRadius.circular(AppRadius.large),
-            border: Border.all(
-              color: AppColors.gold.withValues(alpha: 0.28),
-              width: 0.8,
-            ),
+          child: GlassContainer(
+            borderRadius: AppRadius.large,
+            padding: EdgeInsets.zero,
+            gradient: AppGradients.glassCard,
+            borderColor: AppColors.gold.withValues(alpha: 0.28),
+            borderWidth: 0.8,
             child: body,
           ),
         ),
@@ -66,11 +65,12 @@ Future<void> showProfileSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => SmokedGlassSurface(
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppRadius.large),
-      ),
-      border: Border.all(color: AppColors.glassBorder, width: 0.6),
+    builder: (_) => GlassContainer(
+      borderRadius: AppRadius.large,
+      padding: EdgeInsets.zero,
+      gradient: AppGradients.glassCard,
+      borderColor: AppColors.glassBorder,
+      borderWidth: 0.6,
       child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(context).bottom,

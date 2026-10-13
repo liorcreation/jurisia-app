@@ -77,9 +77,27 @@ class AuthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final baseTheme = Theme.of(context);
+    final authTextTheme = baseTheme.textTheme.apply(
+      bodyColor: AppColors.textOnDark,
+      displayColor: AppColors.textOnDark,
+    );
     return ChangeNotifierProvider<AuthController>(
       create: (_) => _buildAuthController(),
-      child: const _AuthView(),
+      child: Theme(
+        data: baseTheme.copyWith(
+          textTheme: authTextTheme,
+          inputDecorationTheme: baseTheme.inputDecorationTheme.copyWith(
+            labelStyle: authTextTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryOnDark,
+            ),
+            hintStyle: authTextTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryOnDark,
+            ),
+          ),
+        ),
+        child: const _AuthView(),
+      ),
     );
   }
 }
@@ -249,7 +267,7 @@ class _AuthViewState extends State<_AuthView> {
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.textSecondaryOnDark,
                                   height: 1.4,
                                 ),
                           ),
@@ -602,7 +620,7 @@ class _ThresholdActions extends StatelessWidget {
                     child: Text(
                       'UN ACCÈS, TOUS VOS ESPACES',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: AppColors.textSecondaryOnDark,
                         letterSpacing: 1.2,
                         fontWeight: FontWeight.w700,
                       ),
@@ -690,8 +708,8 @@ class _OAuthPillButton extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
               color: light
-                  ? AppColors.textPrimary
-                  : AppColors.legalBlueDark.withValues(alpha: 0.55),
+                  ? Colors.white
+                  : AppColors.nightBlueDeep,
               border: light
                   ? null
                   : Border.all(
@@ -713,7 +731,7 @@ class _OAuthPillButton extends StatelessWidget {
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: light
                           ? AppColors.nightBlueDeep
-                          : AppColors.textPrimary,
+                          : AppColors.textOnDark,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -953,7 +971,7 @@ class _DesktopAuthView extends StatelessWidget {
                                               .textTheme
                                               .bodySmall
                                               ?.copyWith(
-                                                color: AppColors.textSecondary,
+                                                color: AppColors.textSecondaryOnDark,
                                               ),
                                         ),
                                         const SizedBox(height: AppSpacing.lg),
@@ -1044,7 +1062,7 @@ class _BrandPanel extends StatelessWidget {
                   'L\'assistant juridique pensé pour le droit burkinabè et l\'espace OHADA — '
                   'confidentiel, et sans jugement.',
                   style: textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondaryOnDark,
                     height: 1.5,
                   ),
                 ),
@@ -1078,7 +1096,7 @@ class _BrandPanel extends StatelessWidget {
                         child: Text(
                           entry.$2,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textPrimary,
+                            color: AppColors.textOnDark,
                           ),
                         ),
                       ),
@@ -1400,7 +1418,7 @@ class _AuthFormState extends State<_AuthForm> {
                   : 'Créez votre espace personnel en quelques instants.',
               key: ValueKey('subtitle-$isSignIn'),
               style: textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryOnDark,
               ),
             ),
           ),
@@ -1428,7 +1446,7 @@ class _AuthFormState extends State<_AuthForm> {
             Text(
               'Vous êtes',
               style: textTheme.labelMedium?.copyWith(
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryOnDark,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -1645,7 +1663,7 @@ class _ModeToggleTab extends StatelessWidget {
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: active
                       ? AppColors.nightBlueDeep
-                      : AppColors.textSecondary,
+                      : AppColors.textSecondaryOnDark,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -1708,8 +1726,8 @@ class _AuthProfessionChip extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: selected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                      ? AppColors.textOnDark
+                      : AppColors.textSecondaryOnDark,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

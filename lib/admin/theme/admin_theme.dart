@@ -4,8 +4,7 @@ import '../../theme/app_theme.dart';
 
 export 'admin_gradients.dart';
 
-/// Thème de la console d'administration : identique au registre « verre fumé
-/// & or brossé » de l'application, mais l'**accent passe du doré au cobalt**.
+/// Thème clair de la console d'administration, avec le cobalt comme accent.
 /// Un opérateur ne doit jamais confondre la console et la production d'un
 /// coup d'œil.
 class AdminTheme {
@@ -16,12 +15,13 @@ class AdminTheme {
   static const Color accentDark = Color(0xFF1B4FC0);
   static const Color accentLight = Color(0xFF6EA0FF);
 
-  static ThemeData get dark {
-    final base = AppTheme.darkTheme;
+  static ThemeData get light {
+    final base = AppTheme.lightTheme;
     final scheme = base.colorScheme.copyWith(
       primary: accent,
-      onPrimary: AppColors.textPrimary,
+      onPrimary: Colors.white,
       primaryContainer: accentDark,
+      onPrimaryContainer: Colors.white,
       secondary: AppColors.gold,
       onSecondary: AppColors.nightBlueDeep,
     );
@@ -33,12 +33,12 @@ class AdminTheme {
       highlightColor: accent.withValues(alpha: 0.06),
       hoverColor: accent.withValues(alpha: 0.05),
       appBarTheme: base.appBarTheme.copyWith(
-        iconTheme: const IconThemeData(color: accentLight),
+        iconTheme: const IconThemeData(color: accent),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: accent,
-          foregroundColor: AppColors.textPrimary,
+          foregroundColor: Colors.white,
           disabledBackgroundColor: accentDark.withValues(alpha: 0.3),
           disabledForegroundColor: AppColors.textDisabled,
           elevation: 0,
@@ -56,4 +56,6 @@ class AdminTheme {
       ),
     );
   }
+
+  static ThemeData get dark => light;
 }

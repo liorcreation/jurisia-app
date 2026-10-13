@@ -260,7 +260,7 @@ class _ConversationTileState extends State<_ConversationTile> {
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleSmall?.copyWith(
                           fontSize: 13,
-                          color: active ? AppColors.gold : AppColors.textPrimary,
+                          color: active ? AppColors.gold : AppColors.textOnDark,
                           fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                         ),
                       ),
@@ -277,7 +277,7 @@ class _ConversationTileState extends State<_ConversationTile> {
                             padding: EdgeInsets.zero,
                             tooltip: 'Actions',
                             icon: const Icon(Icons.more_horiz_rounded,
-                                size: 16, color: AppColors.textSecondary),
+                                size: 16, color: AppColors.textSecondaryOnDark),
                             onPressed: () => _openMenu(context),
                           ),
                         ),

@@ -12,9 +12,9 @@ class JurisIAAdminApp extends StatelessWidget {
     return MaterialApp(
       title: 'JurisIA — Administration',
       debugShowCheckedModeBanner: false,
-      theme: AdminTheme.dark,
-      darkTheme: AdminTheme.dark,
-      themeMode: ThemeMode.dark,
+      theme: AdminTheme.light,
+      darkTheme: AdminTheme.light,
+      themeMode: ThemeMode.light,
       home: const AdminAuthGate(),
     );
   }

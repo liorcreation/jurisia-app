@@ -197,12 +197,7 @@ class _PdfDocumentToolbar extends StatelessWidget {
         AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.nightBlueDeep.withValues(alpha: 0.96),
-            AppColors.legalBlueDark.withValues(alpha: 0.7),
-          ],
-        ),
+        gradient: AppGradients.heroCard,
         border: Border(
           bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.2)),
         ),

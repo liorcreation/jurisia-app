@@ -235,73 +235,81 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.large);
+    final baseTheme = Theme.of(context);
+    final sidebarTextTheme = baseTheme.textTheme.apply(
+      bodyColor: AppColors.textOnDark,
+      displayColor: AppColors.textOnDark,
+    );
 
     // Pas de largeur imposée ici : le panneau permanent (desktop) et le
     // tiroir (mobile/tablette) contraignent chacun leur propre largeur côté
     // appelant — un `SizedBox` fixe ici déborderait du tiroir sur un petit
     // téléphone.
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: radius,
-        boxShadow: AppShadows.floating,
-      ),
-      child: SmokedGlassSurface(
-        borderRadius: radius,
-        border: Border.all(
-          color: AdminTheme.accent.withValues(alpha: 0.26),
-          width: 0.8,
+    return Theme(
+      data: baseTheme.copyWith(textTheme: sidebarTextTheme),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          boxShadow: AppShadows.floating,
         ),
-        child: Stack(
-          children: [
-            const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
-            SafeArea(
-              right: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _BrandHeader(),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.sm,
-                      0,
-                      AppSpacing.sm,
-                      AppSpacing.sm,
-                    ),
-                    child: _ReturnToAppButton(),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.sm,
-                      0,
-                      AppSpacing.sm,
-                      AppSpacing.xs,
-                    ),
-                    child: _WorkspaceCard(
-                      destination: destinations[selectedIndex],
-                      roleCount: identity.roles.length,
-                    ),
-                  ),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+        child: SmokedGlassSurface(
+          borderRadius: radius,
+          border: Border.all(
+            color: AdminTheme.accent.withValues(alpha: 0.26),
+            width: 0.8,
+          ),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+              SafeArea(
+                right: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _BrandHeader(),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.sm,
+                        0,
+                        AppSpacing.sm,
+                        AppSpacing.sm,
                       ),
-                      children: _buildNavChildren(),
+                      child: _ReturnToAppButton(),
                     ),
-                  ),
-                  const _FadingRule(),
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    child: _ProfileCard(
-                      identity: identity,
-                      onSignOut: onSignOut,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.sm,
+                        0,
+                        AppSpacing.sm,
+                        AppSpacing.xs,
+                      ),
+                      child: _WorkspaceCard(
+                        destination: destinations[selectedIndex],
+                        roleCount: identity.roles.length,
+                      ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        children: _buildNavChildren(),
+                      ),
+                    ),
+                    const _FadingRule(),
+                    Padding(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      child: _ProfileCard(
+                        identity: identity,
+                        onSignOut: onSignOut,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -412,7 +420,7 @@ class _BrandHeader extends StatelessWidget {
                     Text(
                       'ESPACE SÉCURISÉ',
                       style: textTheme.labelSmall?.copyWith(
-                        color: AppColors.textDisabled,
+                        color: AppColors.textSecondaryOnDark,
                         fontSize: 9,
                         letterSpacing: 0.8,
                       ),
@@ -535,7 +543,7 @@ class _GroupLabel extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textDisabled,
+              color: AppColors.textSecondaryOnDark,
               letterSpacing: AppLetterSpacing.caps,
               fontWeight: FontWeight.w800,
               fontSize: 9,
@@ -597,7 +605,7 @@ class _WorkspaceCard extends StatelessWidget {
               gradient: AdminGradients.cobaltMetallic,
               boxShadow: AdminGradients.cobaltGlowSoft,
             ),
-            child: Icon(destination.icon, size: 19, color: AppColors.textPrimary),
+            child: Icon(destination.icon, size: 19, color: AppColors.textOnDark),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -636,7 +644,7 @@ class _WorkspaceCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.labelMedium?.copyWith(
-                      color: AppColors.textPrimary,
+                      color: AppColors.textOnDark,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -646,7 +654,7 @@ class _WorkspaceCard extends StatelessWidget {
                   '$roleCount rôle${roleCount > 1 ? 's' : ''} d’accès actif${roleCount > 1 ? 's' : ''}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary, fontSize: 10),
+                  style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondaryOnDark, fontSize: 10),
                 ),
               ],
             ),
@@ -736,7 +744,7 @@ class _NavItemState extends State<_NavItem> {
           child: Icon(
             widget.destination.icon,
             size: 17,
-            color: selected ? AdminTheme.accentLight : AppColors.textSecondary,
+            color: selected ? AdminTheme.accentLight : AppColors.textSecondaryOnDark,
           ),
         ),
           const SizedBox(width: AppSpacing.sm),
@@ -747,8 +755,8 @@ class _NavItemState extends State<_NavItem> {
               overflow: TextOverflow.ellipsis,
               style: textTheme.labelMedium?.copyWith(
                 color: selected
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
+                    ? AppColors.textOnDark
+                    : AppColors.textSecondaryOnDark,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -835,7 +843,7 @@ class _ProfileCard extends StatelessWidget {
               Text(
                 'SESSION ADMIN',
                 style: textTheme.labelSmall?.copyWith(
-                  color: AppColors.textDisabled,
+                  color: AppColors.textSecondaryOnDark,
                   letterSpacing: AppLetterSpacing.caps,
                   fontWeight: FontWeight.w800,
                   fontSize: 9,
@@ -896,7 +904,7 @@ class _ProfileCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.textOnDark,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -944,7 +952,7 @@ class _ProfileCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.key_rounded, size: 14, color: AdminTheme.accentLight),
                   const SizedBox(width: 6),
-                  Expanded(child: Text('${identity.roles.length} rôles actifs dans la console', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary))),
+                  Expanded(child: Text('${identity.roles.length} rôles actifs dans la console', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondaryOnDark))),
                 ],
               ),
             ),
@@ -969,8 +977,8 @@ class _ProfileCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.logout_rounded, size: 15, color: AppColors.error),
                       const SizedBox(width: 8),
-                      Expanded(child: Text('Se déconnecter', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w700))),
-                      const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textDisabled),
+                      Expanded(child: Text('Se déconnecter', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondaryOnDark, fontWeight: FontWeight.w700))),
+                      const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textSecondaryOnDark),
                     ],
                   ),
                 ),
