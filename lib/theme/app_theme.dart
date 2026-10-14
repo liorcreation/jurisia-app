@@ -6,17 +6,17 @@ class AppColors {
   const AppColors._();
 
   /// Surfaces de travail claires : blanc cassé, blanc pur et bleu-gris léger.
-  static const Color deepSlate = Color(0xFFF4F6FA);
-  static const Color deepSlateDeep = Color(0xFFEDF1F6);
+  static const Color deepSlate = Color(0xFFF7F8FA);
+  static const Color deepSlateDeep = Color(0xFFF0F2F5);
   static const Color deepSlateElevated = Color(0xFFFFFFFF);
 
-  static const Color cobalt = Color(0xFF24558B);
-  static const Color cobaltLight = Color(0xFF527CA7);
-  static const Color cobaltDeep = Color(0xFFE4ECF5);
+  static const Color cobalt = Color(0xFF213D5B);
+  static const Color cobaltLight = Color(0xFF627A94);
+  static const Color cobaltDeep = Color(0xFFE8EDF2);
 
-  static const Color gold = Color(0xFFB58A24);
-  static const Color goldLight = Color(0xFF9B7419);
-  static const Color goldDark = Color(0xFF795A12);
+  static const Color gold = Color(0xFFA98032);
+  static const Color goldLight = Color(0xFFC3A665);
+  static const Color goldDark = Color(0xFF76551E);
   static const Color roseGold = Color(0xFFD9A98A);
   static const Color agedGold = Color(0xFF7C6122);
 
@@ -27,7 +27,7 @@ class AppColors {
   static const Color legalBlueLight = cobalt;
   // Ancien nom conservé pour limiter les changements d'API ; ces surfaces
   // de cartes sont désormais bleu-gris clair. Le vrai fond nuit est ci-dessus.
-  static const Color legalBlueDark = Color(0xFFE6EDF5);
+  static const Color legalBlueDark = Color(0xFFF0F2F5);
 
   static const Color textPrimary = Color(0xFF172235);
   static const Color textSecondary = Color(0xFF59677A);
@@ -38,7 +38,7 @@ class AppColors {
   /// Verre à 10 % : suffisamment présent pour séparer les surfaces, sans
   /// transformer l'interface en succession de panneaux opaques.
   static const Color glassFill = Color(0xDFFFFFFF);
-  static const Color glassBorder = Color(0xFFDCE3EC);
+  static const Color glassBorder = Color(0xFFE1E5EA);
   static const Color glassHighlight = Color(0xFFFFFFFF);
 
   /// Surface « verre fumé » des barres de navigation.
@@ -71,7 +71,7 @@ class AppGradients {
   static const LinearGradient background = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFFCFDFE), AppColors.deepSlate],
+    colors: [Colors.white, AppColors.deepSlate],
   );
 
   /// Or brossé : dégradé à bandes multiples simulant le passage de la
@@ -112,13 +112,20 @@ class AppGradients {
   static const LinearGradient glassCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFFFFF), Color(0xFFF7F9FC)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFFBFCFD)],
   );
 
   static const LinearGradient heroCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFEAF1F8), Color(0xFFDCE7F2)],
+    colors: [Color(0xFFFFFFFF), Color(0xFFF1F4F7)],
+  );
+
+  /// Barre de travail claire, distincte de la navigation bleu nuit.
+  static const LinearGradient workspaceHeader = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Colors.white, Colors.white],
   );
 
   /// Surface de verre fumé des barres de navigation.

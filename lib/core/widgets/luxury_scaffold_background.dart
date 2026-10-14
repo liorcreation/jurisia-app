@@ -44,14 +44,14 @@ class _AmbientGlowPainter extends CustomPainter {
       center: Offset(size.width * 0.88, size.height * 0.06),
       radius: size.longestSide * 0.55,
       color: AppColors.gold,
-      maxAlpha: 0.10,
+      maxAlpha: 0.025,
     );
     _paintGlow(
       canvas,
       center: Offset(size.width * 0.05, size.height * 0.92),
       radius: size.longestSide * 0.6,
       color: AppColors.cobalt,
-      maxAlpha: 0.07,
+      maxAlpha: 0.018,
     );
   }
 
@@ -84,7 +84,7 @@ class _FiberTexturePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.gold.withValues(alpha: 0.018)
+      ..color = AppColors.gold.withValues(alpha: 0.006)
       ..strokeWidth = 0.4;
 
     final diagonal = size.width + size.height;

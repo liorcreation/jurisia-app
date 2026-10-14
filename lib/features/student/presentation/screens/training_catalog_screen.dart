@@ -475,9 +475,9 @@ class _StudentWelcomeHero extends StatelessWidget {
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.nightBlueDeep.withValues(alpha: 0.42),
-                blurRadius: 34,
-                offset: const Offset(0, 18),
+                color: AppColors.nightBlueDeep.withValues(alpha: 0.20),
+                blurRadius: 26,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -517,12 +517,15 @@ class _StudentWelcomeHero extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _CatalogEyebrow('ESPACE ÉTUDIANT · JURISIA'),
+                    const _CatalogEyebrow(
+                      'ESPACE ÉTUDIANT · JURISIA',
+                      onDark: true,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Votre progression\ncommence ici.',
                       style: textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.textOnDark,
                         fontFamily: 'Libre Caslon Display',
                         height: 1.06,
                       ),
@@ -531,7 +534,7 @@ class _StudentWelcomeHero extends StatelessWidget {
                     Text(
                       'Des spécialités ciblées, des cas concrets et une validation qui transforme vos connaissances en réflexes professionnels.',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: AppColors.textSecondaryOnDark,
                         height: 1.5,
                       ),
                     ),
@@ -544,11 +547,13 @@ class _StudentWelcomeHero extends StatelessWidget {
                           icon: Icons.workspace_premium_rounded,
                           value: '01',
                           label: 'objectif certifiant',
+                          onDark: true,
                         ),
                         _StudentStat(
                           icon: Icons.auto_graph_rounded,
                           value: '∞',
                           label: 'à votre rythme',
+                          onDark: true,
                         ),
                       ],
                     ),
@@ -562,12 +567,15 @@ class _StudentWelcomeHero extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _CatalogEyebrow('ESPACE ÉTUDIANT · JURISIA'),
+                          const _CatalogEyebrow(
+                            'ESPACE ÉTUDIANT · JURISIA',
+                            onDark: true,
+                          ),
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             'Votre progression commence ici.',
                             style: textTheme.displaySmall?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: AppColors.textOnDark,
                               fontFamily: 'Libre Caslon Display',
                               height: 1.04,
                             ),
@@ -578,7 +586,7 @@ class _StudentWelcomeHero extends StatelessWidget {
                             child: Text(
                               'Des spécialités ciblées, des cas concrets et une validation qui transforme vos connaissances en réflexes professionnels.',
                               style: textTheme.bodyLarge?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: AppColors.textSecondaryOnDark,
                                 height: 1.55,
                               ),
                             ),
@@ -593,12 +601,14 @@ class _StudentWelcomeHero extends StatelessWidget {
                           icon: Icons.workspace_premium_rounded,
                           value: '01',
                           label: 'objectif certifiant',
+                          onDark: true,
                         ),
                         SizedBox(height: AppSpacing.sm),
                         _StudentStat(
                           icon: Icons.auto_graph_rounded,
                           value: '∞',
                           label: 'à votre rythme',
+                          onDark: true,
                         ),
                       ],
                     ),
@@ -617,30 +627,42 @@ class _StudentStat extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    this.onDark = false,
   });
 
   final IconData icon;
   final String value;
   final String label;
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.055),
+        color: onDark
+            ? Colors.white.withValues(alpha: 0.10)
+            : Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(
+          color: onDark
+              ? Colors.white.withValues(alpha: 0.22)
+              : AppColors.glassBorder,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.goldLight),
+          Icon(
+            icon,
+            size: 16,
+            color: onDark ? AppColors.goldLight : AppColors.goldDark,
+          ),
           const SizedBox(width: 7),
           Text(
             value,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: AppColors.textPrimary,
+              color: onDark ? AppColors.textOnDark : AppColors.textPrimary,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -649,7 +671,11 @@ class _StudentStat extends StatelessWidget {
             label,
             style: Theme.of(
               context,
-            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+            ).textTheme.labelSmall?.copyWith(
+              color: onDark
+                  ? AppColors.textSecondaryOnDark
+                  : AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -1481,16 +1507,17 @@ class _CatalogTrustNote extends StatelessWidget {
 }
 
 class _CatalogEyebrow extends StatelessWidget {
-  const _CatalogEyebrow(this.text);
+  const _CatalogEyebrow(this.text, {this.onDark = false});
 
   final String text;
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: AppColors.gold,
+        color: onDark ? AppColors.goldLight : AppColors.gold,
         fontWeight: FontWeight.w700,
         letterSpacing: AppLetterSpacing.caps,
       ),

@@ -354,10 +354,10 @@ class _DesktopProfessionalHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.18),
+            color: AppColors.glassBorder,
             width: 0.6,
           ),
         ),
@@ -655,9 +655,9 @@ class _ProfessionalHero extends StatelessWidget {
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.cobalt.withValues(alpha: 0.18),
-                blurRadius: 32,
-                offset: const Offset(0, 16),
+                color: AppColors.cobalt.withValues(alpha: 0.09),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
               ),
             ],
           ),

@@ -735,10 +735,10 @@ class _DesktopWsHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.18),
+            color: AppColors.glassBorder,
             width: 0.6,
           ),
         ),

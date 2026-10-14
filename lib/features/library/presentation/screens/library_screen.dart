@@ -221,9 +221,9 @@ class _LibraryLandingHero extends StatelessWidget {
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
             boxShadow: [
               BoxShadow(
-                color: AppColors.nightBlueDeep.withValues(alpha: 0.38),
-                blurRadius: 34,
-                offset: const Offset(0, 18),
+                color: AppColors.cobalt.withValues(alpha: 0.10),
+                blurRadius: 26,
+                offset: const Offset(0, 12),
               ),
             ],
           ),
@@ -608,24 +608,24 @@ class _PackCardState extends State<_PackCard> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: _hovered
-                      ? const [Color(0xFF1B3E66), Color(0xFF111C2D)]
-                      : const [Color(0xD9172639), Color(0xB80D131E)],
+                      ? const [Color(0xFFFFFFFF), Color(0xFFF0F4F8)]
+                      : const [Color(0xFFFFFFFF), Color(0xFFFBFCFD)],
                 ),
                 border: Border.all(
                   color: _hovered
                       ? AppColors.gold.withValues(alpha: 0.62)
-                      : AppColors.glassBorder,
+                      : const Color(0xFFE1E5EA),
                   width: _hovered ? 1.1 : 0.8,
                 ),
-                boxShadow: _hovered
-                    ? [
-                        BoxShadow(
-                          color: AppColors.gold.withValues(alpha: 0.13),
-                          blurRadius: 28,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.cobalt.withValues(
+                      alpha: _hovered ? 0.14 : 0.055,
+                    ),
+                    blurRadius: _hovered ? 24 : 14,
+                    offset: Offset(0, _hovered ? 10 : 6),
+                  ),
+                ],
               ),
               child: Stack(
                 children: [
@@ -636,7 +636,7 @@ class _PackCardState extends State<_PackCard> {
                       child: Text(
                         widget.index.toString().padLeft(2, '0'),
                         style: textTheme.displayLarge?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.035),
+                          color: AppColors.cobalt.withValues(alpha: 0.045),
                           fontFamily: 'Libre Caslon Display',
                           fontWeight: FontWeight.w700,
                         ),
@@ -681,7 +681,7 @@ class _PackCardState extends State<_PackCard> {
                           Text(
                             'PACK ${widget.index.toString().padLeft(2, '0')}',
                             style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.goldLight,
+                              color: AppColors.goldDark,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.2,
                             ),
@@ -751,7 +751,7 @@ class _PackCardState extends State<_PackCard> {
                           Text(
                             'EXPLORER',
                             style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.goldLight,
+                              color: AppColors.goldDark,
                               letterSpacing: 1,
                               fontWeight: FontWeight.w800,
                             ),
@@ -1427,10 +1427,10 @@ class _LibraryHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.18),
+            color: AppColors.glassBorder,
             width: 0.6,
           ),
         ),
@@ -2157,7 +2157,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           Text(
                             hasPdf ? 'OUVRIR LE PDF' : 'OUVRIR LA FICHE',
                             style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.goldLight,
+                              color: AppColors.goldDark,
                               letterSpacing: 0.9,
                               fontWeight: FontWeight.w800,
                             ),

@@ -249,10 +249,10 @@ class _DesktopContactHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.18),
+            color: AppColors.glassBorder,
             width: 0.6,
           ),
         ),
@@ -318,9 +318,9 @@ class _ContactHero extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.nightBlueDeep.withValues(alpha: 0.3),
-              blurRadius: 30,
-              offset: const Offset(0, 16),
+              color: AppColors.cobalt.withValues(alpha: 0.11),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
             ),
           ],
         ),

@@ -311,10 +311,10 @@ class _DesktopHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.gold.withValues(alpha: 0.18),
+            color: AppColors.glassBorder,
             width: 0.6,
           ),
         ),
@@ -877,7 +877,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
                               ? textTheme.headlineSmall
                               : textTheme.headlineLarge)
                           ?.copyWith(
-                            color: AppColors.textPrimary,
+                            color: AppColors.textOnDark,
                             height: 1.06,
                             fontWeight: FontWeight.w600,
                           ),
@@ -886,7 +886,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
                 Text(
                   'Expliquez les faits simplement. JurisIA vous aide à les organiser et à comprendre les prochaines pistes possibles.',
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondaryOnDark,
                     height: compact ? 1.45 : 1.55,
                   ),
                 ),
@@ -926,7 +926,7 @@ class _LiveStatusPill extends StatelessWidget {
           Text(
             'ESPACE ACTIF',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textPrimary,
+              color: AppColors.textOnDark,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.7,
             ),

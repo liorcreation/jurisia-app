@@ -151,9 +151,9 @@ class _LegalHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.smokedGlass,
+        gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(color: AppColors.gold.withValues(alpha: 0.18), width: 0.6),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.lg, AppSpacing.sm),
