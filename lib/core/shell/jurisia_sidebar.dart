@@ -72,8 +72,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
 
   @override
   Widget build(BuildContext context) {
-    final rounded = widget.variant != SidebarVariant.drawer;
-    final radius = BorderRadius.circular(AppRadius.large);
+    final isDrawer = widget.variant == SidebarVariant.drawer;
     final baseTheme = Theme.of(context);
     final sidebarTextTheme = baseTheme.textTheme.apply(
       bodyColor: AppColors.textOnDark,
@@ -82,17 +81,15 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
 
     return Theme(
       data: baseTheme.copyWith(textTheme: sidebarTextTheme),
-      child: DecoratedBox(
-        decoration: BoxDecoration(borderRadius: rounded ? radius : null, boxShadow: rounded ? AppShadows.floating : null),
-        child: SmokedGlassSurface(
-          borderRadius: rounded ? radius : null,
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.22), width: 0.7),
-          child: Stack(
-            children: [
-              const Positioned.fill(child: IgnorePointer(child: _SidebarAmbience())),
-              SafeArea(right: false, child: _isRail ? _buildRail(context) : _buildExpanded(context)),
-            ],
-          ),
+      child: SmokedGlassSurface(
+        border: isDrawer
+            ? null
+            : Border(right: BorderSide(color: AppColors.gold.withValues(alpha: 0.24), width: 0.8)),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: IgnorePointer(child: _SidebarAmbience())),
+            SafeArea(right: false, child: _isRail ? _buildRail(context) : _buildExpanded(context)),
+          ],
         ),
       ),
     );
@@ -117,7 +114,10 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: shell.toggleNav,
-                  child: const Padding(padding: EdgeInsets.all(4), child: JurisIAAppIconTile(size: 40)),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: JurisIAAppIconTile(size: 40),
+                  ),
                 ),
               ),
             ),
@@ -163,7 +163,12 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
           },
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
           child: LuxuryElevatedButton(
             icon: Icons.add_comment_rounded,
             onPressed: () => _startNewConsultation(context),
@@ -219,9 +224,9 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
               prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.goldLight),
               prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               hintText: 'Rechercher une consultation…',
-              hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondaryOnDark,
-              ),
+              hintStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondaryOnDark),
               contentPadding: const EdgeInsets.symmetric(vertical: 11),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -261,10 +266,7 @@ class _JurisIASidebarState extends State<JurisIASidebar> {
 /// (vécu : il masquait le bouton « Nouvelle consultation »). La sidebar est
 /// la seule surface de l'app garantie libre de tout contenu d'écran.
 class _AdminPortalEntry extends StatefulWidget {
-  const _AdminPortalEntry({
-    required this.compact,
-    required this.closeDrawerOnReturn,
-  });
+  const _AdminPortalEntry({required this.compact, required this.closeDrawerOnReturn});
 
   final bool compact;
   final bool closeDrawerOnReturn;
@@ -300,10 +302,7 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           settings: const RouteSettings(name: '/admin'),
-          builder: (_) => Theme(
-            data: AdminTheme.dark,
-            child: const AdminAuthGate(),
-          ),
+          builder: (_) => Theme(data: AdminTheme.dark, child: const AdminAuthGate()),
         ),
       );
     } finally {
@@ -373,7 +372,9 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
                         'Console d\'administration',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
                     if (_opening)
@@ -383,7 +384,11 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cobalt),
                       )
                     else
-                      const Icon(Icons.chevron_right_rounded, size: 16, color: AppColors.textSecondaryOnDark),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: AppColors.textSecondaryOnDark,
+                      ),
                   ],
                 ),
               ),
@@ -401,7 +406,12 @@ class _AdminPortalEntryState extends State<_AdminPortalEntry> {
 /// actif. L'espace actif porte en plus un lent reflet d'or qui la traverse
 /// en boucle — le repère « vous êtes ici », vivant.
 class _FacetedTile extends StatelessWidget {
-  const _FacetedTile({required this.icon, required this.selected, this.hovered = false, this.size = 26});
+  const _FacetedTile({
+    required this.icon,
+    required this.selected,
+    this.hovered = false,
+    this.size = 26,
+  });
 
   final IconData icon;
   final bool selected;
@@ -428,7 +438,9 @@ class _FacetedTile extends StatelessWidget {
               : AppColors.glassBorder,
           width: 0.8,
         ),
-        boxShadow: selected ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.32), blurRadius: 10)] : null,
+        boxShadow: selected
+            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.32), blurRadius: 10)]
+            : null,
       ),
       child: Icon(
         icon,
@@ -495,7 +507,10 @@ class _ModuleRowState extends State<_ModuleRow> {
                       ? LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: [AppColors.gold.withValues(alpha: 0.17), AppColors.cobalt.withValues(alpha: 0.08)],
+                          colors: [
+                            AppColors.gold.withValues(alpha: 0.17),
+                            AppColors.cobalt.withValues(alpha: 0.08),
+                          ],
                         )
                       : null,
                   color: selected || _hovered ? null : Colors.transparent,
@@ -520,7 +535,12 @@ class _ModuleRowState extends State<_ModuleRow> {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         gradient: AppGradients.goldMetallic,
                         boxShadow: selected
-                            ? [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 8)]
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.gold.withValues(alpha: 0.35),
+                                  blurRadius: 8,
+                                ),
+                              ]
                             : null,
                       ),
                     ),
@@ -549,7 +569,11 @@ class _ModuleRowState extends State<_ModuleRow> {
                     AnimatedOpacity(
                       opacity: selected ? 1 : 0,
                       duration: const Duration(milliseconds: 180),
-                      child: const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: AppColors.goldLight),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 10,
+                        color: AppColors.goldLight,
+                      ),
                     ),
                   ],
                 ),
@@ -584,7 +608,12 @@ class _BrandHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.sm, AppSpacing.sm),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.sm,
+          ),
           child: Row(
             children: [
               ShaderMask(
@@ -608,7 +637,11 @@ class _BrandHeader extends StatelessWidget {
                 onPressed: onSearch,
               ),
               const SizedBox(width: 6),
-              _HeaderControl(tooltip: collapseTooltip, icon: Icons.view_sidebar_rounded, onPressed: onCollapse),
+              _HeaderControl(
+                tooltip: collapseTooltip,
+                icon: Icons.view_sidebar_rounded,
+                onPressed: onCollapse,
+              ),
             ],
           ),
         ),
@@ -624,7 +657,12 @@ class _BrandHeader extends StatelessWidget {
 /// Bouton de contrôle de l'en-tête (recherche / repli) — pastille de verre
 /// discrète ; passe à l'or lorsqu'elle est active.
 class _HeaderControl extends StatelessWidget {
-  const _HeaderControl({required this.tooltip, required this.icon, required this.onPressed, this.active = false});
+  const _HeaderControl({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.active = false,
+  });
 
   final String tooltip;
   final IconData icon;
@@ -637,16 +675,25 @@ class _HeaderControl extends StatelessWidget {
       message: tooltip,
       child: TapScale(
         child: Material(
-          color: active ? AppColors.gold.withValues(alpha: 0.18) : AppColors.legalBlueDark.withValues(alpha: 0.5),
+          color: active
+              ? AppColors.gold.withValues(alpha: 0.18)
+              : AppColors.legalBlueDark.withValues(alpha: 0.5),
           shape: CircleBorder(
-            side: BorderSide(color: active ? AppColors.gold.withValues(alpha: 0.6) : AppColors.glassBorder, width: 0.6),
+            side: BorderSide(
+              color: active ? AppColors.gold.withValues(alpha: 0.6) : AppColors.glassBorder,
+              width: 0.6,
+            ),
           ),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: onPressed,
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: Icon(icon, size: 18, color: active ? AppColors.goldLight : AppColors.textSecondaryOnDark),
+              child: Icon(
+                icon,
+                size: 18,
+                color: active ? AppColors.goldLight : AppColors.textSecondaryOnDark,
+              ),
             ),
           ),
         ),
@@ -743,8 +790,10 @@ class _SidebarAmbience extends StatefulWidget {
 }
 
 class _SidebarAmbienceState extends State<_SidebarAmbience> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(seconds: 24))
-    ..repeat();
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 24),
+  )..repeat();
 
   @override
   void dispose() {
@@ -815,7 +864,13 @@ class _AmbiencePainter extends CustomPainter {
 }
 
 class _Mote {
-  const _Mote({required this.x, required this.radius, required this.speed, required this.drift, required this.phase});
+  const _Mote({
+    required this.x,
+    required this.radius,
+    required this.speed,
+    required this.drift,
+    required this.phase,
+  });
 
   final double x;
   final double radius;
@@ -834,7 +889,9 @@ class _FadingRule extends StatelessWidget {
       height: 1,
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [Colors.transparent, AppColors.divider, Colors.transparent]),
+        gradient: LinearGradient(
+          colors: [Colors.transparent, AppColors.divider, Colors.transparent],
+        ),
       ),
     );
   }
@@ -866,9 +923,15 @@ class _RailNewConsultationButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: AppGradients.goldMetallic,
                   borderRadius: BorderRadius.circular(13),
-                  boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 12)],
+                  boxShadow: [
+                    BoxShadow(color: AppColors.gold.withValues(alpha: 0.35), blurRadius: 12),
+                  ],
                 ),
-                child: const Icon(Icons.add_comment_rounded, size: 20, color: AppColors.nightBlueDeep),
+                child: const Icon(
+                  Icons.add_comment_rounded,
+                  size: 20,
+                  color: AppColors.nightBlueDeep,
+                ),
               ),
             ),
           ),
@@ -943,7 +1006,9 @@ class _RailModuleButtonState extends State<_RailModuleButton> {
                   selected: widget.selected,
                   label: widget.destination.label,
                   child: _FacetedTile(
-                    icon: widget.selected ? widget.destination.selectedIcon : widget.destination.icon,
+                    icon: widget.selected
+                        ? widget.destination.selectedIcon
+                        : widget.destination.icon,
                     selected: widget.selected,
                     hovered: _hovered,
                     size: 40,

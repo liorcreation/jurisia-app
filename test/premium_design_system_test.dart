@@ -10,6 +10,7 @@ void main() {
     expect(AppColors.cobalt, const Color(0xFF213D5B));
     expect(AppColors.gold, const Color(0xFFA98032));
     expect(AppColors.textPrimary, const Color(0xFF172235));
+    expect(AppGradients.smokedGlass.colors, const [Color(0xFF183653), Color(0xFF0D1C30)]);
     expect(AppMotion.standard, const Duration(milliseconds: 300));
     expect(AppBreakpoints.contentMaxWidth, 1200);
   });

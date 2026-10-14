@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../platform/app_platform_style.dart';
 import '../shell/app_shell.dart';
 
-/// Bouton hamburger présent dans chaque `AppBar` / `IosLargeTitleBar` des
-/// six espaces : ouvre la sidebar unifiée — le tiroir sur mobile, ou déplie
-/// le rail sur desktop. La tablette garde un rail permanent et n'affiche donc
-/// pas ce bouton. Sans effet si aucun [AppShell] n'englobe l'écran.
+/// Bouton hamburger des en-têtes mobiles : ouvre le tiroir de navigation.
+/// Desktop et tablette ont une navigation permanente et utilisent le contrôle
+/// unique placé dans le rail/la sidebar. Sans effet hors d'un [AppShell].
 class AppShellMenuButton extends StatelessWidget {
   const AppShellMenuButton({super.key});
 
@@ -16,16 +15,14 @@ class AppShellMenuButton extends StatelessWidget {
     if (shell == null) return const SizedBox.shrink();
 
     final isDesktop = AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
-    final isTablet =
-        AppPlatformStyle.viewportOf(context) == AppViewportClass.tablet;
-    if (isTablet) return const SizedBox.shrink();
-    final collapsed = isDesktop && shell.railCollapsed;
+    final isTablet = AppPlatformStyle.viewportOf(context) == AppViewportClass.tablet;
+    // Sur desktop, l’unique contrôle de repli se trouve dans l’en-tête de la
+    // sidebar. Le hamburger des AppBars est réservé au tiroir mobile.
+    if (isDesktop || isTablet) return const SizedBox.shrink();
 
     return IconButton(
-      tooltip: isDesktop
-          ? (collapsed ? 'Déplier la navigation' : 'Replier la navigation')
-          : 'Menu',
-      icon: Icon(collapsed ? Icons.menu_open_rounded : Icons.menu_rounded),
+      tooltip: 'Menu',
+      icon: const Icon(Icons.menu_rounded),
       onPressed: shell.toggleNav,
     );
   }

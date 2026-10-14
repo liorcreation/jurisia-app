@@ -21,9 +21,9 @@ class AppColors {
   static const Color agedGold = Color(0xFF7C6122);
 
   // Compatibilité avec les composants déjà livrés.
-  static const Color nightBlue = Color(0xFF0B0F19);
-  static const Color nightBlueDeep = Color(0xFF070A12);
-  static const Color legalBlue = Color(0xFF111827);
+  static const Color nightBlue = Color(0xFF10243D);
+  static const Color nightBlueDeep = Color(0xFF09182A);
+  static const Color legalBlue = Color(0xFF142A45);
   static const Color legalBlueLight = cobalt;
   // Ancien nom conservé pour limiter les changements d'API ; ces surfaces
   // de cartes sont désormais bleu-gris clair. Le vrai fond nuit est ci-dessus.
@@ -132,7 +132,7 @@ class AppGradients {
   static const LinearGradient smokedGlass = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xF20F1A2C), Color(0xF70B0F19)],
+    colors: [Color(0xFF183653), Color(0xFF0D1C30)],
   );
 }
 
@@ -351,31 +351,21 @@ class AppTheme {
           disabledBackgroundColor: AppColors.cobalt.withValues(alpha: 0.28),
           disabledForegroundColor: AppColors.textDisabled,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.label,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.cobalt,
           side: BorderSide(color: AppColors.cobalt.withValues(alpha: 0.45), width: 1),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -438,9 +428,7 @@ class AppTheme {
           color: AppColors.cobalt,
           fontWeight: FontWeight.w700,
         ),
-        unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
         indicatorColor: Colors.transparent,
         useIndicator: true,
       ),
@@ -450,9 +438,7 @@ class AppTheme {
         labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
         secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.cobalt),
         side: BorderSide(color: AppColors.glassBorder.withValues(alpha: 0.8), width: 0.6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       ),
       dialogTheme: DialogThemeData(
@@ -491,9 +477,7 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: AppColors.cobalt,
         textColor: AppColors.textPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.medium),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.medium)),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -578,7 +562,10 @@ class AppTheme {
             fontWeight: FontWeight.w600,
             letterSpacing: AppLetterSpacing.label,
           ),
-          labelMedium: sans.labelMedium?.copyWith(color: AppColors.textSecondary, letterSpacing: 0.2),
+          labelMedium: sans.labelMedium?.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.2,
+          ),
           labelSmall: sans.labelSmall?.copyWith(color: AppColors.textSecondary, letterSpacing: 0.2),
         )
         .apply(bodyColor: AppColors.textPrimary, displayColor: AppColors.textPrimary);
@@ -603,10 +590,7 @@ class _LuxuryFadeThroughTransitionsBuilder extends PageTransitionsBuilder {
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.02),
-          end: Offset.zero,
-        ).animate(curved),
+        position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(curved),
         child: child,
       ),
     );

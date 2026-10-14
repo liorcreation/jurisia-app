@@ -19,27 +19,20 @@ Widget _wrapHomeNavigation({
     darkTheme: AppTheme.darkTheme.copyWith(platform: platform),
     themeMode: ThemeMode.dark,
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(textScale)),
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
       child: child!,
     ),
     home: const HomeNavigation(),
   );
 }
 
-Widget _wrapLitigationScreen({
-  required TargetPlatform platform,
-  required double textScale,
-}) {
+Widget _wrapLitigationScreen({required TargetPlatform platform, required double textScale}) {
   return MaterialApp(
     theme: AppTheme.darkTheme.copyWith(platform: platform),
     darkTheme: AppTheme.darkTheme.copyWith(platform: platform),
     themeMode: ThemeMode.dark,
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(textScaler: TextScaler.linear(textScale)),
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
       child: child!,
     ),
     home: ChangeNotifierProvider<LitigationChatController>(
@@ -102,68 +95,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'Litigation landing stays usable across phone sizes and text scaling',
-    (WidgetTester tester) async {
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('Litigation landing stays usable across phone sizes and text scaling', (
+    WidgetTester tester,
+  ) async {
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      const cases = [
-        (Size(320, 568), TargetPlatform.android, 1.0),
-        (Size(360, 640), TargetPlatform.android, 1.0),
-        (Size(360, 800), TargetPlatform.android, 1.0),
-        (Size(375, 667), TargetPlatform.iOS, 1.0),
-        (Size(390, 844), TargetPlatform.iOS, 1.2),
-        (Size(428, 926), TargetPlatform.iOS, 1.0),
-        (Size(568, 320), TargetPlatform.iOS, 1.0),
-        (Size(844, 390), TargetPlatform.android, 1.0),
-        (Size(932, 430), TargetPlatform.iOS, 1.0),
-      ];
+    const cases = [
+      (Size(320, 568), TargetPlatform.android, 1.0),
+      (Size(360, 640), TargetPlatform.android, 1.0),
+      (Size(360, 800), TargetPlatform.android, 1.0),
+      (Size(375, 667), TargetPlatform.iOS, 1.0),
+      (Size(390, 844), TargetPlatform.iOS, 1.2),
+      (Size(428, 926), TargetPlatform.iOS, 1.0),
+      (Size(568, 320), TargetPlatform.iOS, 1.0),
+      (Size(844, 390), TargetPlatform.android, 1.0),
+      (Size(932, 430), TargetPlatform.iOS, 1.0),
+    ];
 
-      for (final (size, platform, textScale) in cases) {
-        tester.view.physicalSize = size;
-        tester.view.devicePixelRatio = 1;
-        await tester.pumpWidget(
-          _wrapLitigationScreen(platform: platform, textScale: textScale),
-        );
-        await _settle(tester);
+    for (final (size, platform, textScale) in cases) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(_wrapLitigationScreen(platform: platform, textScale: textScale));
+      await _settle(tester);
 
-        expect(
-          find.text('Litiges et consultations'),
-          findsOneWidget,
-          reason: '$size / $platform',
-        );
-        expect(
-          find.text('Quel est votre sujet ?'),
-          findsOneWidget,
-          reason: '$size / $platform',
-        );
+      expect(find.text('Litiges et consultations'), findsOneWidget, reason: '$size / $platform');
+      expect(find.text('Quel est votre sujet ?'), findsOneWidget, reason: '$size / $platform');
 
-        // Le dernier domaine doit pouvoir défiler entièrement dans la zone de
-        // lecture, sans être recouvert par le rappel IA ou le composeur fixe.
-        final lastDomain = find.text('Autre situation');
-        await tester.ensureVisible(lastDomain);
-        await _settle(tester);
-        final lastDomainCard = find
-            .ancestor(of: lastDomain, matching: find.byType(GlassContainer))
-            .first;
-        expect(
-          tester.getRect(lastDomainCard).bottom,
-          lessThanOrEqualTo(tester.getRect(find.byType(ChatComposer)).top),
-          reason:
-              '$size / $platform / la carte doit rester au-dessus du composeur',
-        );
-        await tester.tap(lastDomain);
-        await _settle(tester);
-        expect(
-          tester.widget<TextField>(find.byType(TextField)).controller?.text,
-          'Je souhaite expliquer une situation juridique. ',
-          reason: '$size / $platform / domaine actionnable',
-        );
-        expect(tester.takeException(), isNull, reason: '$size / $platform');
-      }
-    },
-  );
+      // Le dernier domaine doit pouvoir défiler entièrement dans la zone de
+      // lecture, sans être recouvert par le rappel IA ou le composeur fixe.
+      final lastDomain = find.text('Autre situation');
+      await tester.ensureVisible(lastDomain);
+      await _settle(tester);
+      final lastDomainCard = find
+          .ancestor(of: lastDomain, matching: find.byType(GlassContainer))
+          .first;
+      expect(
+        tester.getRect(lastDomainCard).bottom,
+        lessThanOrEqualTo(tester.getRect(find.byType(ChatComposer)).top),
+        reason: '$size / $platform / la carte doit rester au-dessus du composeur',
+      );
+      await tester.tap(lastDomain);
+      await _settle(tester);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller?.text,
+        'Je souhaite expliquer une situation juridique. ',
+        reason: '$size / $platform / domaine actionnable',
+      );
+      expect(tester.takeException(), isNull, reason: '$size / $platform');
+    }
+  });
 
   testWidgets('iPhone litigation title aligns with the navigation toolbar', (
     WidgetTester tester,
@@ -180,67 +161,61 @@ void main() {
     final menu = find.byIcon(Icons.menu_rounded);
     expect(title, findsOneWidget);
     expect(menu, findsOneWidget);
-    expect(
-      tester.getRect(title).center.dy,
-      closeTo(tester.getRect(menu).center.dy, 2),
-    );
+    expect(tester.getRect(title).center.dy, closeTo(tester.getRect(menu).center.dy, 2));
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'Wide layout: the permanent JurisIA sidebar renders without overflow',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1280, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(_wrapHomeNavigation());
-      await _settle(tester);
-
-      expect(find.text('JurisIA'), findsOneWidget);
-      for (final label in [
-        'Litiges',
-        'Bibliothèque',
-        'Formations',
-        'Service professionnel',
-        'Contacter',
-        'Stages et emploi',
-      ]) {
-        expect(find.text(label), findsOneWidget);
-      }
-
-      // Chaque espace rend sa section contextuelle dans la sidebar sans
-      // exception ni débordement.
-      for (final entry in const {
-        'Bibliothèque': 'Bibliothèque juridique',
-        'Formations': 'Formations',
-        'Service professionnel': 'Service professionnel',
-        'Contacter': 'Contacter un professionnel',
-        'Stages et emploi': 'Stages et emploi',
-        'Litiges': 'Litiges et consultations',
-      }.entries) {
-        await tester.tap(find.text(entry.key));
-        await _settle(tester);
-        expect(find.text(entry.value), findsWidgets, reason: entry.key);
-        if (entry.key == 'Service professionnel') {
-          for (final category in [
-            'Services notariaux',
-            'Services d’avocats',
-            'Services d’huissier',
-            'Jurisconsulte',
-          ]) {
-            expect(find.text(category), findsOneWidget);
-          }
-        }
-        expect(tester.takeException(), isNull, reason: entry.key);
-      }
-    },
-  );
-
-  testWidgets('Wide layout: the profile card opens the profile sheet', (
+  testWidgets('Wide layout: the permanent JurisIA sidebar renders without overflow', (
     WidgetTester tester,
   ) async {
+    tester.view.physicalSize = const Size(1280, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
+
+    expect(find.text('JurisIA'), findsOneWidget);
+    for (final label in [
+      'Litiges',
+      'Bibliothèque',
+      'Formations',
+      'Service professionnel',
+      'Contacter',
+      'Stages et emploi',
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    // Chaque espace rend sa section contextuelle dans la sidebar sans
+    // exception ni débordement.
+    for (final entry in const {
+      'Bibliothèque': 'Bibliothèque juridique',
+      'Formations': 'Formations',
+      'Service professionnel': 'Service professionnel',
+      'Contacter': 'Contacter un professionnel',
+      'Stages et emploi': 'Stages et emploi',
+      'Litiges': 'Litiges et consultations',
+    }.entries) {
+      await tester.tap(find.text(entry.key));
+      await _settle(tester);
+      expect(find.text(entry.value), findsWidgets, reason: entry.key);
+      if (entry.key == 'Service professionnel') {
+        for (final category in [
+          'Services notariaux',
+          'Services d’avocats',
+          'Services d’huissier',
+          'Jurisconsulte',
+        ]) {
+          expect(find.text(category), findsOneWidget);
+        }
+      }
+      expect(tester.takeException(), isNull, reason: entry.key);
+    }
+  });
+
+  testWidgets('Wide layout: the profile card opens the profile sheet', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1280, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -269,6 +244,11 @@ void main() {
 
     await tester.pumpWidget(_wrapHomeNavigation());
     await _settle(tester);
+    expect(find.byTooltip('Replier la navigation'), findsOneWidget);
+    final sidebar = find.byKey(const ValueKey('jurisia-sidebar'));
+    expect(sidebar, findsOneWidget);
+    expect(tester.getTopLeft(sidebar).dy, 0);
+    expect(tester.getSize(sidebar).height, 900);
     await tester.tap(find.byTooltip('Replier la navigation'));
     await _settle(tester);
 
@@ -277,9 +257,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Library packs open cleanly on phone and desktop', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('Library packs open cleanly on phone and desktop', (WidgetTester tester) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -296,10 +274,7 @@ void main() {
       await tester.tap(find.text('Bibliothèque'));
       await _settle(tester);
 
-      expect(
-        find.text('Le droit, organisé pour éclairer vos décisions.'),
-        findsOneWidget,
-      );
+      expect(find.text('Le droit, organisé pour éclairer vos décisions.'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'catalogue $size');
 
       await tester.ensureVisible(find.text('DROIT DES OBLIGATIONS'));
@@ -307,10 +282,7 @@ void main() {
       await tester.tap(find.text('DROIT DES OBLIGATIONS'));
       await _settle(tester);
       expect(find.textContaining('COLLECTION'), findsOneWidget);
-      expect(
-        find.text('Obligations, contrats et responsabilité'),
-        findsOneWidget,
-      );
+      expect(find.text('Obligations, contrats et responsabilité'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'pack $size');
     }
   });
@@ -341,40 +313,32 @@ void main() {
       await tester.tap(find.text('Formations Certifiantes'));
       await _settle(tester);
       expect(find.text('Choisissez votre spécialité.'), findsOneWidget);
-      expect(
-        tester.takeException(),
-        isNull,
-        reason: 'catalogue étudiant $size',
-      );
+      expect(tester.takeException(), isNull, reason: 'catalogue étudiant $size');
 
       await tester.ensureVisible(find.text('Droit de la famille'));
       await tester.tap(find.text('Droit de la famille'));
       await _settle(tester);
-      expect(
-        find.text('Une spécialité pensée pour la pratique.'),
-        findsOneWidget,
-      );
+      expect(find.text('Une spécialité pensée pour la pratique.'), findsOneWidget);
       expect(find.text('Architecture du parcours'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'spécialité $size');
     }
   });
 
-  testWidgets(
-    'Tablet layout: a permanent compact rail preserves content space',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 900);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('Tablet layout: a permanent compact rail preserves content space', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(_wrapHomeNavigation());
-      await _settle(tester);
+    await tester.pumpWidget(_wrapHomeNavigation());
+    await _settle(tester);
 
-      // La tablette garde un rail permanent ; le tiroir mobile et la barre
-      // inférieure ne doivent pas revenir sur cette largeur intermédiaire.
-      expect(find.byTooltip('Rechercher'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
-      expect(tester.takeException(), isNull);
-    },
-  );
+    // La tablette garde un rail permanent ; le tiroir mobile et la barre
+    // inférieure ne doivent pas revenir sur cette largeur intermédiaire.
+    expect(find.byTooltip('Rechercher'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -78,15 +78,12 @@ class AppShellScope extends InheritedWidget {
   }
 
   static AppShellController? maybeOf(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<AppShellScope>()
-        ?.controller;
+    return context.dependOnInheritedWidgetOfExactType<AppShellScope>()?.controller;
   }
 
   @override
   bool updateShouldNotify(AppShellScope oldWidget) {
-    return selectedIndex != oldWidget.selectedIndex ||
-        railCollapsed != oldWidget.railCollapsed;
+    return selectedIndex != oldWidget.selectedIndex || railCollapsed != oldWidget.railCollapsed;
   }
 }
 
@@ -155,10 +152,8 @@ class _AppShellState extends State<AppShell> implements AppShellController {
     CareerOpportunitiesScreen(),
   ];
 
-  bool get _isDesktop =>
-      AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
-  bool get _isTablet =>
-      AppPlatformStyle.viewportOf(context) == AppViewportClass.tablet;
+  bool get _isDesktop => AppPlatformStyle.of(context) == AppPlatformStyle.desktop;
+  bool get _isTablet => AppPlatformStyle.viewportOf(context) == AppViewportClass.tablet;
 
   // --- AppShellController -------------------------------------------------
 
@@ -249,15 +244,9 @@ class _AppShellState extends State<AppShell> implements AppShellController {
         ChangeNotifierProvider<LitigationChatController>(
           create: (_) => buildLitigationChatController(),
         ),
-        ChangeNotifierProvider<ProfileController>(
-          create: (_) => buildProfileController(),
-        ),
-        ChangeNotifierProvider<LibraryController>(
-          create: (_) => buildLibraryController(),
-        ),
-        ChangeNotifierProvider<StudentController>(
-          create: (_) => buildStudentController(),
-        ),
+        ChangeNotifierProvider<ProfileController>(create: (_) => buildProfileController()),
+        ChangeNotifierProvider<LibraryController>(create: (_) => buildLibraryController()),
+        ChangeNotifierProvider<StudentController>(create: (_) => buildStudentController()),
         ChangeNotifierProvider<ContactProfessionalController>(
           create: (_) => buildContactProfessionalController(),
         ),
@@ -284,17 +273,13 @@ class _AppShellState extends State<AppShell> implements AppShellController {
       onSelectModule: selectModule,
       child: CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.keyN, meta: true):
-              _newConsultation,
-          const SingleActivator(LogicalKeyboardKey.keyN, control: true):
-              _newConsultation,
+          const SingleActivator(LogicalKeyboardKey.keyN, meta: true): _newConsultation,
+          const SingleActivator(LogicalKeyboardKey.keyN, control: true): _newConsultation,
           const SingleActivator(LogicalKeyboardKey.keyB, meta: true): toggleNav,
-          const SingleActivator(LogicalKeyboardKey.keyB, control: true):
-              toggleNav,
+          const SingleActivator(LogicalKeyboardKey.keyB, control: true): toggleNav,
           for (var i = 0; i < kNavDestinations.length; i++) ...{
             SingleActivator(_digitKeys[i], meta: true): () => selectModule(i),
-            SingleActivator(_digitKeys[i], control: true): () =>
-                selectModule(i),
+            SingleActivator(_digitKeys[i], control: true): () => selectModule(i),
           },
         },
         child: shell,
@@ -312,10 +297,9 @@ const List<LogicalKeyboardKey> _digitKeys = [
   LogicalKeyboardKey.digit6,
 ];
 
-/// Enveloppe de la sidebar permanente sur desktop : **largeur fixe** (dépliée
-/// ou rail), marge flottante symétrique, ombre portée. Aucune poignée de
-/// redimensionnement — la colonne ne se règle qu'avec le bouton « Replier la
-/// navigation ». La transition entre les deux largeurs est animée.
+/// Enveloppe desktop de la sidebar : largeur fixe, bord à bord sur toute la
+/// hauteur. Aucune poignée de redimensionnement — le contrôle unique dans
+/// l'en-tête replie/déplie la navigation avec une transition animée.
 class _DesktopSidebar extends StatelessWidget {
   const _DesktopSidebar({required this.collapsed});
 
@@ -328,19 +312,10 @@ class _DesktopSidebar extends StatelessWidget {
       duration: AppMotion.standard,
       curve: AppMotion.premium,
       width: targetWidth,
-      padding: const EdgeInsets.all(12),
-      // Le contenu est toujours mis en page à sa largeur cible et laissé
-      // dépasser à gauche ; c'est le `ClipRect` qui le révèle / le masque
-      // pendant que la largeur s'anime — une transition nette, sans
-      // écrasement ni débordement.
       child: ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.centerLeft,
-          minWidth: targetWidth - 24,
-          maxWidth: targetWidth - 24,
-          child: JurisIASidebar(
-            variant: collapsed ? SidebarVariant.rail : SidebarVariant.permanent,
-          ),
+        child: JurisIASidebar(
+          key: const ValueKey('jurisia-sidebar'),
+          variant: collapsed ? SidebarVariant.rail : SidebarVariant.permanent,
         ),
       ),
     );
@@ -358,12 +333,7 @@ class _TabletSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: AppShell.tabletRailWidth,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: ClipRect(
-          child: const JurisIASidebar(variant: SidebarVariant.rail),
-        ),
-      ),
+      child: ClipRect(child: const JurisIASidebar(variant: SidebarVariant.rail)),
     );
   }
 }
