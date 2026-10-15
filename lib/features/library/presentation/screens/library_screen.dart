@@ -822,10 +822,15 @@ class _MobileLibrary extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _libraryCanvas,
         appBar: AppBar(
           title: const Text('Bibliothèque juridique'),
           leading: const AppShellMenuButton(),
+          backgroundColor: _libraryPaper,
+          foregroundColor: _libraryInk,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
           actions: [
             IconButton(
               tooltip: controller.favoritesOnly
@@ -835,7 +840,7 @@ class _MobileLibrary extends StatelessWidget {
                 controller.favoritesOnly
                     ? Icons.star_rounded
                     : Icons.star_border_rounded,
-                color: AppColors.gold,
+                color: AppColors.goldDark,
               ),
               onPressed: controller.toggleFavoritesOnly,
             ),
@@ -844,7 +849,7 @@ class _MobileLibrary extends StatelessWidget {
         body: Stack(
           children: [
             const Positioned.fill(
-              child: IgnorePointer(child: _LibraryAmbience()),
+              child: ColoredBox(color: _libraryCanvas),
             ),
             SafeArea(
               child: SingleChildScrollView(
@@ -1015,12 +1020,12 @@ class _MobileFacet extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 color: selected
-                    ? AppColors.gold.withValues(alpha: 0.14)
-                    : AppColors.legalBlueDark.withValues(alpha: 0.45),
+                    ? const Color(0xFFFFF7E1)
+                    : _libraryPaper,
                 border: Border.all(
                   color: selected
-                      ? AppColors.gold.withValues(alpha: 0.5)
-                      : AppColors.glassBorder,
+                      ? const Color(0xFFE8CD82)
+                      : _libraryHairline,
                   width: selected ? 1 : 0.6,
                 ),
               ),
@@ -1042,8 +1047,8 @@ class _MobileFacet extends StatelessWidget {
                     label,
                     style: textTheme.labelMedium?.copyWith(
                       color: selected
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
+                          ? AppColors.goldDark
+                          : _libraryInk,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
@@ -1052,8 +1057,8 @@ class _MobileFacet extends StatelessWidget {
                     '$count',
                     style: textTheme.labelSmall?.copyWith(
                       color: selected
-                          ? AppColors.goldLight
-                          : AppColors.textDisabled,
+                          ? AppColors.goldDark
+                          : _libraryMuted,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1124,7 +1129,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
             maxLines: compact ? 3 : 2,
             overflow: TextOverflow.ellipsis,
             style: textTheme.headlineSmall?.copyWith(
-              color: AppColors.textPrimary,
+              color: _libraryInk,
               fontFamily: 'Libre Caslon Display',
               fontWeight: FontWeight.w700,
               height: 1.08,
@@ -1135,18 +1140,28 @@ class _SelectedCollectionHeader extends StatelessWidget {
                   tooltip: 'Retour aux packs',
                   onPressed: onBack,
                   icon: const Icon(Icons.arrow_back_rounded),
-                  color: AppColors.goldLight,
+                  color: _libraryInk,
                 )
               : OutlinedButton.icon(
                   onPressed: onBack,
                   icon: const Icon(Icons.grid_view_rounded, size: 16),
                   label: const Text('Tous les packs'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _libraryInk,
+                    side: const BorderSide(color: _libraryHairline),
+                  ),
                 );
 
           return GlassContainer(
             padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
             borderRadius: AppRadius.large,
-            borderColor: AppColors.gold.withValues(alpha: 0.28),
+            blurSigma: 0,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_libraryPaper, _libraryPaperSoft],
+            ),
+            borderColor: _libraryHairline,
             child: Stack(
               children: [
                 Positioned(
@@ -1156,7 +1171,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                     child: Icon(
                       _iconForCollection(collection.icon),
                       size: compact ? 84 : 122,
-                      color: AppColors.gold.withValues(alpha: 0.035),
+                      color: AppColors.goldDark.withValues(alpha: 0.055),
                     ),
                   ),
                 ),
@@ -1171,7 +1186,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.textDisabled,
+                              color: _libraryMuted,
                               letterSpacing: 1.15,
                               fontWeight: FontWeight.w800,
                             ),
@@ -1181,7 +1196,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                         Text(
                           '${position.toString().padLeft(2, '0')} / ${libraryCollections.length.toString().padLeft(2, '0')}',
                           style: textTheme.labelSmall?.copyWith(
-                            color: AppColors.goldLight,
+                            color: AppColors.goldDark,
                             fontWeight: FontWeight.w800,
                             fontFeatures: const [FontFeature.tabularFigures()],
                           ),
@@ -1194,7 +1209,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: position / libraryCollections.length,
                         minHeight: 3,
-                        backgroundColor: Colors.white.withValues(alpha: 0.07),
+                        backgroundColor: const Color(0xFFE9EEF4),
                         valueColor: const AlwaysStoppedAnimation<Color>(
                           AppColors.gold,
                         ),
@@ -1216,7 +1231,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                               Text(
                                 'COLLECTION  ${position.toString().padLeft(2, '0')} / ${libraryCollections.length.toString().padLeft(2, '0')}',
                                 style: textTheme.labelSmall?.copyWith(
-                                  color: AppColors.goldLight,
+                                  color: AppColors.goldDark,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 1.15,
                                 ),
@@ -1242,7 +1257,7 @@ class _SelectedCollectionHeader extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: _libraryMuted,
                         height: 1.35,
                       ),
                     ),
@@ -1290,19 +1305,19 @@ class _PackMetric extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
     decoration: BoxDecoration(
-      color: AppColors.legalBlueDark.withValues(alpha: 0.62),
+      color: const Color(0xFFF2F5F8),
       borderRadius: BorderRadius.circular(AppRadius.pill),
-      border: Border.all(color: AppColors.glassBorder),
+      border: Border.all(color: _libraryHairline),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.gold),
+        Icon(icon, size: 13, color: AppColors.goldDark),
         const SizedBox(width: 5),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.textSecondary,
+            color: _libraryMuted,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -1342,12 +1357,12 @@ class _DesktopLibrary extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _libraryCanvas,
         body: SafeArea(
           child: Stack(
             children: [
               const Positioned.fill(
-                child: IgnorePointer(child: _LibraryAmbience()),
+                child: ColoredBox(color: _libraryCanvas),
               ),
               Column(
                 children: [
@@ -1444,11 +1459,11 @@ class _LibraryHeader extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.workspaceHeader,
+        color: _libraryPaper,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
+            color: _libraryHairline,
+            width: 1,
           ),
         ),
       ),
@@ -1463,7 +1478,7 @@ class _LibraryHeader extends StatelessWidget {
           const Icon(
             Icons.local_library_rounded,
             size: 18,
-            color: AppColors.gold,
+            color: AppColors.goldDark,
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -1475,7 +1490,7 @@ class _LibraryHeader extends StatelessWidget {
                   'Bibliothèque juridique',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.headlineSmall,
+                  style: textTheme.headlineSmall?.copyWith(color: _libraryInk),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -1483,7 +1498,7 @@ class _LibraryHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _libraryMuted,
                   ),
                 ),
               ],
@@ -1523,11 +1538,11 @@ class _FavoritesToggle extends StatelessWidget {
               gradient: active ? AppGradients.goldMetallic : null,
               color: active
                   ? null
-                  : AppColors.legalBlueDark.withValues(alpha: 0.5),
+                  : _libraryPaperSoft,
               border: Border.all(
                 color: active
                     ? Colors.transparent
-                    : AppColors.gold.withValues(alpha: 0.4),
+                    : _libraryHairline,
                 width: 0.8,
               ),
             ),
@@ -1537,7 +1552,7 @@ class _FavoritesToggle extends StatelessWidget {
                 Icon(
                   active ? Icons.star_rounded : Icons.star_border_rounded,
                   size: 15,
-                  color: active ? AppColors.nightBlueDeep : AppColors.goldLight,
+                  color: active ? AppColors.nightBlueDeep : AppColors.goldDark,
                 ),
                 const SizedBox(width: 6),
                 Text(
@@ -1545,7 +1560,7 @@ class _FavoritesToggle extends StatelessWidget {
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: active
                         ? AppColors.nightBlueDeep
-                        : AppColors.goldLight,
+                        : _libraryInk,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1629,13 +1644,13 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.large),
-            color: AppColors.legalBlueDark.withValues(alpha: 0.62),
+            color: _libraryPaper,
+            border: Border.all(color: _libraryHairline),
             boxShadow: [
               BoxShadow(
-                color: (_focused ? AppColors.cobalt : AppColors.nightBlueDeep)
-                    .withValues(alpha: _focused ? 0.24 : 0.4),
-                blurRadius: _focused ? 24 : 16,
-                offset: const Offset(0, 6),
+                color: _libraryInk.withValues(alpha: _focused ? 0.10 : 0.045),
+                blurRadius: _focused ? 20 : 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -1645,7 +1660,7 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
               Icon(
                 Icons.search_rounded,
                 size: 22,
-                color: _focused ? AppColors.cobalt : AppColors.goldLight,
+                color: _focused ? AppColors.cobalt : AppColors.goldDark,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -1655,9 +1670,9 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
                   onChanged: widget.onChanged,
                   cursorColor: AppColors.cobalt,
                   style: textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textPrimary,
+                    color: _libraryInk,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     filled: false,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -1665,6 +1680,9 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
                     contentPadding: EdgeInsets.symmetric(vertical: 16),
                     hintText:
                         'Rechercher un texte, un article, une branche du droit…',
+                    hintStyle: textTheme.bodyLarge?.copyWith(
+                      color: _libraryMuted.withValues(alpha: 0.82),
+                    ),
                   ),
                 ),
               ),
@@ -1674,7 +1692,7 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
                   icon: const Icon(
                     Icons.close_rounded,
                     size: 18,
-                    color: AppColors.textSecondary,
+                    color: _libraryMuted,
                   ),
                   onPressed: widget.onClear,
                 ),
@@ -1705,12 +1723,12 @@ class _RadiantBorderPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1
-        ..color = (focused ? AppColors.cobalt : AppColors.glassBorder)
-            .withValues(alpha: focused ? 0.9 : 0.7),
+        ..color = (focused ? AppColors.cobalt : _libraryHairline)
+            .withValues(alpha: focused ? 0.9 : 1),
     );
 
     // Éclat qui tourne autour du contour.
-    final glint = focused ? AppColors.cobalt : AppColors.goldLight;
+    final glint = focused ? AppColors.cobalt : AppColors.goldDark;
     canvas.drawRRect(
       rrect,
       Paint()
@@ -1757,7 +1775,7 @@ class _FacetStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionLabel('Parcourir par catégorie'),
+        const _SectionLabel('Parcourir par catégorie', light: true),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
@@ -1885,14 +1903,14 @@ class _FacetState extends State<_Facet> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.medium),
                 color: widget.selected
-                    ? AppColors.gold.withValues(alpha: 0.14)
+                    ? const Color(0xFFFFF7E1)
                     : _hovered
-                    ? Colors.white.withValues(alpha: 0.05)
-                    : AppColors.legalBlueDark.withValues(alpha: 0.4),
+                    ? _libraryPaperSoft
+                    : _libraryPaper,
                 border: Border.all(
                   color: widget.selected
-                      ? AppColors.gold.withValues(alpha: 0.5)
-                      : AppColors.glassBorder,
+                      ? const Color(0xFFE8CD82)
+                      : _libraryHairline,
                   width: 0.8,
                 ),
               ),
@@ -1913,14 +1931,14 @@ class _FacetState extends State<_Facet> {
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: widget.selected
-                                ? AppColors.gold
-                                : AppColors.textPrimary,
+                                ? AppColors.goldDark
+                                : _libraryInk,
                           ),
                         ),
                         Text(
                           widget.sub,
                           style: textTheme.labelSmall?.copyWith(
-                            color: AppColors.textDisabled,
+                            color: _libraryMuted,
                             fontSize: 10.5,
                           ),
                         ),
@@ -1948,16 +1966,27 @@ class _CorpusScopeBanner extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       borderRadius: AppRadius.medium,
+      blurSigma: 0,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [_libraryPaper, _libraryPaperSoft],
+      ),
+      borderColor: _libraryHairline,
       child: Row(
         children: [
-          const Icon(Icons.verified_rounded, size: 17, color: AppColors.gold),
+          const Icon(
+            Icons.verified_rounded,
+            size: 17,
+            color: AppColors.goldDark,
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               'Consultation limitée au pack ouvert · textes, doctrine et ressources pédagogiques.',
               style: Theme.of(
                 context,
-              ).textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
+              ).textTheme.labelMedium?.copyWith(color: _libraryMuted),
             ),
           ),
         ],
@@ -1991,7 +2020,7 @@ class _ResultsBar extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.titleSmall?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: _libraryInk,
                 ),
               ),
             ),
@@ -2004,7 +2033,7 @@ class _ResultsBar extends StatelessWidget {
                   icon: const Icon(Icons.close_rounded, size: 15),
                   label: Text(compact ? 'Effacer' : 'Effacer les filtres'),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
+                    foregroundColor: _libraryMuted,
                     textStyle: textTheme.labelMedium,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.sm,
@@ -2104,9 +2133,15 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
       child: GlassContainer(
         onTap: widget.onOpen,
         borderColor: _hovered
-            ? AppColors.gold.withValues(alpha: 0.55)
-            : AppColors.glassBorder,
+            ? const Color(0xFFE8CD82)
+            : _libraryHairline,
         borderWidth: _hovered ? 0.9 : 0.5,
+        blurSigma: 0,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_libraryPaper, _libraryPaperSoft],
+        ),
         padding: const EdgeInsets.all(14),
         child: Stack(
           children: [
@@ -2127,6 +2162,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.titleSmall?.copyWith(
+                            color: _libraryInk,
                             fontFamily: 'Libre Caslon Display',
                             fontWeight: FontWeight.w600,
                             height: 1.18,
@@ -2139,7 +2175,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: _libraryMuted,
                           height: 1.3,
                         ),
                       ),
@@ -2160,8 +2196,8 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         spacing: 5,
                         runSpacing: 4,
                         children: [
-                          DocumentTag(label: doc.type.label),
-                          DocumentTag(label: doc.domain.label),
+                          DocumentTag(label: doc.type.label, light: true),
+                          DocumentTag(label: doc.domain.label, light: true),
                         ],
                       ),
                       if (doc.reference.trim().isNotEmpty) ...[
@@ -2183,7 +2219,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           Icon(
                             Icons.arrow_outward_rounded,
                             size: 16,
-                            color: AppColors.goldLight.withValues(alpha: 0.8),
+                            color: AppColors.goldDark,
                           ),
                         ],
                       ),
@@ -2306,16 +2342,16 @@ class _DocumentReferenceLine extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.66),
+        color: const Color(0xFFF2F5F8),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: _libraryHairline),
       ),
       child: Text(
         'Réf. $reference',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: _libraryMuted,
           height: 1.25,
         ),
       ),
@@ -2376,20 +2412,24 @@ class _EmptyResults extends StatelessWidget {
             const Icon(
               Icons.search_off_rounded,
               size: 40,
-              color: AppColors.textDisabled,
+              color: _libraryMuted,
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
               'Aucun texte ne correspond à ces critères.',
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+              ).textTheme.bodyLarge?.copyWith(color: _libraryInk),
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(
               onPressed: onClear,
               icon: const Icon(Icons.refresh_rounded, size: 18),
               label: const Text('Réinitialiser la recherche'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: _libraryInk,
+                side: const BorderSide(color: _libraryHairline),
+              ),
             ),
           ],
         ),
