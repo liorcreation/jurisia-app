@@ -389,7 +389,17 @@ void main() {
       await tester.ensureVisible(find.text('Formations Certifiantes'));
       await tester.tap(find.text('Formations Certifiantes'));
       await _settle(tester);
-      expect(find.text('Choisissez votre spécialité.'), findsOneWidget);
+      expect(find.text('Débuter la formation en ligne'), findsOneWidget);
+      expect(
+        find.text('S’inscrire pour la formation en présentiel'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull, reason: 'formats étudiant $size');
+
+      await tester.ensureVisible(find.text('Voir les spécialités'));
+      await tester.tap(find.text('Voir les spécialités'));
+      await _settle(tester);
+      expect(find.text('Formation en ligne'), findsOneWidget);
       expect(tester.takeException(), isNull, reason: 'catalogue étudiant $size');
 
       await tester.ensureVisible(find.text('Droit de la famille'));
