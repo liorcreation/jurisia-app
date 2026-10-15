@@ -8,7 +8,6 @@ import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/gradient_icon_badge.dart';
-import '../../../../core/widgets/luxury_elevated_button.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../core/widgets/premium_surface.dart';
 import '../../../../core/widgets/shimmer_sweep.dart';
@@ -21,7 +20,6 @@ import '../controllers/contact_professional_controller.dart';
 import '../../../professional/presentation/controllers/professional_service_request_controller.dart';
 import '../widgets/contact_request_sheet.dart';
 import '../widgets/professional_category_card.dart';
-import '../../../professional/presentation/widgets/professional_service_request_wizard.dart';
 
 abstract final class _ContactPalette {
   static const canvas = Color(0xFFF3F6FA);
@@ -84,10 +82,6 @@ class _ContactProfessionalView extends StatelessWidget {
     }
   }
 
-  void _openServiceRequest(BuildContext context) {
-    showProfessionalServiceRequestWizard(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<ContactProfessionalController>();
@@ -99,7 +93,6 @@ class _ContactProfessionalView extends StatelessWidget {
         controller: controller,
         serviceController: serviceController,
         onOpenRequest: (category) => _openRequestSheet(context, category),
-        onOpenServiceRequest: () => _openServiceRequest(context),
       );
     }
 
@@ -141,7 +134,6 @@ class _ContactProfessionalView extends StatelessWidget {
                   serviceRequests: serviceController.requests,
                   onOpenRequest: (category) =>
                       _openRequestSheet(context, category),
-                  onOpenServiceRequest: () => _openServiceRequest(context),
                 ),
               ),
             ],
@@ -218,13 +210,11 @@ class _DesktopContactView extends StatelessWidget {
     required this.controller,
     required this.serviceController,
     required this.onOpenRequest,
-    required this.onOpenServiceRequest,
   });
 
   final ContactProfessionalController controller;
   final ProfessionalServiceRequestController serviceController;
   final _OpenRequest onOpenRequest;
-  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +246,6 @@ class _DesktopContactView extends StatelessWidget {
                               requests: controller.requests,
                               serviceRequests: serviceController.requests,
                               onOpenRequest: onOpenRequest,
-                              onOpenServiceRequest: onOpenServiceRequest,
                             ),
                           ),
                         ),
@@ -560,18 +549,14 @@ class _ContactBody extends StatelessWidget {
     required this.requests,
     required this.serviceRequests,
     required this.onOpenRequest,
-    required this.onOpenServiceRequest,
   });
 
   final List<ContactRequest> requests;
   final List<ProfessionalServiceRequest> serviceRequests;
   final _OpenRequest onOpenRequest;
-  final VoidCallback onOpenServiceRequest;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
     final categoriesGrid = LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 680
@@ -631,73 +616,6 @@ class _ContactBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _ContactHero(),
-        const SizedBox(height: AppSpacing.xl),
-        PremiumSurface(
-          tone: PremiumSurfaceTone.cobalt,
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final copy = Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const PremiumStatusPill(
-                    label: 'Parcours prioritaire',
-                    tone: PremiumStatusTone.gold,
-                    icon: Icons.auto_awesome_rounded,
-                    compact: true,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    'Demander un acte ou un rendez-vous',
-                    style: textTheme.titleLarge?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontFamily: 'Libre Caslon Display',
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Un formulaire guidé pour cadrer votre besoin, recevoir un accusé et suivre le devis.',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              );
-              final action = constraints.maxWidth < 620
-                  ? LuxuryElevatedButton(
-                      onPressed: onOpenServiceRequest,
-                      icon: Icons.arrow_forward_rounded,
-                      child: const Text('Ouvrir le parcours'),
-                    )
-                  : SizedBox(
-                      width: 220,
-                      child: LuxuryElevatedButton(
-                        onPressed: onOpenServiceRequest,
-                        icon: Icons.arrow_forward_rounded,
-                        child: const Text('Ouvrir le parcours'),
-                      ),
-                    );
-              if (constraints.maxWidth < 620) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    copy,
-                    const SizedBox(height: AppSpacing.md),
-                    action,
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  Expanded(child: copy),
-                  const SizedBox(width: AppSpacing.lg),
-                  action,
-                ],
-              );
-            },
-          ),
-        ),
         const SizedBox(height: AppSpacing.xl),
         const _ContactSectionHeader(),
         const SizedBox(height: AppSpacing.md),
