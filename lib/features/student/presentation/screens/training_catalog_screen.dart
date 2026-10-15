@@ -8,6 +8,13 @@ import '../../../../models/training/training_category.dart';
 import '../../../../theme/app_theme.dart';
 import '../../data/datasources/training_catalog_local_datasource.dart';
 
+const _trainingCanvas = Color(0xFFF3F6FA);
+const _trainingPaper = Color(0xFFFFFFFF);
+const _trainingPaperSoft = Color(0xFFF8FAFC);
+const _trainingInk = Color(0xFF10243D);
+const _trainingMuted = Color(0xFF53657A);
+const _trainingLine = Color(0xFFDCE4ED);
+
 /// Catalogue thématique des formations certifiantes.
 class TrainingCatalogScreen extends StatelessWidget {
   const TrainingCatalogScreen({super.key});
@@ -21,8 +28,16 @@ class TrainingCatalogScreen extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _trainingCanvas,
         appBar: AppBar(
+          backgroundColor: _trainingPaper,
+          foregroundColor: _trainingInk,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(height: 1, color: _trainingLine),
+          ),
           leading: IconButton(
             tooltip: 'Retour aux formations',
             icon: const Icon(Icons.arrow_back_ios_new_rounded),
@@ -117,6 +132,7 @@ class TrainingOrientationSection extends StatelessWidget {
           'Choisissez votre parcours',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
             fontFamily: 'Libre Caslon Display',
+            color: _trainingInk,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -125,7 +141,7 @@ class TrainingOrientationSection extends StatelessWidget {
           child: Text(
             'JurisIA vous accompagne d’abord par des formations certifiantes thématiques. Le parcours universitaire LMD sera activé dans une prochaine phase.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
+              color: _trainingMuted,
               height: 1.5,
             ),
           ),
@@ -365,9 +381,10 @@ class _LearningRouteRail extends StatelessWidget {
         ];
         return GlassContainer(
           padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
-          borderColor: AppColors.cobaltLight.withValues(alpha: 0.24),
+          blurSigma: 0,
+          borderColor: _trainingLine,
           gradient: const LinearGradient(
-            colors: [Color(0x201A5590), Color(0x0D10243A)],
+            colors: [_trainingPaper, _trainingPaperSoft],
           ),
           child: compact
               ? Column(
@@ -433,14 +450,14 @@ class _LearningRouteStep extends StatelessWidget {
                 '$number  $title',
                 style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: _trainingInk,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 text,
                 style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: _trainingMuted,
                   height: 1.4,
                 ),
               ),
@@ -723,15 +740,19 @@ class _OrientationCardState extends State<_OrientationCard> {
       onExit: widget.available ? (_) => setState(() => _hovered = false) : null,
       child: AnimatedOpacity(
         duration: AppMotion.standard,
-        opacity: widget.available ? 1 : 0.56,
+        opacity: widget.available ? 1 : 0.78,
         child: AnimatedSlide(
           duration: AppMotion.standard,
           offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
           child: GlassContainer(
             onTap: widget.available ? widget.onTap : null,
             padding: const EdgeInsets.all(AppSpacing.lg),
+            blurSigma: 0,
             borderColor: borderColor,
             borderWidth: widget.available && _hovered ? 1.1 : 0.7,
+            gradient: const LinearGradient(
+              colors: [_trainingPaper, _trainingPaperSoft],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -753,6 +774,7 @@ class _OrientationCardState extends State<_OrientationCard> {
                   widget.title,
                   style: textTheme.headlineSmall?.copyWith(
                     fontFamily: 'Libre Caslon Display',
+                    color: _trainingInk,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -767,7 +789,7 @@ class _OrientationCardState extends State<_OrientationCard> {
                 Text(
                   widget.description,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _trainingMuted,
                     height: 1.45,
                   ),
                 ),
@@ -781,8 +803,8 @@ class _OrientationCardState extends State<_OrientationCard> {
                             : 'Accès prochainement',
                         style: textTheme.labelLarge?.copyWith(
                           color: widget.available
-                              ? AppColors.goldLight
-                              : AppColors.textDisabled,
+                              ? AppColors.goldDark
+                              : _trainingMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -793,8 +815,8 @@ class _OrientationCardState extends State<_OrientationCard> {
                           : Icons.lock_outline_rounded,
                       size: 18,
                       color: widget.available
-                          ? AppColors.goldLight
-                          : AppColors.textDisabled,
+                          ? AppColors.goldDark
+                          : _trainingMuted,
                     ),
                   ],
                 ),
@@ -838,6 +860,10 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
         child: GlassContainer(
           onTap: category.isAvailable ? widget.onOpen : null,
           padding: const EdgeInsets.all(AppSpacing.lg),
+          blurSigma: 0,
+          gradient: const LinearGradient(
+            colors: [_trainingPaper, _trainingPaperSoft],
+          ),
           borderColor: AppColors.gold.withValues(alpha: _hovered ? 0.66 : 0.34),
           borderWidth: _hovered ? 1 : 0.6,
           child: Column(
@@ -886,6 +912,7 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                 style: textTheme.titleLarge?.copyWith(
                   fontFamily: 'Libre Caslon Display',
                   height: 1.12,
+                  color: _trainingInk,
                 ),
               ),
               const SizedBox(height: 6),
@@ -894,7 +921,7 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.labelMedium?.copyWith(
-                  color: AppColors.goldLight,
+                  color: AppColors.goldDark,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -904,7 +931,7 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: _trainingMuted,
                   height: 1.45,
                 ),
               ),
@@ -937,8 +964,8 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                           : 'Accès prochainement',
                       style: textTheme.labelLarge?.copyWith(
                         color: category.isAvailable
-                            ? AppColors.goldLight
-                            : AppColors.textDisabled,
+                            ? AppColors.goldDark
+                            : _trainingMuted,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -949,8 +976,8 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                         : Icons.lock_outline_rounded,
                     size: 18,
                     color: category.isAvailable
-                        ? AppColors.goldLight
-                        : AppColors.textDisabled,
+                        ? AppColors.goldDark
+                        : _trainingMuted,
                   ),
                 ],
               ),
@@ -972,9 +999,9 @@ class _CatalogChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
     decoration: BoxDecoration(
-      color: AppColors.legalBlueDark.withValues(alpha: 0.62),
+      color: const Color(0xFFF1F5F9),
       borderRadius: BorderRadius.circular(AppRadius.pill),
-      border: Border.all(color: AppColors.glassBorder),
+      border: Border.all(color: _trainingLine),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
@@ -984,7 +1011,7 @@ class _CatalogChip extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.textSecondary,
+            color: _trainingMuted,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -1002,8 +1029,16 @@ class TrainingCategoryDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _trainingCanvas,
         appBar: AppBar(
+          backgroundColor: _trainingPaper,
+          foregroundColor: _trainingInk,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(height: 1, color: _trainingLine),
+          ),
           title: const Text('Spécialité'),
           actions: const [AppShellMenuButton()],
         ),
@@ -1048,13 +1083,14 @@ class _CategoryDetailContent extends StatelessWidget {
           'Une spécialité pensée pour la pratique.',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             fontFamily: 'Libre Caslon Display',
+            color: _trainingInk,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Apprenez à raisonner, qualifier et agir avec une méthode claire, progressive et directement applicable.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: AppColors.textSecondary,
+            color: _trainingMuted,
             height: 1.5,
           ),
         ),
@@ -1106,11 +1142,15 @@ class _CategoryDetailContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         GlassContainer(
           padding: const EdgeInsets.all(AppSpacing.lg),
+          blurSigma: 0,
           borderColor: AppColors.cobaltLight.withValues(alpha: 0.22),
+          gradient: const LinearGradient(
+            colors: [_trainingPaper, _trainingPaperSoft],
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.route_rounded, color: AppColors.cobaltLight),
+              const Icon(Icons.route_rounded, color: AppColors.goldDark),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -1120,13 +1160,14 @@ class _CategoryDetailContent extends StatelessWidget {
                       'Architecture du parcours',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
+                        color: _trainingInk,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Introduction · notions fondamentales · mises en situation · évaluation certifiante',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: _trainingMuted,
                         height: 1.45,
                       ),
                     ),
@@ -1172,7 +1213,11 @@ class _CategorySnapshot extends StatelessWidget {
         ];
         return GlassContainer(
           padding: const EdgeInsets.all(AppSpacing.md),
+          blurSigma: 0,
           borderColor: AppColors.gold.withValues(alpha: 0.24),
+          gradient: const LinearGradient(
+            colors: [_trainingPaper, _trainingPaperSoft],
+          ),
           child: compact
               ? Wrap(
                   spacing: AppSpacing.lg,
@@ -1212,7 +1257,7 @@ class _SnapshotItem extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(icon, size: 19, color: AppColors.goldLight),
+      Icon(icon, size: 19, color: AppColors.goldDark),
       const SizedBox(width: AppSpacing.sm),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1221,13 +1266,16 @@ class _SnapshotItem extends StatelessWidget {
             value,
             style: Theme.of(
               context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: _trainingInk,
+            ),
           ),
           Text(
             label,
             style: Theme.of(
               context,
-            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+            ).textTheme.labelSmall?.copyWith(color: _trainingMuted),
           ),
         ],
       ),
@@ -1244,7 +1292,7 @@ class _CategoryRoadmap extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.auto_awesome_rounded, color: AppColors.goldLight),
+          const Icon(Icons.auto_awesome_rounded, color: AppColors.goldDark),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -1254,13 +1302,16 @@ class _CategoryRoadmap extends StatelessWidget {
                   'Votre feuille de route',
                   style: Theme.of(
                     context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: _trainingInk,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Orientation → modules guidés → exercices → évaluation certifiante. Les contenus disponibles apparaîtront dans votre espace étudiant au fil de leur ouverture.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _trainingMuted,
                     height: 1.45,
                   ),
                 ),
@@ -1387,10 +1438,15 @@ class _DetailPillar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => GlassContainer(
     padding: const EdgeInsets.all(AppSpacing.md),
+    blurSigma: 0,
+    borderColor: _trainingLine,
+    gradient: const LinearGradient(
+      colors: [_trainingPaper, _trainingPaperSoft],
+    ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 22, color: AppColors.goldLight),
+        Icon(icon, size: 22, color: AppColors.goldDark),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
@@ -1400,13 +1456,16 @@ class _DetailPillar extends StatelessWidget {
                 title,
                 style: Theme.of(
                   context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: _trainingInk,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 text,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: _trainingMuted,
                   height: 1.4,
                 ),
               ),
@@ -1428,9 +1487,9 @@ class PremiumLikePanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.08),
+        color: const Color(0xFFFFFBEB),
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.26)),
+        border: Border.all(color: const Color(0xFFEADDAF)),
       ),
       child: child,
     );
@@ -1496,7 +1555,7 @@ class _CatalogTrustNote extends StatelessWidget {
           child: Text(
             'Chaque parcours certifiant associe contenus pédagogiques, pratique guidée et validation finale. Les certificats seront vérifiables par code unique.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
+              color: _trainingMuted,
               height: 1.45,
             ),
           ),
@@ -1517,7 +1576,7 @@ class _CatalogEyebrow extends StatelessWidget {
     return Text(
       text,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-        color: onDark ? AppColors.goldLight : AppColors.gold,
+        color: onDark ? AppColors.goldLight : AppColors.goldDark,
         fontWeight: FontWeight.w700,
         letterSpacing: AppLetterSpacing.caps,
       ),

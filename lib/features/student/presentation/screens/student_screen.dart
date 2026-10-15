@@ -63,8 +63,24 @@ class _StudentView extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: selectedLevel == null
+            ? const Color(0xFFF3F6FA)
+            : Colors.transparent,
         appBar: AppBar(
+          backgroundColor: selectedLevel == null
+              ? Colors.white
+              : Colors.transparent,
+          foregroundColor: selectedLevel == null
+              ? const Color(0xFF10243D)
+              : AppColors.textPrimary,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          bottom: selectedLevel == null
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(1),
+                  child: Divider(height: 1, color: Color(0xFFDCE4ED)),
+                )
+              : null,
           title: Text(
             selectedLevel == null ? 'Formations' : selectedLevel.fullLabel,
           ),
@@ -78,9 +94,10 @@ class _StudentView extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            const Positioned.fill(
-              child: IgnorePointer(child: _StudentAmbience()),
-            ),
+            if (selectedLevel != null)
+              const Positioned.fill(
+                child: IgnorePointer(child: _StudentAmbience()),
+              ),
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
@@ -169,13 +186,16 @@ class _DesktopStudentView extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: level == null
+            ? const Color(0xFFF3F6FA)
+            : Colors.transparent,
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(
-                child: IgnorePointer(child: _StudentAmbience()),
-              ),
+              if (level != null)
+                const Positioned.fill(
+                  child: IgnorePointer(child: _StudentAmbience()),
+                ),
               Column(
                 children: [
                   _DesktopStudentHeader(
