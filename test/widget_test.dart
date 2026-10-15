@@ -160,11 +160,11 @@ void main() {
     await _settle(tester);
 
     final field = tester.widget<TextField>(find.byType(TextField));
-    expect(field.decoration.filled, isFalse);
-    expect(field.decoration.fillColor, Colors.transparent);
+    expect(field.decoration!.filled, isFalse);
+    expect(field.decoration!.fillColor, Colors.transparent);
     expect(field.style?.color, const Color(0xFF10243D));
     expect(
-      field.decoration.hintStyle?.color,
+      field.decoration!.hintStyle?.color,
       const Color(0xFF5B6B80),
     );
     expect(tester.takeException(), isNull);
