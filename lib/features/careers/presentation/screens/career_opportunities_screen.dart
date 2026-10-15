@@ -7,6 +7,24 @@ import '../../../../theme/app_theme.dart';
 
 enum _OpportunityKind { internship, employment }
 
+abstract final class _CareerPalette {
+  static const canvas = Color(0xFFF3F6FA);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceSoft = Color(0xFFF8FAFD);
+  static const ink = Color(0xFF10233F);
+  static const muted = Color(0xFF52647C);
+  static const subtle = Color(0xFF718198);
+  static const border = Color(0xFFDCE4EE);
+  static const goldInk = Color(0xFF8A6815);
+  static const cobaltInk = Color(0xFF28558D);
+
+  static const surfaceGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [surface, surfaceSoft],
+  );
+}
+
 /// Hub des opportunités professionnelles : la personne choisit le type
 /// d’annonce avant d’accéder à sa liste.
 class CareerOpportunitiesScreen extends StatefulWidget {
@@ -31,7 +49,7 @@ class _CareerOpportunitiesScreenState extends State<CareerOpportunitiesScreen> {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _CareerPalette.canvas,
         appBar: AppBar(
           leading: selected == null
               ? const AppShellMenuButton()
@@ -41,6 +59,19 @@ class _CareerOpportunitiesScreenState extends State<CareerOpportunitiesScreen> {
                   onPressed: () => setState(() => _selection = null),
                 ),
           title: Text(title),
+          backgroundColor: Colors.white,
+          foregroundColor: _CareerPalette.ink,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: _CareerPalette.border,
+            ),
+          ),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -64,6 +95,11 @@ class _CareerOpportunitiesScreenState extends State<CareerOpportunitiesScreen> {
                       : _OpportunityListing(
                           key: ValueKey(selected),
                           kind: selected,
+                          onSwitchKind: () => setState(() {
+                            _selection = selected == _OpportunityKind.internship
+                                ? _OpportunityKind.employment
+                                : _OpportunityKind.internship;
+                          }),
                         ),
                 ),
               ),
@@ -96,7 +132,11 @@ class _OpportunityChooser extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [AppColors.cobalt, AppColors.cobaltDeep, AppColors.deepSlate],
+                colors: [
+                  AppColors.cobalt,
+                  AppColors.cobaltDeep,
+                  AppColors.deepSlate,
+                ],
               ),
               border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
               boxShadow: AppShadows.floating,
@@ -104,11 +144,12 @@ class _OpportunityChooser extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _GoldLabel('CARRIÈRES · JURISIA'),
+                const _GoldLabel('CARRIÈRES · JURISIA', onDark: true),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'La prochaine étape\nde votre parcours.',
                   style: textTheme.displaySmall?.copyWith(
+                    color: AppColors.textPrimary,
                     fontFamily: 'Libre Caslon Display',
                     height: 1.08,
                   ),
@@ -134,6 +175,7 @@ class _OpportunityChooser extends StatelessWidget {
         Text(
           'Que recherchez-vous ?',
           style: textTheme.headlineMedium?.copyWith(
+            color: _CareerPalette.ink,
             fontFamily: 'Libre Caslon Display',
           ),
         ),
@@ -214,8 +256,15 @@ class _OpportunityCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.large),
-              gradient: AppGradients.glassCard,
-              border: Border.all(color: AppColors.glassBorder),
+              gradient: _CareerPalette.surfaceGradient,
+              border: Border.all(color: _CareerPalette.border),
+              boxShadow: [
+                BoxShadow(
+                  color: _CareerPalette.ink.withValues(alpha: 0.06),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,6 +285,7 @@ class _OpportunityCard extends StatelessWidget {
                 Text(
                   title,
                   style: textTheme.headlineSmall?.copyWith(
+                    color: _CareerPalette.ink,
                     fontFamily: 'Libre Caslon Display',
                   ),
                 ),
@@ -243,7 +293,7 @@ class _OpportunityCard extends StatelessWidget {
                 Text(
                   description,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _CareerPalette.muted,
                     height: 1.5,
                   ),
                 ),
@@ -253,12 +303,15 @@ class _OpportunityCard extends StatelessWidget {
                     Text(
                       'Explorer les annonces',
                       style: textTheme.labelLarge?.copyWith(
-                        color: AppColors.goldLight,
+                        color: _CareerPalette.goldInk,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    const Icon(Icons.arrow_forward_rounded, color: AppColors.gold),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: _CareerPalette.goldInk,
+                    ),
                   ],
                 ),
               ],
@@ -271,9 +324,14 @@ class _OpportunityCard extends StatelessWidget {
 }
 
 class _OpportunityListing extends StatelessWidget {
-  const _OpportunityListing({super.key, required this.kind});
+  const _OpportunityListing({
+    super.key,
+    required this.kind,
+    required this.onSwitchKind,
+  });
 
   final _OpportunityKind kind;
+  final VoidCallback onSwitchKind;
 
   @override
   Widget build(BuildContext context) {
@@ -288,20 +346,35 @@ class _OpportunityListing extends StatelessWidget {
         Text(
           title,
           style: textTheme.displaySmall?.copyWith(
+            color: _CareerPalette.ink,
             fontFamily: 'Libre Caslon Display',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          isInternship
+              ? 'Les opportunités de stage publiées par le réseau JurisIA.'
+              : 'Les opportunités d’emploi publiées par le réseau JurisIA.',
+          style: textTheme.bodyMedium?.copyWith(
+            color: _CareerPalette.muted,
+            height: 1.5,
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.xl,
-          ),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
-            color: AppColors.deepSlateElevated.withValues(alpha: 0.74),
+            gradient: _CareerPalette.surfaceGradient,
             borderRadius: BorderRadius.circular(AppRadius.large),
-            border: Border.all(color: AppColors.glassBorder),
+            border: Border.all(color: _CareerPalette.border),
+            boxShadow: [
+              BoxShadow(
+                color: _CareerPalette.ink.withValues(alpha: 0.06),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -309,13 +382,13 @@ class _OpportunityListing extends StatelessWidget {
                 width: 62,
                 height: 62,
                 decoration: BoxDecoration(
-                  color: AppColors.cobalt.withValues(alpha: 0.3),
+                  color: const Color(0xFFF2F5FA),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                  border: Border.all(color: _CareerPalette.border),
                 ),
                 child: Icon(
                   isInternship ? Icons.school_rounded : Icons.work_rounded,
-                  color: AppColors.goldLight,
+                  color: _CareerPalette.goldInk,
                   size: 28,
                 ),
               ),
@@ -324,6 +397,7 @@ class _OpportunityListing extends StatelessWidget {
                 'Aucune annonce publiée pour le moment',
                 textAlign: TextAlign.center,
                 style: textTheme.titleLarge?.copyWith(
+                  color: _CareerPalette.ink,
                   fontFamily: 'Libre Caslon Display',
                 ),
               ),
@@ -334,8 +408,30 @@ class _OpportunityListing extends StatelessWidget {
                   'Les nouvelles offres ${isInternship ? 'de stage' : 'd’emploi'} apparaîtront ici dès leur publication.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _CareerPalette.muted,
                     height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              OutlinedButton.icon(
+                onPressed: onSwitchKind,
+                icon: Icon(
+                  isInternship
+                      ? Icons.work_outline_rounded
+                      : Icons.school_rounded,
+                ),
+                label: Text(
+                  isInternship
+                      ? 'Voir les offres d’emploi'
+                      : 'Voir les offres de stage',
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _CareerPalette.cobaltInk,
+                  side: const BorderSide(color: _CareerPalette.border),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
                 ),
               ),
@@ -348,15 +444,16 @@ class _OpportunityListing extends StatelessWidget {
 }
 
 class _GoldLabel extends StatelessWidget {
-  const _GoldLabel(this.text);
+  const _GoldLabel(this.text, {this.onDark = false});
 
   final String text;
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) => Text(
     text,
     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-      color: AppColors.goldLight,
+      color: onDark ? AppColors.goldLight : _CareerPalette.goldInk,
       letterSpacing: 2.0,
       fontWeight: FontWeight.w800,
     ),
