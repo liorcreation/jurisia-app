@@ -23,6 +23,26 @@ import '../widgets/contact_request_sheet.dart';
 import '../widgets/professional_category_card.dart';
 import '../../../professional/presentation/widgets/professional_service_request_wizard.dart';
 
+abstract final class _ContactPalette {
+  static const canvas = Color(0xFFF3F6FA);
+  static const surface = Color(0xFFFFFFFF);
+  static const surfaceSoft = Color(0xFFF8FAFD);
+  static const ink = Color(0xFF10233F);
+  static const muted = Color(0xFF52647C);
+  static const subtle = Color(0xFF718198);
+  static const border = Color(0xFFDCE4EE);
+  static const goldInk = Color(0xFF8A6815);
+  static const cobaltInk = Color(0xFF28558D);
+  static const chip = Color(0xFFEEF3F9);
+  static const goldWash = Color(0xFFFFF8E8);
+
+  static const surfaceGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [surface, surfaceSoft],
+  );
+}
+
 /// Section 5 — Contacter un professionnel : mise en relation avec un
 /// notaire, avocat, juriste, huissier, greffier ou juge partenaire, via une
 /// demande de contact enregistrée et suivie dans Supabase. Le
@@ -85,10 +105,23 @@ class _ContactProfessionalView extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _ContactPalette.canvas,
         appBar: AppBar(
           title: const Text('Contacter un professionnel'),
           leading: const AppShellMenuButton(),
+          backgroundColor: Colors.white,
+          foregroundColor: _ContactPalette.ink,
+          surfaceTintColor: Colors.white,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: _ContactPalette.border,
+            ),
+          ),
         ),
         body: SafeArea(
           child: Stack(
@@ -197,7 +230,7 @@ class _DesktopContactView extends StatelessWidget {
   Widget build(BuildContext context) {
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _ContactPalette.canvas,
         body: SafeArea(
           child: Stack(
             children: [
@@ -504,6 +537,7 @@ class _ContactSectionHeader extends StatelessWidget {
         Text(
           'Choisissez votre expertise',
           style: textTheme.headlineMedium?.copyWith(
+            color: _ContactPalette.ink,
             fontFamily: 'Libre Caslon Display',
           ),
         ),
@@ -511,7 +545,7 @@ class _ContactSectionHeader extends StatelessWidget {
         Text(
           'Chaque demande commence par une orientation simple, humaine et contextualisée.',
           style: textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
+            color: _ContactPalette.muted,
             height: 1.45,
           ),
         ),
@@ -615,6 +649,7 @@ class _ContactBody extends StatelessWidget {
                   Text(
                     'Demander un acte ou un rendez-vous',
                     style: textTheme.titleLarge?.copyWith(
+                      color: AppColors.textPrimary,
                       fontFamily: 'Libre Caslon Display',
                     ),
                   ),
@@ -739,9 +774,10 @@ class _ProfessionCardState extends State<_ProfessionCard> {
         child: GlassContainer(
           onTap: widget.onTap,
           padding: const EdgeInsets.all(AppSpacing.lg),
+          gradient: _ContactPalette.surfaceGradient,
           borderColor: _hovered
               ? tint.withValues(alpha: 0.6)
-              : tint.withValues(alpha: 0.26),
+              : _ContactPalette.border,
           borderWidth: _hovered ? 1 : 0.6,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -751,6 +787,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
               Text(
                 category.label,
                 style: textTheme.titleLarge?.copyWith(
+                  color: _ContactPalette.ink,
                   fontFamily: 'Libre Caslon Display',
                 ),
               ),
@@ -797,7 +834,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                   'Un juge ne se contacte pas à titre personnel. Cette demande sert à '
                   'obtenir une orientation générale, transmise par un partenaire juriste.',
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _ContactPalette.muted,
                     height: 1.4,
                   ),
                 ),
@@ -805,7 +842,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                 Text(
                   category.description,
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _ContactPalette.muted,
                     height: 1.4,
                   ),
                 ),
@@ -821,7 +858,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.legalBlueDark.withValues(alpha: 0.6),
+                          color: _ContactPalette.chip,
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                           border: Border.all(
                             color: tint.withValues(alpha: 0.3),
@@ -831,7 +868,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                         child: Text(
                           specialty,
                           style: textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: _ContactPalette.muted,
                           ),
                         ),
                       ),
@@ -850,7 +887,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelMedium?.copyWith(
-                        color: AppColors.goldLight,
+                        color: _ContactPalette.goldInk,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -859,7 +896,7 @@ class _ProfessionCardState extends State<_ProfessionCard> {
                   const Icon(
                     Icons.arrow_forward_rounded,
                     size: 15,
-                    color: AppColors.goldLight,
+                    color: _ContactPalette.goldInk,
                   ),
                 ],
               ),
@@ -880,6 +917,8 @@ class _RequestPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      gradient: _ContactPalette.surfaceGradient,
+      borderColor: _ContactPalette.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -922,6 +961,8 @@ class _ServiceRequestPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.lg),
+      gradient: _ContactPalette.surfaceGradient,
+      borderColor: _ContactPalette.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -943,7 +984,7 @@ class _ServiceRequestPanel extends StatelessWidget {
             Text(
               'Les demandes d’actes, devis et créneaux confirmés apparaîtront ici.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: _ContactPalette.muted,
                 height: 1.4,
               ),
             )
@@ -983,9 +1024,9 @@ class _ServiceRequestRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.4),
+        color: const Color(0xFFF5F8FC),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.glassBorder, width: 0.5),
+        border: Border.all(color: _ContactPalette.border, width: 0.7),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -999,6 +1040,7 @@ class _ServiceRequestRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: _ContactPalette.ink,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1016,14 +1058,14 @@ class _ServiceRequestRow extends StatelessWidget {
             '${request.category.label} · ${_relativeDate(request.createdAt)}',
             style: Theme.of(
               context,
-            ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+            ).textTheme.labelSmall?.copyWith(color: _ContactPalette.muted),
           ),
           if (request.quoteAmount != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Devis : ${request.quoteAmount} ${request.quoteCurrency}',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.goldLight,
+                color: _ContactPalette.goldInk,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1053,7 +1095,7 @@ class _HowItWorks extends StatelessWidget {
         Text(
           'Vos demandes de mise en relation et leur suivi apparaîtront ici.',
           style: textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
+            color: _ContactPalette.muted,
             height: 1.4,
           ),
         ),
@@ -1069,19 +1111,19 @@ class _HowItWorks extends StatelessWidget {
                 Text(
                   '0${i + 1}',
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.gold,
+                    color: _ContactPalette.goldInk,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Icon(_steps[i].$1, size: 14, color: AppColors.goldLight),
+                Icon(_steps[i].$1, size: 14, color: _ContactPalette.cobaltInk),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     _steps[i].$2,
                     style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: _ContactPalette.muted,
                       height: 1.35,
                     ),
                   ),
@@ -1118,9 +1160,9 @@ class _RequestRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.4),
+        color: const Color(0xFFF5F8FC),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.glassBorder, width: 0.5),
+        border: Border.all(color: _ContactPalette.border, width: 0.7),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1141,6 +1183,7 @@ class _RequestRow extends StatelessWidget {
                       child: Text(
                         request.category.label,
                         style: textTheme.labelMedium?.copyWith(
+                          color: _ContactPalette.ink,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1160,7 +1203,7 @@ class _RequestRow extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _ContactPalette.muted,
                     height: 1.3,
                   ),
                 ),
@@ -1168,7 +1211,7 @@ class _RequestRow extends StatelessWidget {
                 Text(
                   _relativeDate(request.createdAt),
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.textDisabled,
+                    color: _ContactPalette.subtle,
                   ),
                 ),
               ],
@@ -1190,10 +1233,10 @@ class _ConfidentialityNote extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColors.gold.withValues(alpha: 0.06),
+        color: _ContactPalette.goldWash,
         borderRadius: BorderRadius.circular(AppRadius.small),
         border: Border.all(
-          color: AppColors.gold.withValues(alpha: 0.2),
+          color: Color(0xFFE8D7AA),
           width: 0.7,
         ),
       ),
@@ -1203,7 +1246,7 @@ class _ConfidentialityNote extends StatelessWidget {
           const Icon(
             Icons.lock_outline_rounded,
             size: 15,
-            color: AppColors.goldLight,
+            color: _ContactPalette.goldInk,
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -1211,7 +1254,7 @@ class _ConfidentialityNote extends StatelessWidget {
               'Vos coordonnées ne sont partagées qu\'avec le partenaire qui prend en charge '
               'votre demande, et l\'équipe JurisIA en assure le suivi.',
               style: textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: _ContactPalette.muted,
                 height: 1.4,
               ),
             ),
@@ -1242,7 +1285,7 @@ class _Eyebrow extends StatelessWidget {
           child: Text(
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.goldLight,
+              color: _ContactPalette.goldInk,
               letterSpacing: AppLetterSpacing.caps,
               fontWeight: FontWeight.w700,
             ),
