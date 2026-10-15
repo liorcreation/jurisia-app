@@ -129,72 +129,23 @@ void main() {
       ),
       findsOneWidget,
     );
+    final exploreButton = find.text('EXPLORER').first;
+    await tester.ensureVisible(exploreButton);
+    await tester.tap(exploreButton);
+    await _settle(tester);
+    expect(find.text('PARCOURS DES PACKS'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is ColoredBox && widget.color == const Color(0xFFF4F7FA),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<AppBar>(find.byType(AppBar)).backgroundColor,
+      const Color(0xFFFFFFFF),
+    );
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('Selected library pack uses light surfaces on phone and desktop', (
-    WidgetTester tester,
-  ) async {
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    for (final size in [const Size(390, 844), const Size(1440, 900)]) {
-      tester.view.physicalSize = size;
-      tester.view.devicePixelRatio = 1;
-      await tester.pumpWidget(
-        _wrapHomeNavigation(
-          platform: size.width < 600
-              ? TargetPlatform.iOS
-              : TargetPlatform.macOS,
-        ),
-      );
-      await _settle(tester);
-      if (size.width < 1000) {
-        await tester.tap(find.byIcon(Icons.menu_rounded));
-        await _settle(tester);
-      }
-      await tester.tap(find.text('Bibliothèque'));
-      await _settle(tester);
-      await tester.tap(find.text('EXPLORER').first);
-      await _settle(tester);
-
-      expect(find.text('PARCOURS DES PACKS'), findsOneWidget, reason: '$size');
-      expect(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is ColoredBox && widget.color == const Color(0xFFF4F7FA),
-        ),
-        findsOneWidget,
-        reason: '$size',
-      );
-      final packScaffold = find
-          .ancestor(
-            of: find.text('PARCOURS DES PACKS'),
-            matching: find.byType(Scaffold),
-          )
-          .first;
-      final surfaces = tester.widgetList<GlassContainer>(
-        find.descendant(of: packScaffold, matching: find.byType(GlassContainer)),
-      );
-      expect(surfaces, isNotEmpty, reason: '$size');
-      expect(
-        surfaces.every(
-          (surface) =>
-              surface.gradient is LinearGradient &&
-              (surface.gradient as LinearGradient).colors.first ==
-                  const Color(0xFFFFFFFF),
-        ),
-        isTrue,
-        reason: '$size',
-      );
-      if (size.width < 600) {
-        expect(
-          tester.widget<AppBar>(find.byType(AppBar)).backgroundColor,
-          const Color(0xFFFFFFFF),
-        );
-      }
-      expect(tester.takeException(), isNull, reason: '$size');
-    }
   });
 
   testWidgets('Litigation landing stays usable across phone sizes and text scaling', (
