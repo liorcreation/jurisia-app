@@ -146,6 +146,30 @@ void main() {
     }
   });
 
+  testWidgets('Litigation mobile composer keeps readable text on its light surface', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _wrapLitigationScreen(platform: TargetPlatform.iOS, textScale: 1),
+    );
+    await _settle(tester);
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.decoration.filled, isFalse);
+    expect(field.decoration.fillColor, Colors.transparent);
+    expect(field.style?.color, const Color(0xFF10243D));
+    expect(
+      field.decoration.hintStyle?.color,
+      const Color(0xFF5B6B80),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('iPhone litigation title aligns with the navigation toolbar', (
     WidgetTester tester,
   ) async {

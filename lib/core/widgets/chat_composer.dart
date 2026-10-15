@@ -109,6 +109,13 @@ class _ChatComposerState extends State<ChatComposer> {
                     color: widget.foregroundColor ?? AppColors.textPrimary,
                   ),
                   decoration: InputDecoration(
+                    // The litigation screen supplies its own light surface.
+                    // Do not inherit the app-wide dark InputDecoration fill:
+                    // on phones that paints a navy box behind navy text.
+                    filled: widget.surfaceGradient == null ? null : false,
+                    fillColor: widget.surfaceGradient == null
+                        ? null
+                        : Colors.transparent,
                     border: InputBorder.none,
                     hintText: widget.hintText,
                     hintStyle: TextStyle(
