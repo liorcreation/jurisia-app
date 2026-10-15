@@ -16,6 +16,10 @@ class ChatComposer extends StatefulWidget {
     required this.onSend,
     this.hintText = 'Écrivez votre message…',
     this.compact = false,
+    this.surfaceGradient,
+    this.surfaceBorderColor,
+    this.foregroundColor,
+    this.hintColor,
   });
 
   final TextEditingController controller;
@@ -23,6 +27,10 @@ class ChatComposer extends StatefulWidget {
   final VoidCallback onSend;
   final String hintText;
   final bool compact;
+  final Gradient? surfaceGradient;
+  final Color? surfaceBorderColor;
+  final Color? foregroundColor;
+  final Color? hintColor;
 
   @override
   State<ChatComposer> createState() => _ChatComposerState();
@@ -76,12 +84,15 @@ class _ChatComposerState extends State<ChatComposer> {
         ),
         child: GlassContainer(
           borderRadius: AppRadius.pill,
-          borderColor: _focused ? AppColors.cobalt : AppColors.glassBorder,
+          borderColor: _focused
+              ? AppColors.cobalt
+              : (widget.surfaceBorderColor ?? AppColors.glassBorder),
           borderWidth: _focused ? 1.1 : 0.5,
           padding: EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: widget.compact ? 2 : AppSpacing.xs,
           ),
+          gradient: widget.surfaceGradient ?? AppGradients.glassCard,
           child: Row(
             children: [
               Expanded(
@@ -94,10 +105,15 @@ class _ChatComposerState extends State<ChatComposer> {
                   maxLength: AppInputLimits.chatMessage,
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyLarge?.copyWith(color: AppColors.textPrimary),
+                  ).textTheme.bodyLarge?.copyWith(
+                    color: widget.foregroundColor ?? AppColors.textPrimary,
+                  ),
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: widget.hintText,
+                    hintStyle: TextStyle(
+                      color: widget.hintColor ?? AppColors.textDisabled,
+                    ),
                     counterText: '',
                   ),
                   onSubmitted: (_) => widget.onSend(),

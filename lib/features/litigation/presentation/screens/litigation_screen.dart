@@ -25,6 +25,18 @@ import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/litigation_chat_controller.dart';
 
+const _litigationCanvas = Color(0xFFF3F6FA);
+const _litigationPaper = Color(0xFFFFFFFF);
+const _litigationSoftBlue = Color(0xFFEAF0F7);
+const _litigationBorder = Color(0xFFD7E0EA);
+const _litigationInk = Color(0xFF10243D);
+const _litigationMuted = Color(0xFF5B6B80);
+const _litigationSurfaceGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [_litigationPaper, Color(0xFFF8FAFC)],
+);
+
 /// Section 1 — Litiges et consultations : interface de chat naturel avec
 /// l'IA juridique. Le contrôleur ([LitigationChatController]) est fourni par
 /// la coquille applicative ([AppShell]) — la sidebar unifiée pilote
@@ -204,6 +216,10 @@ class _LitigationViewState extends State<_LitigationView> {
           onSend: () => _handleSend(controller),
           hintText: 'Décrivez votre situation…',
           compact: MediaQuery.sizeOf(context).height < 500,
+          surfaceGradient: _litigationSurfaceGradient,
+          surfaceBorderColor: _litigationBorder,
+          foregroundColor: _litigationInk,
+          hintColor: _litigationMuted,
         ),
       ],
     );
@@ -216,7 +232,10 @@ class _LitigationViewState extends State<_LitigationView> {
           leading: const AppShellMenuButton(),
           actions: [newConsultationAction],
         ),
-        body: SafeArea(child: chatBody),
+        body: ColoredBox(
+          color: _litigationCanvas,
+          child: SafeArea(child: chatBody),
+        ),
       ),
     );
   }
@@ -258,7 +277,7 @@ class _DesktopLitigationView extends StatelessWidget {
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: _litigationCanvas,
         body: SafeArea(
           child: Column(
             children: [
@@ -585,21 +604,35 @@ class _AssistantTurn extends StatelessWidget {
           const _MarkAvatar(),
           const SizedBox(width: AppSpacing.md),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (thinking && content.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: AiThinkingIndicator(),
-                  )
-                else
-                  MarkdownText(content),
-                if (suggestedProfessional != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  _ProfessionalSuggestionChip(label: suggestedProfessional!),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: _litigationPaper,
+                borderRadius: BorderRadius.circular(AppRadius.medium),
+                border: Border.all(color: _litigationBorder),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (thinking && content.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: AiThinkingIndicator(),
+                    )
+                  else
+                    MarkdownText(
+                      content,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: _litigationInk,
+                        height: 1.5,
+                      ),
+                    ),
+                  if (suggestedProfessional != null) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    _ProfessionalSuggestionChip(label: suggestedProfessional!),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
@@ -620,7 +653,7 @@ class _MarkAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.gold.withValues(alpha: 0.08),
-        border: Border.all(color: AppColors.glassBorder, width: 0.75),
+        border: Border.all(color: _litigationBorder, width: 0.75),
       ),
       child: const JurisIAMark(size: 17),
     );
@@ -825,10 +858,16 @@ class _WelcomeIdentityPane extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xE51B3E67), Color(0xC70D1B30), Color(0xA80B0F19)],
+            colors: [_litigationSoftBlue, _litigationPaper, Color(0xFFF4F7FB)],
           ),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
-          boxShadow: AppShadows.cardElevated,
+          border: Border.all(color: _litigationBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.nightBlueDeep.withValues(alpha: 0.08),
+              blurRadius: 28,
+              offset: const Offset(0, 12),
+            ),
+          ],
         ),
         child: Stack(
           children: [
@@ -842,8 +881,8 @@ class _WelcomeIdentityPane extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.cobaltLight.withValues(alpha: 0.2),
-                      AppColors.cobaltLight.withValues(alpha: 0),
+                      AppColors.cobalt.withValues(alpha: 0.09),
+                      AppColors.cobalt.withValues(alpha: 0),
                     ],
                   ),
                 ),
@@ -863,7 +902,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
                 Text(
                   'VOTRE ESPACE\nJURIDIQUE',
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.goldLight,
+                    color: AppColors.agedGold,
                     fontWeight: FontWeight.w800,
                     letterSpacing: AppLetterSpacing.caps,
                     height: 1.5,
@@ -877,7 +916,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
                               ? textTheme.headlineSmall
                               : textTheme.headlineLarge)
                           ?.copyWith(
-                            color: AppColors.textOnDark,
+                            color: _litigationInk,
                             height: 1.06,
                             fontWeight: FontWeight.w600,
                           ),
@@ -886,7 +925,7 @@ class _WelcomeIdentityPane extends StatelessWidget {
                 Text(
                   'Expliquez les faits simplement. JurisIA vous aide à les organiser et à comprendre les prochaines pistes possibles.',
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondaryOnDark,
+                    color: _litigationMuted,
                     height: compact ? 1.45 : 1.55,
                   ),
                 ),
@@ -926,7 +965,7 @@ class _LiveStatusPill extends StatelessWidget {
           Text(
             'ESPACE ACTIF',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.textOnDark,
+              color: _litigationInk,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.7,
             ),
@@ -962,7 +1001,7 @@ class _ConsultationChoices extends StatelessWidget {
                   Text(
                     'COMMENCER UNE CONSULTATION',
                     style: textTheme.labelSmall?.copyWith(
-                      color: AppColors.textDisabled,
+                      color: _litigationMuted,
                       fontWeight: FontWeight.w800,
                       letterSpacing: AppLetterSpacing.caps,
                     ),
@@ -970,7 +1009,9 @@ class _ConsultationChoices extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     'Quel est votre sujet ?',
-                    style: textTheme.headlineSmall,
+                    style: textTheme.headlineSmall?.copyWith(
+                      color: _litigationInk,
+                    ),
                   ),
                 ],
               ),
@@ -979,7 +1020,7 @@ class _ConsultationChoices extends StatelessWidget {
             Text(
               '6 domaines',
               style: textTheme.labelSmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: _litigationMuted,
               ),
             ),
           ],
@@ -1034,9 +1075,9 @@ class _ConsultationJourney extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
-        color: AppColors.deepSlateElevated.withValues(alpha: 0.64),
+        color: _litigationPaper,
         borderRadius: BorderRadius.circular(AppRadius.medium),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: _litigationBorder),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -1094,7 +1135,7 @@ class _JourneyStep extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.22)),
           ),
-          child: Icon(icon, size: 18, color: AppColors.goldLight),
+          child: Icon(icon, size: 18, color: AppColors.agedGold),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
@@ -1103,7 +1144,10 @@ class _JourneyStep extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: theme.labelLarge?.copyWith(color: AppColors.textPrimary),
+                style: theme.labelLarge?.copyWith(
+                  color: _litigationInk,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
@@ -1111,7 +1155,7 @@ class _JourneyStep extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.labelSmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: _litigationMuted,
                 ),
               ),
             ],
@@ -1141,7 +1185,8 @@ class _StarterCard extends StatelessWidget {
     return GlassContainer(
       onTap: onTap,
       borderRadius: AppRadius.medium,
-      borderColor: AppColors.gold.withValues(alpha: 0.18),
+      gradient: _litigationSurfaceGradient,
+      borderColor: _litigationBorder,
       padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1160,6 +1205,7 @@ class _StarterCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleSmall?.copyWith(
+                          color: _litigationInk,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1168,7 +1214,7 @@ class _StarterCard extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_rounded,
                       size: 16,
-                      color: AppColors.goldLight.withValues(alpha: 0.8),
+                      color: AppColors.cobalt,
                     ),
                   ],
                 ),
@@ -1178,7 +1224,7 @@ class _StarterCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: _litigationMuted,
                     height: 1.35,
                   ),
                 ),
@@ -1186,7 +1232,7 @@ class _StarterCard extends StatelessWidget {
                 Text(
                   'PÉRIMÈTRE  0${index.toString()}',
                   style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.goldLight.withValues(alpha: 0.78),
+                    color: AppColors.cobalt,
                     fontSize: 9,
                     letterSpacing: 1,
                     fontWeight: FontWeight.w800,
@@ -1212,7 +1258,7 @@ class _ConfidentialityNote extends StatelessWidget {
         const Icon(
           Icons.lock_outline_rounded,
           size: 13,
-          color: AppColors.textDisabled,
+          color: _litigationMuted,
         ),
         const SizedBox(width: 6),
         Flexible(
@@ -1221,7 +1267,7 @@ class _ConfidentialityNote extends StatelessWidget {
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+            ).textTheme.labelSmall?.copyWith(color: _litigationMuted),
           ),
         ),
       ],
@@ -1319,7 +1365,7 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                       : [
                           BoxShadow(
                             color: AppColors.nightBlueDeep.withValues(
-                              alpha: 0.4,
+                              alpha: 0.1,
                             ),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
@@ -1328,11 +1374,10 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                 ),
                 child: GlassContainer(
                   borderRadius: AppRadius.large,
-                  borderColor: _focused
-                      ? AppColors.cobalt
-                      : AppColors.glassBorder,
+                  borderColor: _focused ? AppColors.cobalt : _litigationBorder,
                   borderWidth: _focused ? 1.1 : 0.5,
                   padding: const EdgeInsets.fromLTRB(AppSpacing.md, 7, 7, 7),
+                  gradient: _litigationSurfaceGradient,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -1346,7 +1391,7 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                           maxLength: AppInputLimits.chatMessage,
                           cursorColor: AppColors.cobalt,
                           style: textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textPrimary,
+                            color: _litigationInk,
                             height: 1.3,
                           ),
                           decoration: const InputDecoration(
@@ -1357,6 +1402,7 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                             focusedBorder: InputBorder.none,
                             counterText: '',
                             hintText: 'Décrivez votre situation…',
+                            hintStyle: TextStyle(color: _litigationMuted),
                             hintMaxLines: 1,
                           ),
                         ),
@@ -1393,7 +1439,7 @@ class _DesktopComposerState extends State<_DesktopComposer> {
                               style: textTheme.labelSmall?.copyWith(
                                 color: length >= AppInputLimits.chatMessage
                                     ? AppColors.error
-                                    : AppColors.textDisabled,
+                                    : _litigationMuted,
                               ),
                             ),
                           );
@@ -1476,7 +1522,7 @@ class _DisclaimerLink extends StatelessWidget {
             const Icon(
               Icons.info_outline_rounded,
               size: 13,
-              color: AppColors.textDisabled,
+              color: _litigationMuted,
             ),
             const SizedBox(width: 5),
             Flexible(
@@ -1485,7 +1531,7 @@ class _DisclaimerLink extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
-                ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                ).textTheme.labelSmall?.copyWith(color: _litigationMuted),
               ),
             ),
           ],
@@ -1502,7 +1548,7 @@ class _KbdHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = Theme.of(
       context,
-    ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled);
+    ).textTheme.labelSmall?.copyWith(color: _litigationMuted);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1527,12 +1573,12 @@ class _Kbd extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(5),
-        color: AppColors.textSecondary.withValues(alpha: 0.12),
+        color: _litigationSoftBlue,
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: _litigationMuted,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -1625,6 +1671,10 @@ class _ChatBubble extends StatelessWidget {
 
     return ChatBubble(
       isUser: isUser,
+      gradient: isUser ? AppGradients.heroCard : _litigationSurfaceGradient,
+      borderColor: isUser
+          ? AppColors.gold.withValues(alpha: 0.45)
+          : _litigationBorder,
       footer: message.suggestedProfessional != null
           ? _ProfessionalSuggestionChip(label: message.suggestedProfessional!)
           : null,
@@ -1636,7 +1686,13 @@ class _ChatBubble extends StatelessWidget {
                 height: 1.4,
               ),
             )
-          : MarkdownText(message.content),
+          : MarkdownText(
+              message.content,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: _litigationInk,
+                height: 1.45,
+              ),
+            ),
     );
   }
 }
@@ -1702,7 +1758,7 @@ class _AiDisclaimerHint extends StatelessWidget {
             const Icon(
               Icons.info_outline_rounded,
               size: 13,
-              color: AppColors.textDisabled,
+              color: _litigationMuted,
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -1711,7 +1767,7 @@ class _AiDisclaimerHint extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
                   context,
-                ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+                ).textTheme.labelSmall?.copyWith(color: _litigationMuted),
               ),
             ),
           ],

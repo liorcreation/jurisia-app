@@ -8,7 +8,14 @@ import 'glass_container.dart';
 /// ultra-fine, et un reflet de réfraction qui glisse sur la surface à
 /// l'apparition du message.
 class ChatBubble extends StatefulWidget {
-  const ChatBubble({super.key, required this.isUser, required this.child, this.footer});
+  const ChatBubble({
+    super.key,
+    required this.isUser,
+    required this.child,
+    this.footer,
+    this.gradient,
+    this.borderColor,
+  });
 
   final bool isUser;
   final Widget child;
@@ -16,6 +23,8 @@ class ChatBubble extends StatefulWidget {
   /// Contenu optionnel affiché sous la bulle, hors du verre (ex. puce
   /// d'orientation vers un professionnel).
   final Widget? footer;
+  final Gradient? gradient;
+  final Color? borderColor;
 
   @override
   State<ChatBubble> createState() => _ChatBubbleState();
@@ -56,8 +65,16 @@ class _ChatBubbleState extends State<ChatBubble> with SingleTickerProviderStateM
                   position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero).animate(curved),
                   child: GlassContainer(
                     borderRadius: AppRadius.large,
-                    gradient: widget.isUser ? AppGradients.heroCard : AppGradients.glassCard,
-                    borderColor: widget.isUser ? AppColors.gold.withValues(alpha: 0.5) : AppColors.glassBorder,
+                    gradient:
+                        widget.gradient ??
+                        (widget.isUser
+                            ? AppGradients.heroCard
+                            : AppGradients.glassCard),
+                    borderColor:
+                        widget.borderColor ??
+                        (widget.isUser
+                            ? AppColors.gold.withValues(alpha: 0.5)
+                            : AppColors.glassBorder),
                     child: Stack(
                       children: [
                         widget.child,
