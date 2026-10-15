@@ -13,7 +13,6 @@ abstract final class _CareerPalette {
   static const surfaceSoft = Color(0xFFF8FAFD);
   static const ink = Color(0xFF10233F);
   static const muted = Color(0xFF52647C);
-  static const subtle = Color(0xFF718198);
   static const border = Color(0xFFDCE4EE);
   static const goldInk = Color(0xFF8A6815);
   static const cobaltInk = Color(0xFF28558D);
