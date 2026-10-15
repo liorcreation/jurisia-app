@@ -55,6 +55,7 @@ class ProfessionalServiceRequestRepositoryImpl
     required String details,
     required ProfessionalRequestUrgency urgency,
     required List<String> attachmentNames,
+    List<ProfessionalRequestAttachment> attachments = const [],
     required DateTime? desiredDate,
     required ProfessionalAppointmentMode? appointmentMode,
   }) async {
@@ -91,15 +92,19 @@ class ProfessionalServiceRequestRepositoryImpl
         'details': details,
         'urgency': urgency.name,
         'attachmentNames': attachmentNames,
+        'attachments': attachments.map((file) => file.toJson()).toList(),
         'desiredDate': desiredDate?.toIso8601String(),
         'appointmentMode': appointmentMode?.name,
       },
     );
 
     final payload = response.data;
+    final emailDispatched = payload is Map && payload['mailDispatched'] == true;
     final returned = payload is Map && payload['request'] is Map
-        ? _fromRow(Map<String, dynamic>.from(payload['request'] as Map))
-        : request;
+        ? _fromRow(
+            Map<String, dynamic>.from(payload['request'] as Map),
+          ).copyWith(emailDispatched: emailDispatched)
+        : request.copyWith(emailDispatched: emailDispatched);
     _requests.insert(0, returned);
     return returned;
   }

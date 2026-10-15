@@ -2,6 +2,8 @@ export type TransactionalEmail = {
   to: string | string[];
   subject: string;
   html: string;
+  replyTo?: string;
+  attachments?: Array<{ filename: string; content: string }>;
 };
 
 /**
@@ -19,7 +21,14 @@ export async function sendTransactionalEmail(email: TransactionalEmail): Promise
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from, to: email.to, subject: email.subject, html: email.html }),
+    body: JSON.stringify({
+      from,
+      to: email.to,
+      subject: email.subject,
+      html: email.html,
+      ...(email.replyTo ? { reply_to: email.replyTo } : {}),
+      ...(email.attachments?.length ? { attachments: email.attachments } : {}),
+    }),
   });
   if (!response.ok) {
     throw new Error(`Le prestataire e-mail a répondu ${response.status}`);

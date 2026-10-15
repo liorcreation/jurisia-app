@@ -24,6 +24,8 @@ class ProfessionalServiceRequestController extends ChangeNotifier {
   List<ProfessionalServiceRequest> get requests => repository.requests;
   ProfessionalRequestSubmissionStatus get status => _status;
   String? get errorMessage => _errorMessage;
+  bool get lastEmailDispatched => _lastEmailDispatched;
+  bool _lastEmailDispatched = false;
 
   Future<bool> submit({
     required ProfessionalRequestKind kind,
@@ -35,15 +37,17 @@ class ProfessionalServiceRequestController extends ChangeNotifier {
     required String details,
     required ProfessionalRequestUrgency urgency,
     required List<String> attachmentNames,
+    List<ProfessionalRequestAttachment> attachments = const [],
     required DateTime? desiredDate,
     required ProfessionalAppointmentMode? appointmentMode,
   }) async {
     _status = ProfessionalRequestSubmissionStatus.submitting;
     _errorMessage = null;
+    _lastEmailDispatched = false;
     notifyListeners();
 
     try {
-      await submitUseCase(
+      final request = await submitUseCase(
         kind: kind,
         category: category,
         actType: actType,
@@ -53,9 +57,11 @@ class ProfessionalServiceRequestController extends ChangeNotifier {
         details: details,
         urgency: urgency,
         attachmentNames: attachmentNames,
+        attachments: attachments,
         desiredDate: desiredDate,
         appointmentMode: appointmentMode,
       );
+      _lastEmailDispatched = request.emailDispatched;
       _status = ProfessionalRequestSubmissionStatus.success;
       notifyListeners();
       return true;
@@ -81,6 +87,7 @@ class ProfessionalServiceRequestController extends ChangeNotifier {
   void resetStatus() {
     _status = ProfessionalRequestSubmissionStatus.idle;
     _errorMessage = null;
+    _lastEmailDispatched = false;
     notifyListeners();
   }
 }

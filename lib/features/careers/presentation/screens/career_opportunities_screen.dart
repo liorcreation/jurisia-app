@@ -362,6 +362,47 @@ class _OpportunityListing extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         Container(
           width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7E6),
+            borderRadius: BorderRadius.circular(AppRadius.medium),
+            border: Border.all(color: const Color(0xFFE7C878)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.gpp_maybe_rounded, color: Color(0xFF8A5B00)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AVERTISSEMENT — CANDIDATURES',
+                      style: textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF704800),
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Soyez prudent dans vos candidatures et ne cédez jamais aux offres conditionnées par des prestations de toute nature. NB : le cabinet se décline de toute responsabilité en cas de litige ou d’infraction.',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF503B13),
+                        fontWeight: FontWeight.w600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
             gradient: _CareerPalette.surfaceGradient,

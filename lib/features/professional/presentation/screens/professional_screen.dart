@@ -25,6 +25,7 @@ import '../widgets/drafting_intake_sheet.dart';
 import '../widgets/professional_service_request_wizard.dart';
 import 'drafting_result_screen.dart';
 import 'drafting_workspace_screen.dart';
+import 'professional_service_catalog_screen.dart';
 
 const _templateDataSource = LocalProfessionalTemplateDataSource();
 
@@ -64,6 +65,17 @@ class ProfessionalScreen extends StatelessWidget {
         context,
         initialKind: ProfessionalRequestKind.legalAct,
         initialActType: template?.title,
+      );
+      return;
+    }
+
+    if (mode == DraftingMode.audit || mode == DraftingMode.consultation) {
+      showProfessionalServiceRequestWizard(
+        context,
+        initialCategory: ProfessionalServiceCategory.jurisconsult,
+        initialActType: mode == DraftingMode.audit
+            ? 'Analyse de contrat'
+            : 'Consultation approfondie',
       );
       return;
     }
@@ -109,7 +121,11 @@ class ProfessionalScreen extends StatelessWidget {
     BuildContext context,
     ProfessionalServiceCategory category,
   ) {
-    showProfessionalServiceRequestWizard(context, initialCategory: category);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ProfessionalServiceCatalogScreen(category: category),
+      ),
+    );
   }
 
   @override
@@ -258,9 +274,9 @@ String _modeDescription(DraftingMode mode) {
     case DraftingMode.redaction:
       return 'Transmettez votre besoin : un professionnel du droit préparera votre projet d’acte.';
     case DraftingMode.audit:
-      return 'Collez un contrat existant : l\'IA en isole les clauses fragiles et les réécrit.';
+      return 'Joignez votre contrat : un juriste l’examinera et vous transmettra une analyse structurée.';
     case DraftingMode.consultation:
-      return 'Une question de droit complexe traitée en note de synthèse argumentée.';
+      return 'Décrivez votre question et sa matière : votre demande est transmise à JurisIA.';
   }
 }
 
@@ -274,15 +290,15 @@ List<String> _modeDeliverables(DraftingMode mode) {
       ];
     case DraftingMode.audit:
       return const [
-        'Clauses abusives ou à risque signalées',
-        'Un niveau de risque par clause',
-        'Une reformulation proposée pour chacune',
+        'Pièces transmises à l’équipe juridique',
+        'Lecture et analyse par un juriste',
+        'Recommandations adaptées à votre dossier',
       ];
     case DraftingMode.consultation:
       return const [
-        'Analyse argumentée, au plan structuré',
-        'Textes et jurisprudence cités à l\'appui',
-        'Note de synthèse exportable',
+        'Matière juridique précisée',
+        'Demande adressée à la boîte JurisIA',
+        'Retour de l’équipe par e-mail',
       ];
   }
 }
@@ -1219,7 +1235,7 @@ class _InstrumentCardState extends State<_InstrumentCard> {
                     child: Text(
                       widget.mode == DraftingMode.redaction
                           ? 'Demander cet acte'
-                          : 'Ouvrir l\'atelier',
+                          : 'Démarrer la demande',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.labelLarge?.copyWith(

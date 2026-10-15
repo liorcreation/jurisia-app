@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/platform/app_platform_style.dart';
@@ -8,6 +12,7 @@ import '../../../../theme/app_theme.dart';
 import '../controllers/professional_service_request_controller.dart';
 import '../../domain/entities/professional_service_request.dart';
 import '../../domain/entities/professional_service_category.dart';
+import '../../../../models/legal_document/legal_domain.dart';
 
 /// Ouvre le parcours de demande sur mobile, tablette ou desktop avec la même
 /// machine d’étapes et le même contrat de persistance.
@@ -85,6 +90,8 @@ class _ProfessionalServiceRequestWizardState
   String? _selectedServiceType;
   bool _isOtherService = false;
   bool _showAllServiceTypes = false;
+  LegalDomain? _consultationDomain;
+  final List<_SelectedRequestFile> _selectedFiles = [];
   ProfessionalRequestUrgency _urgency = ProfessionalRequestUrgency.standard;
   ProfessionalAppointmentMode _appointmentMode =
       ProfessionalAppointmentMode.video;
@@ -94,7 +101,6 @@ class _ProfessionalServiceRequestWizardState
   final _actTypeController = TextEditingController();
   final _serviceSearchController = TextEditingController();
   final _detailsController = TextEditingController();
-  final _attachmentsController = TextEditingController();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -105,6 +111,7 @@ class _ProfessionalServiceRequestWizardState
     _kind = widget.initialKind;
     _category =
         widget.initialCategory ?? ProfessionalServiceCategory.jurisconsult;
+    if (widget.initialCategory != null) _step = 1;
     final initialActType = widget.initialActType?.trim();
     if (initialActType != null && initialActType.isNotEmpty) {
       if (_category.serviceTypes.contains(initialActType)) {
@@ -122,7 +129,6 @@ class _ProfessionalServiceRequestWizardState
     _actTypeController.dispose();
     _serviceSearchController.dispose();
     _detailsController.dispose();
-    _attachmentsController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
@@ -137,6 +143,8 @@ class _ProfessionalServiceRequestWizardState
         final serviceType = _resolvedServiceType;
         return _detailsController.text.trim().length >= 12 &&
             serviceType.isNotEmpty &&
+            (serviceType != 'Consultation approfondie' ||
+                _consultationDomain != null) &&
             (_kind != ProfessionalRequestKind.expertAppointment ||
                 _desiredDate != null);
       case 2:
@@ -160,6 +168,10 @@ class _ProfessionalServiceRequestWizardState
   }
 
   void _back() {
+    if (_step == 1 && widget.initialCategory != null) {
+      Navigator.of(context).pop();
+      return;
+    }
     if (_step == 0) return;
     setState(() => _step--);
   }
@@ -176,6 +188,59 @@ class _ProfessionalServiceRequestWizardState
     if (picked != null && mounted) setState(() => _desiredDate = picked);
   }
 
+  Future<void> _pickAttachments() async {
+    final remaining = 4 - _selectedFiles.length;
+    if (remaining <= 0) return;
+    final pickedFiles = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const [
+        'pdf',
+        'doc',
+        'docx',
+        'txt',
+        'jpg',
+        'jpeg',
+        'png',
+      ],
+    );
+    if (!mounted || pickedFiles.isEmpty) return;
+    final additions = <_SelectedRequestFile>[];
+    for (final file in pickedFiles.take(remaining)) {
+      final size = await file.length();
+      if (!mounted) return;
+      if (size == null || size <= 0 || size > 5 * 1024 * 1024) continue;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      if (bytes.isNotEmpty && bytes.length <= 5 * 1024 * 1024) {
+        additions.add(_SelectedRequestFile(name: file.name, bytes: bytes));
+      }
+    }
+    final total = [
+      ..._selectedFiles,
+      ...additions,
+    ].fold<int>(0, (sum, file) => sum + file.bytes.length);
+    if (total > 8 * 1024 * 1024) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La taille totale des pièces ne doit pas dépasser 8 Mo.',
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() => _selectedFiles.addAll(additions));
+    if (additions.length < pickedFiles.length) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Maximum : 4 pièces, 5 Mo par fichier et 8 Mo au total. Formats PDF, DOC, DOCX, TXT, JPG et PNG.',
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _submit() async {
     final controller = context.read<ProfessionalServiceRequestController>();
     final success = await controller.submit(
@@ -185,9 +250,21 @@ class _ProfessionalServiceRequestWizardState
       fullName: _nameController.text,
       email: _emailController.text,
       phone: _phoneController.text,
-      details: _detailsController.text,
+      details: [
+        if (_consultationDomain != null &&
+            _resolvedServiceType == 'Consultation approfondie')
+          'Domaine : ${_consultationDomain!.label}',
+        _detailsController.text.trim(),
+      ].where((value) => value.isNotEmpty).join('\n\n'),
       urgency: _urgency,
-      attachmentNames: _attachmentsController.text.split(','),
+      attachmentNames: _selectedFiles.map((file) => file.name).toList(),
+      attachments: [
+        for (final file in _selectedFiles)
+          ProfessionalRequestAttachment(
+            filename: file.name,
+            contentBase64: base64Encode(file.bytes),
+          ),
+      ],
       desiredDate: _desiredDate,
       appointmentMode: _kind == ProfessionalRequestKind.expertAppointment
           ? _appointmentMode
@@ -197,9 +274,11 @@ class _ProfessionalServiceRequestWizardState
 
     Navigator.of(context).pop();
     ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Demande reçue. Vous recevrez l’accusé et le suivi par e-mail.',
+          controller.lastEmailDispatched
+              ? 'E-mail envoyé à l’équipe JurisIA. Votre demande est enregistrée.'
+              : 'Demande enregistrée dans JurisIA. La notification e-mail de l’équipe doit encore être configurée.',
         ),
         backgroundColor: AppColors.legalBlueDark,
       ),
@@ -373,7 +452,9 @@ class _ProfessionalServiceRequestWizardState
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
-        for (final kind in ProfessionalRequestKind.values) ...[
+        for (final kind in ProfessionalRequestKind.values.where(
+          (kind) => kind != ProfessionalRequestKind.trainingEnrollment,
+        )) ...[
           _ChoiceTile(
             selected: _kind == kind,
             icon: kind == ProfessionalRequestKind.legalAct
@@ -383,10 +464,35 @@ class _ProfessionalServiceRequestWizardState
             subtitle: kind.description,
             onTap: () => setState(() => _kind = kind),
           ),
-          if (kind != ProfessionalRequestKind.values.last)
+          if (kind != ProfessionalRequestKind.expertAppointment)
             const SizedBox(height: AppSpacing.sm),
         ],
         const SizedBox(height: AppSpacing.lg),
+        if (_resolvedServiceType == 'Consultation approfondie') ...[
+          DropdownButtonFormField<LegalDomain>(
+            initialValue: _consultationDomain,
+            decoration: const InputDecoration(
+              labelText: 'Domaine de consultation',
+              prefixIcon: Icon(Icons.account_balance_outlined),
+            ),
+            items: [
+              for (final domain in LegalDomain.values.where(
+                (domain) => domain != LegalDomain.autre,
+              ))
+                DropdownMenuItem(value: domain, child: Text(domain.label)),
+            ],
+            onChanged: (value) => setState(() => _consultationDomain = value),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'La demande sera adressée à l’équipe JurisIA : Jurisia05@gmail.com.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         TextField(
           controller: _detailsController,
           onChanged: (_) => setState(() {}),
@@ -395,9 +501,21 @@ class _ProfessionalServiceRequestWizardState
           decoration: InputDecoration(
             labelText: isAppointment
                 ? 'Objet du rendez-vous'
+                : _resolvedServiceType == 'Consultation approfondie'
+                ? 'Votre question juridique'
+                : _resolvedServiceType == 'Analyse de contrat'
+                ? 'Contexte du contrat à analyser'
+                : _isContractDraft
+                ? 'Informations nécessaires à la rédaction'
                 : 'Contexte et instructions',
             hintText: isAppointment
                 ? 'Exposez les points à traiter et les documents déjà disponibles.'
+                : _resolvedServiceType == 'Consultation approfondie'
+                ? 'Exposez les faits, les dates utiles et la question posée…'
+                : _resolvedServiceType == 'Analyse de contrat'
+                ? 'Précisez les parties, l’objet et vos points de vigilance…'
+                : _isContractDraft
+                ? 'Parties, objet, prix ou rémunération, durée, obligations et conditions particulières…'
                 : 'Parties, échéances, contraintes et clauses importantes…',
             prefixIcon: const Icon(Icons.notes_rounded),
             alignLabelWithHint: true,
@@ -438,25 +556,23 @@ class _ProfessionalServiceRequestWizardState
           ),
         ] else ...[
           const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _attachmentsController,
-            decoration: const InputDecoration(
-              labelText: 'Pièces à joindre (facultatif)',
-              hintText: 'CNI, projet de contrat, justificatif…',
-              prefixIcon: Icon(Icons.attach_file_rounded),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Séparez les noms par des virgules. Le dépôt sécurisé des fichiers sera proposé après l’accusé de réception.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          _AttachmentPicker(
+            files: _selectedFiles,
+            onAdd: _pickAttachments,
+            onRemove: (file) => setState(() => _selectedFiles.remove(file)),
           ),
         ],
       ],
     );
   }
+
+  bool get _isContractDraft => const {
+    'Contrat de vente',
+    'Bail à usage d’habitation',
+    'Bail à usage professionnel',
+    'Contrat de travail',
+    'Contrat de partenariat',
+  }.contains(_resolvedServiceType);
 
   Widget _buildIdentityStep() {
     return Column(
@@ -503,11 +619,7 @@ class _ProfessionalServiceRequestWizardState
 
   Widget _buildReviewStep() {
     final isAppointment = _kind == ProfessionalRequestKind.expertAppointment;
-    final attachmentNames = _attachmentsController.text
-        .split(',')
-        .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
-        .toList();
+    final attachmentNames = _selectedFiles.map((file) => file.name).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,6 +666,12 @@ class _ProfessionalServiceRequestWizardState
               if (isAppointment)
                 _ReviewLine(label: 'Format', value: _appointmentMode.label),
               _ReviewLine(label: 'Délai', value: _urgency.label),
+              if (_consultationDomain != null &&
+                  _resolvedServiceType == 'Consultation approfondie')
+                _ReviewLine(
+                  label: 'Domaine',
+                  value: _consultationDomain!.label,
+                ),
               if (attachmentNames.isNotEmpty)
                 _ReviewLine(
                   label: 'Pièces prévues',
@@ -573,6 +691,94 @@ class _ProfessionalServiceRequestWizardState
       ],
     );
   }
+}
+
+class _SelectedRequestFile {
+  const _SelectedRequestFile({required this.name, required this.bytes});
+
+  final String name;
+  final Uint8List bytes;
+
+  String get extension =>
+      name.contains('.') ? name.split('.').last.toLowerCase() : '';
+}
+
+class _AttachmentPicker extends StatelessWidget {
+  const _AttachmentPicker({
+    required this.files,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<_SelectedRequestFile> files;
+  final VoidCallback onAdd;
+  final ValueChanged<_SelectedRequestFile> onRemove;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(AppRadius.medium),
+      border: Border.all(color: AppColors.glassBorder),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ajouter un fichier ou une photo',
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'PDF, Word, texte ou image — jusqu’à 4 pièces. Elles seront transmises à l’équipe JurisIA avec votre demande.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.4,
+          ),
+        ),
+        if (files.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final file in files)
+                InputChip(
+                  avatar: Icon(
+                    file.extension == 'pdf'
+                        ? Icons.picture_as_pdf_rounded
+                        : (file.extension == 'jpg' ||
+                              file.extension == 'jpeg' ||
+                              file.extension == 'png')
+                        ? Icons.image_rounded
+                        : Icons.description_rounded,
+                    size: 17,
+                  ),
+                  label: Text(file.name),
+                  onDeleted: () => onRemove(file),
+                ),
+            ],
+          ),
+        ],
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: files.length >= 4 ? null : onAdd,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Choisir dans mes fichiers ou mes photos'),
+        ),
+        Text(
+          '5 Mo maximum par pièce · 8 Mo au total · PDF, DOC, DOCX, TXT, JPG, PNG',
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: AppColors.textDisabled),
+        ),
+      ],
+    ),
+  );
 }
 
 class _WizardHeader extends StatelessWidget {

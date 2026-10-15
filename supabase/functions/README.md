@@ -4,19 +4,23 @@ Deux fonctions Deno gèrent l'abonnement payant. Elles s'appuient sur
 `server/supabase/migration_009_billing.sql` (table `payment_intents`,
 fonctions `jurisia_billing_create_intent` / `jurisia_billing_apply`).
 
-Deux fonctions supplémentaires gèrent les demandes d'actes et de rendez-vous.
-Elles s'appuient sur `migration_016_professional_service_requests.sql`.
+Deux fonctions supplémentaires gèrent les demandes d'actes, de rendez-vous et
+d'inscriptions en formation. Elles s'appuient sur
+`migration_016_professional_service_requests.sql`, `migration_022_professional_service_categories.sql`
+et `migration_042_professional_training_enrollment.sql`.
 
 | Fonction | Appelée par | JWT | Rôle |
 |---|---|---|---|
 | `billing-checkout` | l'application (jeton utilisateur) | oui | crée l'intention de paiement, ouvre un paiement, renvoie l'URL |
 | `billing-webhook` | le prestataire de paiement (serveur→serveur) | non | re-vérifie la transaction, active l'abonnement (idempotent) |
-| `professional-request` | l'application (jeton utilisateur) | oui | enregistre une demande d'acte/rendez-vous et envoie l'accusé |
+| `professional-request` | l'application (jeton utilisateur) | oui | enregistre les demandes, envoie le dossier à Jurisia05@gmail.com et un accusé au demandeur |
 | `professional-request-notify` | console du personnel (JWT staff) | oui | applique un statut/devis et notifie le demandeur |
 
 Les e-mails sont envoyés via Resend quand `RESEND_API_KEY` est configurée.
 Sans cette clé, la demande reste persistée et pourra être notifiée dès que le
 canal transactionnel sera activé.
+Le domaine expéditeur défini par `RESEND_FROM_EMAIL` doit être validé dans
+Resend. Les pièces jointes d'audit sont transmises avec le courriel interne.
 
 ## Prestataire
 

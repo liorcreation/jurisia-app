@@ -32,6 +32,7 @@ class _FakeProfessionalServiceRequestRepository
     required String details,
     required ProfessionalRequestUrgency urgency,
     required List<String> attachmentNames,
+    List<ProfessionalRequestAttachment> attachments = const [],
     required DateTime? desiredDate,
     required ProfessionalAppointmentMode? appointmentMode,
   }) async {
@@ -84,6 +85,34 @@ void main() {
       expect(result.email, 'awa@example.com');
       expect(repository.submitCallCount, 1);
     });
+
+    test(
+      'accepte une inscription en présentiel avec le type de formation',
+      () async {
+        final repository = _FakeProfessionalServiceRequestRepository();
+        final result =
+            await SubmitProfessionalServiceRequestUseCase(
+              repository: repository,
+            )(
+              kind: ProfessionalRequestKind.trainingEnrollment,
+              category: 'jurisconsulte',
+              actType: 'Formation en présentiel — Droit du travail',
+              fullName: 'Awa Traoré',
+              email: 'awa@example.com',
+              phone: '70000000',
+              details:
+                  'Je souhaite m’inscrire et suis disponible les weekends.',
+              urgency: ProfessionalRequestUrgency.standard,
+              attachmentNames: const [],
+              desiredDate: null,
+              appointmentMode: null,
+            );
+
+        expect(result.kind, ProfessionalRequestKind.trainingEnrollment);
+        expect(result.actType, contains('Droit du travail'));
+        expect(repository.submitCallCount, 1);
+      },
+    );
 
     test('exige une date pour un rendez-vous expert', () {
       final useCase = SubmitProfessionalServiceRequestUseCase(

@@ -16,6 +16,7 @@ class SubmitProfessionalServiceRequestUseCase {
     required String details,
     required ProfessionalRequestUrgency urgency,
     required List<String> attachmentNames,
+    List<ProfessionalRequestAttachment> attachments = const [],
     required DateTime? desiredDate,
     required ProfessionalAppointmentMode? appointmentMode,
   }) {
@@ -37,9 +38,10 @@ class SubmitProfessionalServiceRequestUseCase {
     if (normalizedDetails.length < 12) {
       throw ArgumentError('Décrivez votre besoin en quelques phrases.');
     }
-    if (kind == ProfessionalRequestKind.legalAct &&
+    if ((kind == ProfessionalRequestKind.legalAct ||
+            kind == ProfessionalRequestKind.trainingEnrollment) &&
         (normalizedActType == null || normalizedActType.isEmpty)) {
-      throw ArgumentError('Précisez le type d’acte souhaité.');
+      throw ArgumentError('Précisez le type d’acte ou de formation souhaité.');
     }
     if (kind == ProfessionalRequestKind.expertAppointment &&
         desiredDate == null) {
@@ -59,6 +61,7 @@ class SubmitProfessionalServiceRequestUseCase {
           .map((name) => name.trim())
           .where((name) => name.isNotEmpty)
           .toList(growable: false),
+      attachments: attachments,
       desiredDate: desiredDate,
       appointmentMode: appointmentMode,
     );

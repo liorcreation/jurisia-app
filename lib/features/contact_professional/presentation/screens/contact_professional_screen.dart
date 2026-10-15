@@ -284,10 +284,7 @@ class _DesktopContactHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
-          ),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -445,7 +442,11 @@ class _ContactHero extends StatelessWidget {
                   if (compact) {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [copy, const SizedBox(height: AppSpacing.lg), stats],
+                      children: [
+                        copy,
+                        const SizedBox(height: AppSpacing.lg),
+                        stats,
+                      ],
                     );
                   }
                   return Row(
@@ -1018,9 +1019,13 @@ class _ServiceRequestRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = request.kind == ProfessionalRequestKind.legalAct
-        ? request.actType ?? 'Acte juridique'
-        : 'Rendez-vous ${request.category.label.toLowerCase()}';
+    final title = switch (request.kind) {
+      ProfessionalRequestKind.legalAct => request.actType ?? 'Acte juridique',
+      ProfessionalRequestKind.expertAppointment =>
+        'Rendez-vous ${request.category.label.toLowerCase()}',
+      ProfessionalRequestKind.trainingEnrollment =>
+        request.actType ?? 'Inscription en présentiel',
+    };
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
@@ -1235,10 +1240,7 @@ class _ConfidentialityNote extends StatelessWidget {
       decoration: BoxDecoration(
         color: _ContactPalette.goldWash,
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(
-          color: Color(0xFFE8D7AA),
-          width: 0.7,
-        ),
+        border: Border.all(color: Color(0xFFE8D7AA), width: 0.7),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

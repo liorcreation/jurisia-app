@@ -1,11 +1,12 @@
 import 'professional_service_category.dart';
 
-enum ProfessionalRequestKind { legalAct, expertAppointment }
+enum ProfessionalRequestKind { legalAct, expertAppointment, trainingEnrollment }
 
 extension ProfessionalRequestKindDetails on ProfessionalRequestKind {
   String get label => switch (this) {
     ProfessionalRequestKind.legalAct => 'Demande d’acte juridique',
     ProfessionalRequestKind.expertAppointment => 'Rendez-vous avec un expert',
+    ProfessionalRequestKind.trainingEnrollment => 'Inscription en présentiel',
   };
 
   String get description => switch (this) {
@@ -13,6 +14,24 @@ extension ProfessionalRequestKindDetails on ProfessionalRequestKind {
       'Confiez la préparation d’un acte, d’un contrat ou d’un dossier.',
     ProfessionalRequestKind.expertAppointment =>
       'Planifiez un échange avec le professionnel le plus adapté.',
+    ProfessionalRequestKind.trainingEnrollment =>
+      'Inscrivez-vous à une formation certifiante en présentiel.',
+  };
+}
+
+/// Pièce jointe encodée pour le transfert chiffré via l'Edge Function.
+class ProfessionalRequestAttachment {
+  const ProfessionalRequestAttachment({
+    required this.filename,
+    required this.contentBase64,
+  });
+
+  final String filename;
+  final String contentBase64;
+
+  Map<String, String> toJson() => {
+    'filename': filename,
+    'contentBase64': contentBase64,
   };
 }
 
@@ -73,6 +92,7 @@ class ProfessionalServiceRequest {
     required this.createdAt,
     this.actType,
     this.attachmentNames = const [],
+    this.emailDispatched = false,
     this.desiredDate,
     this.appointmentMode,
     this.status = ProfessionalServiceRequestStatus.submitted,
@@ -93,6 +113,7 @@ class ProfessionalServiceRequest {
   final String details;
   final ProfessionalRequestUrgency urgency;
   final List<String> attachmentNames;
+  final bool emailDispatched;
   final DateTime? desiredDate;
   final ProfessionalAppointmentMode? appointmentMode;
   final DateTime createdAt;
@@ -105,6 +126,7 @@ class ProfessionalServiceRequest {
 
   ProfessionalServiceRequest copyWith({
     ProfessionalServiceRequestStatus? status,
+    bool? emailDispatched,
     num? quoteAmount,
     String? quoteCurrency,
     String? depositUrl,
@@ -122,6 +144,7 @@ class ProfessionalServiceRequest {
       details: details,
       urgency: urgency,
       attachmentNames: attachmentNames,
+      emailDispatched: emailDispatched ?? this.emailDispatched,
       desiredDate: desiredDate,
       appointmentMode: appointmentMode,
       createdAt: createdAt,

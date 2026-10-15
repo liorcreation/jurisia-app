@@ -20,7 +20,7 @@ import '../../widgets/admin_status_chip.dart';
 import 'admin_service_request_repository.dart';
 import 'admin_service_requests_controller.dart';
 
-/// Console — centre de pilotage des actes et rendez-vous professionnels.
+/// Console — centre de pilotage des actes, rendez-vous et inscriptions.
 /// Les données, notifications et transitions métier restent confiées au
 /// contrôleur et au repository existants ; cette vue clarifie le parcours.
 class AdminServiceRequestsScreen extends StatelessWidget {
@@ -30,7 +30,9 @@ class AdminServiceRequestsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AdminServiceRequestsController>(
       create: (_) => AdminServiceRequestsController(
-        repository: SupabaseAdminServiceRequestRepository(client: SupabaseConfig.client),
+        repository: SupabaseAdminServiceRequestRepository(
+          client: SupabaseConfig.client,
+        ),
       ),
       child: const _View(),
     );
@@ -50,10 +52,18 @@ class _ViewState extends State<_View> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<AdminServiceRequestsController>();
-    final requests = controller.items.where((request) => _kind == null || request.kind == _kind).toList();
-    final received = controller.countFor(ProfessionalServiceRequestStatus.submitted);
-    final quotes = controller.countFor(ProfessionalServiceRequestStatus.quoteReady);
-    final scheduled = controller.countFor(ProfessionalServiceRequestStatus.scheduled);
+    final requests = controller.items
+        .where((request) => _kind == null || request.kind == _kind)
+        .toList();
+    final received = controller.countFor(
+      ProfessionalServiceRequestStatus.submitted,
+    );
+    final quotes = controller.countFor(
+      ProfessionalServiceRequestStatus.quoteReady,
+    );
+    final scheduled = controller.countFor(
+      ProfessionalServiceRequestStatus.scheduled,
+    );
 
     return LuxuryScaffoldBackground(
       child: Scaffold(
@@ -63,8 +73,9 @@ class _ViewState extends State<_View> {
             children: [
               AdminPageHeader(
                 icon: Icons.assignment_rounded,
-                title: 'Actes & rendez-vous',
-                subtitle: 'De la première demande à la livraison, chaque étape reste visible.',
+                title: 'Demandes professionnelles',
+                subtitle:
+                    'Actes, rendez-vous et inscriptions en formation, suivis au même endroit.',
                 actions: [
                   _IncomingBadge(count: received),
                   const SizedBox(width: AppSpacing.xs),
@@ -76,11 +87,16 @@ class _ViewState extends State<_View> {
                 ],
               ),
               if (controller.error != null)
-                AdminErrorBanner(message: controller.error!, onDismiss: controller.dismissError),
+                AdminErrorBanner(
+                  message: controller.error!,
+                  onDismiss: controller.dismissError,
+                ),
               Expanded(
                 child: Stack(
                   children: [
-                    const Positioned.fill(child: IgnorePointer(child: AdminAmbience())),
+                    const Positioned.fill(
+                      child: IgnorePointer(child: AdminAmbience()),
+                    ),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final wide = constraints.maxWidth >= 1080;
@@ -88,8 +104,14 @@ class _ViewState extends State<_View> {
                           controller: controller,
                           requests: requests,
                           kind: _kind,
-                          onKindChanged: (value) => setState(() => _kind = value),
-                          onStatus: (request, status) => _handleStatus(context, controller, request, status),
+                          onKindChanged: (value) =>
+                              setState(() => _kind = value),
+                          onStatus: (request, status) => _handleStatus(
+                            context,
+                            controller,
+                            request,
+                            status,
+                          ),
                         );
                         if (!wide) return queue;
                         return Row(
@@ -99,7 +121,11 @@ class _ViewState extends State<_View> {
                             const SizedBox(width: AppSpacing.md),
                             SizedBox(
                               width: 300,
-                              child: _ServiceFlowGuide(received: received, quotes: quotes, scheduled: scheduled),
+                              child: _ServiceFlowGuide(
+                                received: received,
+                                quotes: quotes,
+                                scheduled: scheduled,
+                              ),
                             ),
                           ],
                         );
@@ -126,7 +152,9 @@ class _ViewState extends State<_View> {
       return;
     }
 
-    final amount = TextEditingController(text: request.quoteAmount?.toString() ?? '');
+    final amount = TextEditingController(
+      text: request.quoteAmount?.toString() ?? '',
+    );
     final deposit = TextEditingController(text: request.depositUrl ?? '');
     final dropoff = TextEditingController(text: request.dropoffLocation ?? '');
     final pickup = TextEditingController(text: request.pickupLocation ?? '');
@@ -135,24 +163,64 @@ class _ViewState extends State<_View> {
       builder: (context) => AlertDialog(
         title: const Text('Préparer le devis'),
         content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('Les informations seront envoyées au demandeur avec la notification de devis.', style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: AppSpacing.sm),
-            TextField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Montant (XOF)')),
-            TextField(controller: deposit, decoration: const InputDecoration(labelText: 'Lien de paiement (facultatif)')),
-            TextField(controller: dropoff, decoration: const InputDecoration(labelText: 'Lieu de dépôt (facultatif)')),
-            TextField(controller: pickup, decoration: const InputDecoration(labelText: 'Lieu de retrait (facultatif)')),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Les informations seront envoyées au demandeur avec la notification de devis.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: amount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(labelText: 'Montant (XOF)'),
+              ),
+              TextField(
+                controller: deposit,
+                decoration: const InputDecoration(
+                  labelText: 'Lien de paiement (facultatif)',
+                ),
+              ),
+              TextField(
+                controller: dropoff,
+                decoration: const InputDecoration(
+                  labelText: 'Lieu de dépôt (facultatif)',
+                ),
+              ),
+              TextField(
+                controller: pickup,
+                decoration: const InputDecoration(
+                  labelText: 'Lieu de retrait (facultatif)',
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Notifier le devis')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Notifier le devis'),
+          ),
         ],
       ),
     );
     final quote = num.tryParse(amount.text.replaceAll(',', '.').trim());
     if (confirmed == true && quote != null) {
-      await controller.updateStatus(request.id, status, quoteAmount: quote, depositUrl: deposit.text.trim(), dropoffLocation: dropoff.text.trim(), pickupLocation: pickup.text.trim());
+      await controller.updateStatus(
+        request.id,
+        status,
+        quoteAmount: quote,
+        depositUrl: deposit.text.trim(),
+        dropoffLocation: dropoff.text.trim(),
+        pickupLocation: pickup.text.trim(),
+      );
     }
     amount.dispose();
     deposit.dispose();
@@ -162,18 +230,33 @@ class _ViewState extends State<_View> {
 }
 
 class _QueueContent extends StatelessWidget {
-  const _QueueContent({required this.controller, required this.requests, required this.kind, required this.onKindChanged, required this.onStatus});
+  const _QueueContent({
+    required this.controller,
+    required this.requests,
+    required this.kind,
+    required this.onKindChanged,
+    required this.onStatus,
+  });
 
   final AdminServiceRequestsController controller;
   final List<ProfessionalServiceRequest> requests;
   final ProfessionalRequestKind? kind;
   final ValueChanged<ProfessionalRequestKind?> onKindChanged;
-  final Future<void> Function(ProfessionalServiceRequest, ProfessionalServiceRequestStatus) onStatus;
+  final Future<void> Function(
+    ProfessionalServiceRequest,
+    ProfessionalServiceRequestStatus,
+  )
+  onStatus;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
       children: [
         const _ServiceHero(),
         const SizedBox(height: AppSpacing.md),
@@ -182,17 +265,42 @@ class _QueueContent extends StatelessWidget {
         PremiumSectionHeader(
           eyebrow: 'ATELIER OPÉRATIONNEL',
           title: 'Les demandes actives',
-          subtitle: requests.isEmpty ? 'Aucune demande ne correspond à cette vue.' : '${requests.length} demande${requests.length == 1 ? '' : 's'} à suivre dans le parcours.',
+          subtitle: requests.isEmpty
+              ? 'Aucune demande ne correspond à cette vue.'
+              : '${requests.length} demande${requests.length == 1 ? '' : 's'} à suivre dans le parcours.',
           action: _KindFilters(selected: kind, onChanged: onKindChanged),
         ),
         const SizedBox(height: AppSpacing.sm),
         _StatusFilters(controller: controller),
         const SizedBox(height: AppSpacing.md),
         controller.isLoading && requests.isEmpty
-            ? const Padding(padding: EdgeInsets.all(AppSpacing.xxl), child: Center(child: CircularProgressIndicator()))
+            ? const Padding(
+                padding: EdgeInsets.all(AppSpacing.xxl),
+                child: Center(child: CircularProgressIndicator()),
+              )
             : requests.isEmpty
-                ? const AdminEmptyState(icon: Icons.assignment_turned_in_rounded, message: 'Aucune demande active.', detail: 'Les nouvelles demandes d’acte et de rendez-vous apparaîtront ici.')
-                : Column(children: [for (var i = 0; i < requests.length; i++) Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: EntranceFadeSlide(index: i, child: _RequestCard(request: requests[i], busy: controller.isUpdating(requests[i].id), onStatus: (status) => onStatus(requests[i], status))))]),
+            ? const AdminEmptyState(
+                icon: Icons.assignment_turned_in_rounded,
+                message: 'Aucune demande active.',
+                detail:
+                    'Les nouvelles demandes d’acte et de rendez-vous apparaîtront ici.',
+              )
+            : Column(
+                children: [
+                  for (var i = 0; i < requests.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: EntranceFadeSlide(
+                        index: i,
+                        child: _RequestCard(
+                          request: requests[i],
+                          busy: controller.isUpdating(requests[i].id),
+                          onStatus: (status) => onStatus(requests[i], status),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
       ],
     );
   }
@@ -207,19 +315,102 @@ class _ServiceHero extends StatelessWidget {
     return PremiumSurface(
       tone: PremiumSurfaceTone.cobalt,
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: LayoutBuilder(builder: (context, constraints) {
-        final compact = constraints.maxWidth < 590;
-        final copy = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [const GradientIconBadge(icon: Icons.auto_awesome_motion_rounded, size: 48, gradient: AdminGradients.cobaltMetallic, iconColor: AppColors.textPrimary), const SizedBox(width: AppSpacing.md), Text('ATELIER JURISIA', style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700, letterSpacing: AppLetterSpacing.caps))]),
-          const SizedBox(height: AppSpacing.md),
-          Text('Transformer une demande en résultat concret.', style: textTheme.headlineSmall?.copyWith(fontFamily: 'Libre Caslon Display')),
-          const SizedBox(height: AppSpacing.xs),
-          Text('Préparer un acte, cadrer un devis, confirmer un rendez-vous : chaque détail compte pour offrir une expérience professionnelle.', style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.45)),
-        ]);
-        final signal = Container(width: compact ? double.infinity : 180, padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: AppColors.deepSlateDeep.withValues(alpha: 0.48), borderRadius: BorderRadius.circular(AppRadius.medium), border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.10))), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Icon(Icons.timeline_rounded, color: AppColors.goldLight, size: 20), const SizedBox(height: AppSpacing.sm), Text('PARCOURS SUIVI', style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, letterSpacing: AppLetterSpacing.label)), const SizedBox(height: AppSpacing.xs), Text('Brief · Devis · Rendez-vous', style: textTheme.titleSmall)]));
-        if (compact) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [copy, const SizedBox(height: AppSpacing.md), signal]);
-        return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [Expanded(child: copy), const SizedBox(width: AppSpacing.lg), signal]);
-      }),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 590;
+          final copy = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const GradientIconBadge(
+                    icon: Icons.auto_awesome_motion_rounded,
+                    size: 48,
+                    gradient: AdminGradients.cobaltMetallic,
+                    iconColor: AppColors.textPrimary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    'ATELIER JURISIA',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.goldLight,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: AppLetterSpacing.caps,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Transformer une demande en résultat concret.',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Préparer un acte, cadrer un devis, confirmer un rendez-vous : chaque détail compte pour offrir une expérience professionnelle.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          );
+          final signal = Container(
+            width: compact ? double.infinity : 180,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.deepSlateDeep.withValues(alpha: 0.48),
+              borderRadius: BorderRadius.circular(AppRadius.medium),
+              border: Border.all(
+                color: AppColors.textPrimary.withValues(alpha: 0.10),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.timeline_rounded,
+                  color: AppColors.goldLight,
+                  size: 20,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'PARCOURS SUIVI',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: AppColors.goldLight,
+                    letterSpacing: AppLetterSpacing.label,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Brief · Devis · Rendez-vous',
+                  style: textTheme.titleSmall,
+                ),
+              ],
+            ),
+          );
+          if (compact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                copy,
+                const SizedBox(height: AppSpacing.md),
+                signal,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(child: copy),
+              const SizedBox(width: AppSpacing.lg),
+              signal,
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -232,16 +423,63 @@ class _StatRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      AdminStatCard(icon: Icons.inbox_rounded, label: 'Total', value: '${controller.items.length}', hint: 'File actuelle', accentColor: AdminTheme.accentLight),
-      AdminStatCard(icon: Icons.mark_email_unread_rounded, label: 'Reçues', value: '${controller.countFor(ProfessionalServiceRequestStatus.submitted)}', hint: 'À prendre en charge', accentColor: AppColors.warning),
-      AdminStatCard(icon: Icons.request_quote_rounded, label: 'Devis', value: '${controller.countFor(ProfessionalServiceRequestStatus.quoteReady)}', hint: 'À confirmer', accentColor: AppColors.gold),
-      AdminStatCard(icon: Icons.event_available_rounded, label: 'Rendez-vous', value: '${controller.countFor(ProfessionalServiceRequestStatus.scheduled)}', hint: 'Confirmés', accentColor: AppColors.success),
+      AdminStatCard(
+        icon: Icons.inbox_rounded,
+        label: 'Total',
+        value: '${controller.items.length}',
+        hint: 'File actuelle',
+        accentColor: AdminTheme.accentLight,
+      ),
+      AdminStatCard(
+        icon: Icons.mark_email_unread_rounded,
+        label: 'Reçues',
+        value:
+            '${controller.countFor(ProfessionalServiceRequestStatus.submitted)}',
+        hint: 'À prendre en charge',
+        accentColor: AppColors.warning,
+      ),
+      AdminStatCard(
+        icon: Icons.request_quote_rounded,
+        label: 'Devis',
+        value:
+            '${controller.countFor(ProfessionalServiceRequestStatus.quoteReady)}',
+        hint: 'À confirmer',
+        accentColor: AppColors.gold,
+      ),
+      AdminStatCard(
+        icon: Icons.event_available_rounded,
+        label: 'Rendez-vous',
+        value:
+            '${controller.countFor(ProfessionalServiceRequestStatus.scheduled)}',
+        hint: 'Confirmés',
+        accentColor: AppColors.success,
+      ),
     ];
-    return LayoutBuilder(builder: (context, constraints) {
-      if (constraints.maxWidth < 610) return Column(children: [for (var i = 0; i < cards.length; i++) ...[cards[i], if (i != cards.length - 1) const SizedBox(height: AppSpacing.sm)]]);
-      final columns = constraints.maxWidth < 860 ? 2 : 4;
-      return GridView.count(crossAxisCount: columns, crossAxisSpacing: AppSpacing.sm, mainAxisSpacing: AppSpacing.sm, childAspectRatio: columns == 2 ? 2.2 : 1.25, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), children: cards);
-    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 610) {
+          return Column(
+            children: [
+              for (var i = 0; i < cards.length; i++) ...[
+                cards[i],
+                if (i != cards.length - 1)
+                  const SizedBox(height: AppSpacing.sm),
+              ],
+            ],
+          );
+        }
+        final columns = constraints.maxWidth < 860 ? 2 : 4;
+        return GridView.count(
+          crossAxisCount: columns,
+          crossAxisSpacing: AppSpacing.sm,
+          mainAxisSpacing: AppSpacing.sm,
+          childAspectRatio: columns == 2 ? 2.2 : 1.25,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: cards,
+        );
+      },
+    );
   }
 }
 
@@ -253,7 +491,32 @@ class _StatusFilters extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statuses = ProfessionalServiceRequestStatus.values;
-    return SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [Padding(padding: const EdgeInsets.only(right: AppSpacing.sm), child: AdminFilterChip(label: 'Toutes', count: controller.items.length, selected: controller.filter == null, onTap: () => controller.setFilter(null))), for (final status in statuses) Padding(padding: const EdgeInsets.only(right: AppSpacing.sm), child: AdminFilterChip(label: _statusLabel(status), count: controller.countFor(status), selected: controller.filter == status, onTap: () => controller.setFilter(status)))]));
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: AdminFilterChip(
+              label: 'Toutes',
+              count: controller.items.length,
+              selected: controller.filter == null,
+              onTap: () => controller.setFilter(null),
+            ),
+          ),
+          for (final status in statuses)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: AdminFilterChip(
+                label: _statusLabel(status),
+                count: controller.countFor(status),
+                selected: controller.filter == status,
+                onTap: () => controller.setFilter(status),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 
@@ -264,11 +527,45 @@ class _KindFilters extends StatelessWidget {
   final ValueChanged<ProfessionalRequestKind?> onChanged;
 
   @override
-  Widget build(BuildContext context) => Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: [_KindPill(label: 'Tout', icon: Icons.grid_view_rounded, selected: selected == null, onTap: () => onChanged(null)), _KindPill(label: 'Actes', icon: Icons.article_rounded, selected: selected == ProfessionalRequestKind.legalAct, onTap: () => onChanged(ProfessionalRequestKind.legalAct)), _KindPill(label: 'Rendez-vous', icon: Icons.calendar_month_rounded, selected: selected == ProfessionalRequestKind.expertAppointment, onTap: () => onChanged(ProfessionalRequestKind.expertAppointment))]);
+  Widget build(BuildContext context) => Wrap(
+    spacing: AppSpacing.xs,
+    runSpacing: AppSpacing.xs,
+    children: [
+      _KindPill(
+        label: 'Tout',
+        icon: Icons.grid_view_rounded,
+        selected: selected == null,
+        onTap: () => onChanged(null),
+      ),
+      _KindPill(
+        label: 'Actes',
+        icon: Icons.article_rounded,
+        selected: selected == ProfessionalRequestKind.legalAct,
+        onTap: () => onChanged(ProfessionalRequestKind.legalAct),
+      ),
+      _KindPill(
+        label: 'Rendez-vous',
+        icon: Icons.calendar_month_rounded,
+        selected: selected == ProfessionalRequestKind.expertAppointment,
+        onTap: () => onChanged(ProfessionalRequestKind.expertAppointment),
+      ),
+      _KindPill(
+        label: 'Formations',
+        icon: Icons.school_rounded,
+        selected: selected == ProfessionalRequestKind.trainingEnrollment,
+        onTap: () => onChanged(ProfessionalRequestKind.trainingEnrollment),
+      ),
+    ],
+  );
 }
 
 class _KindPill extends StatelessWidget {
-  const _KindPill({required this.label, required this.icon, required this.selected, required this.onTap});
+  const _KindPill({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -278,12 +575,49 @@ class _KindPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = selected ? AppColors.goldLight : AppColors.textSecondary;
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(AppRadius.pill), child: AnimatedContainer(duration: AppMotion.quick, padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: selected ? AppColors.gold.withValues(alpha: 0.16) : AppColors.textPrimary.withValues(alpha: 0.04), borderRadius: BorderRadius.circular(AppRadius.pill), border: Border.all(color: color.withValues(alpha: selected ? 0.50 : 0.18))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 15, color: color), const SizedBox(width: 5), Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700))])));
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: AnimatedContainer(
+        duration: AppMotion.quick,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.gold.withValues(alpha: 0.16)
+              : AppColors.textPrimary.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: color.withValues(alpha: selected ? 0.50 : 0.18),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: color),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
 class _ServiceFlowGuide extends StatelessWidget {
-  const _ServiceFlowGuide({required this.received, required this.quotes, required this.scheduled});
+  const _ServiceFlowGuide({
+    required this.received,
+    required this.quotes,
+    required this.scheduled,
+  });
 
   final int received;
   final int quotes;
@@ -292,12 +626,76 @@ class _ServiceFlowGuide extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Padding(padding: const EdgeInsets.only(top: AppSpacing.lg, right: AppSpacing.lg), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('VUE OPÉRATEUR', style: textTheme.labelSmall?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700, letterSpacing: AppLetterSpacing.caps)), const SizedBox(height: AppSpacing.sm), Text('Un parcours sans angle mort.', style: textTheme.titleLarge?.copyWith(fontFamily: 'Libre Caslon Display')), const SizedBox(height: AppSpacing.md), PremiumSurface(padding: const EdgeInsets.all(AppSpacing.md), tone: PremiumSurfaceTone.elevated, child: Column(children: [_FlowRow(label: 'Demandes reçues', value: received, color: AppColors.warning, icon: Icons.mark_email_unread_rounded), const _FlowDivider(), _FlowRow(label: 'Devis disponibles', value: quotes, color: AppColors.gold, icon: Icons.request_quote_rounded), const _FlowDivider(), _FlowRow(label: 'Rendez-vous confirmés', value: scheduled, color: AppColors.success, icon: Icons.event_available_rounded)])), const SizedBox(height: AppSpacing.md), Text('La notification de devis rassemble le montant, le paiement et les lieux de dépôt ou de retrait lorsqu’ils sont renseignés.', style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary, height: 1.45))]));
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg, right: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'VUE OPÉRATEUR',
+            style: textTheme.labelSmall?.copyWith(
+              color: AppColors.goldLight,
+              fontWeight: FontWeight.w700,
+              letterSpacing: AppLetterSpacing.caps,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Un parcours sans angle mort.',
+            style: textTheme.titleLarge?.copyWith(
+              fontFamily: 'Libre Caslon Display',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          PremiumSurface(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            tone: PremiumSurfaceTone.elevated,
+            child: Column(
+              children: [
+                _FlowRow(
+                  label: 'Demandes reçues',
+                  value: received,
+                  color: AppColors.warning,
+                  icon: Icons.mark_email_unread_rounded,
+                ),
+                const _FlowDivider(),
+                _FlowRow(
+                  label: 'Devis disponibles',
+                  value: quotes,
+                  color: AppColors.gold,
+                  icon: Icons.request_quote_rounded,
+                ),
+                const _FlowDivider(),
+                _FlowRow(
+                  label: 'Rendez-vous confirmés',
+                  value: scheduled,
+                  color: AppColors.success,
+                  icon: Icons.event_available_rounded,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'La notification de devis rassemble le montant, le paiement et les lieux de dépôt ou de retrait lorsqu’ils sont renseignés.',
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class _FlowRow extends StatelessWidget {
-  const _FlowRow({required this.label, required this.value, required this.color, required this.icon});
+  const _FlowRow({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
 
   final String label;
   final int value;
@@ -305,14 +703,35 @@ class _FlowRow extends StatelessWidget {
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => Row(children: [Icon(icon, size: 18, color: color), const SizedBox(width: AppSpacing.sm), Expanded(child: Text(label, style: Theme.of(context).textTheme.bodySmall)), Text('$value', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color, fontWeight: FontWeight.w700))]);
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 18, color: color),
+      const SizedBox(width: AppSpacing.sm),
+      Expanded(
+        child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ),
+      Text(
+        '$value',
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ],
+  );
 }
 
 class _FlowDivider extends StatelessWidget {
   const _FlowDivider();
 
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm), child: Divider(color: AppColors.textPrimary.withValues(alpha: 0.08), height: 1));
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+    child: Divider(
+      color: AppColors.textPrimary.withValues(alpha: 0.08),
+      height: 1,
+    ),
+  );
 }
 
 class _IncomingBadge extends StatelessWidget {
@@ -323,12 +742,46 @@ class _IncomingBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = count == 0 ? AppColors.success : AppColors.warning;
-    return Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(AppRadius.pill), border: Border.all(color: color.withValues(alpha: 0.28))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(count == 0 ? Icons.check_circle_outline_rounded : Icons.mark_email_unread_rounded, size: 16, color: color), const SizedBox(width: 5), Text('$count reçue${count == 1 ? '' : 's'}', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w700))]));
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            count == 0
+                ? Icons.check_circle_outline_rounded
+                : Icons.mark_email_unread_rounded,
+            size: 16,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '$count reçue${count == 1 ? '' : 's'}',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.request, required this.busy, required this.onStatus});
+  const _RequestCard({
+    required this.request,
+    required this.busy,
+    required this.onStatus,
+  });
 
   final ProfessionalServiceRequest request;
   final bool busy;
@@ -337,55 +790,292 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final title = request.kind == ProfessionalRequestKind.legalAct ? request.actType ?? 'Acte juridique' : 'Rendez-vous ${request.category.label.toLowerCase()}';
+    final title = switch (request.kind) {
+      ProfessionalRequestKind.legalAct => request.actType ?? 'Acte juridique',
+      ProfessionalRequestKind.expertAppointment =>
+        'Rendez-vous ${request.category.label.toLowerCase()}',
+      ProfessionalRequestKind.trainingEnrollment =>
+        request.actType ?? 'Inscription en présentiel',
+    };
+    final kindLabel = switch (request.kind) {
+      ProfessionalRequestKind.legalAct => 'DEMANDE D’ACTE',
+      ProfessionalRequestKind.expertAppointment => 'DEMANDE DE RENDEZ-VOUS',
+      ProfessionalRequestKind.trainingEnrollment => 'INSCRIPTION EN FORMATION',
+    };
+    final kindIcon = switch (request.kind) {
+      ProfessionalRequestKind.legalAct => Icons.article_rounded,
+      ProfessionalRequestKind.expertAppointment => Icons.calendar_month_rounded,
+      ProfessionalRequestKind.trainingEnrollment => Icons.school_rounded,
+    };
     final statusColor = _statusColor(request.status);
-    final actionStatuses = const [ProfessionalServiceRequestStatus.acknowledged, ProfessionalServiceRequestStatus.quoteReady, ProfessionalServiceRequestStatus.scheduled, ProfessionalServiceRequestStatus.closed, ProfessionalServiceRequestStatus.cancelled];
+    final actionStatuses = const [
+      ProfessionalServiceRequestStatus.acknowledged,
+      ProfessionalServiceRequestStatus.quoteReady,
+      ProfessionalServiceRequestStatus.scheduled,
+      ProfessionalServiceRequestStatus.closed,
+      ProfessionalServiceRequestStatus.cancelled,
+    ];
     return GlassContainer(
       padding: const EdgeInsets.all(AppSpacing.md),
       borderColor: statusColor.withValues(alpha: 0.34),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          GradientIconBadge(icon: request.kind == ProfessionalRequestKind.legalAct ? Icons.article_rounded : Icons.calendar_month_rounded, size: 42, gradient: AdminGradients.cobaltMetallic, iconColor: AppColors.textPrimary),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(request.kind == ProfessionalRequestKind.legalAct ? 'DEMANDE D’ACTE' : 'DEMANDE DE RENDEZ-VOUS', style: textTheme.labelSmall?.copyWith(color: AdminTheme.accentLight, fontWeight: FontWeight.w700, letterSpacing: AppLetterSpacing.label)), const SizedBox(height: 2), Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text('${request.fullName} · ${request.category.label}', style: textTheme.labelSmall?.copyWith(color: AppColors.textSecondary))])),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [AdminStatusChip(label: _statusLabel(request.status), color: statusColor), const SizedBox(height: 4), Text(_formatDate(request.createdAt), style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled))]),
-        ]),
-        const SizedBox(height: AppSpacing.md),
-        Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: [_InfoTag(icon: Icons.priority_high_rounded, label: request.urgency.label, color: request.urgency == ProfessionalRequestUrgency.urgent ? AppColors.error : request.urgency == ProfessionalRequestUrgency.priority ? AppColors.warning : AppColors.textSecondary), if (request.desiredDate != null) _InfoTag(icon: Icons.event_rounded, label: 'Souhaité le ${_formatDate(request.desiredDate!)}', color: AppColors.cobaltLight), if (request.appointmentMode != null) _InfoTag(icon: Icons.video_call_rounded, label: request.appointmentMode!.label, color: AppColors.cobaltLight), if (request.attachmentNames.isNotEmpty) _InfoTag(icon: Icons.attach_file_rounded, label: '${request.attachmentNames.length} pièce${request.attachmentNames.length == 1 ? '' : 's'}', color: AppColors.goldLight)]),
-        const SizedBox(height: AppSpacing.sm),
-        Container(padding: const EdgeInsets.all(AppSpacing.sm), decoration: BoxDecoration(color: AppColors.deepSlateDeep.withValues(alpha: 0.34), borderRadius: BorderRadius.circular(AppRadius.small), border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.08))), child: Row(children: [const Icon(Icons.contact_mail_outlined, size: 17, color: AppColors.goldLight), const SizedBox(width: AppSpacing.sm), Expanded(child: Text('${request.email} · ${request.phone}', maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall?.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600)))])),
-        const SizedBox(height: AppSpacing.sm),
-        Text(request.details, maxLines: 3, overflow: TextOverflow.ellipsis, style: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.4)),
-        if (request.quoteAmount != null) ...[const SizedBox(height: AppSpacing.sm), Row(children: [const Icon(Icons.request_quote_rounded, size: 17, color: AppColors.goldLight), const SizedBox(width: AppSpacing.xs), Text('Devis : ${request.quoteAmount} ${request.quoteCurrency}', style: textTheme.labelMedium?.copyWith(color: AppColors.goldLight, fontWeight: FontWeight.w700))])],
-        if (request.dropoffLocation != null || request.pickupLocation != null) ...[const SizedBox(height: AppSpacing.xs), Text('Logistique : ${request.dropoffLocation ?? 'Dépôt à définir'} → ${request.pickupLocation ?? 'Retrait à définir'}', style: textTheme.labelSmall?.copyWith(color: AppColors.textDisabled))],
-        const SizedBox(height: AppSpacing.md),
-        Row(children: [if (busy) ...[const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2)), const SizedBox(width: AppSpacing.sm)], Expanded(child: Wrap(spacing: AppSpacing.xs, runSpacing: AppSpacing.xs, children: [for (final status in actionStatuses) AdminFilterChip(label: status == ProfessionalServiceRequestStatus.quoteReady ? 'Devis' : _statusLabel(status), selected: request.status == status, onTap: busy ? () {} : () => onStatus(status))]))]),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GradientIconBadge(
+                icon: kindIcon,
+                size: 42,
+                gradient: AdminGradients.cobaltMetallic,
+                iconColor: AppColors.textPrimary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      kindLabel,
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AdminTheme.accentLight,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: AppLetterSpacing.label,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${request.fullName} · ${request.category.label}',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AdminStatusChip(
+                    label: _statusLabel(request.status),
+                    color: statusColor,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDate(request.createdAt),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.textDisabled,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              _InfoTag(
+                icon: Icons.priority_high_rounded,
+                label: request.urgency.label,
+                color: request.urgency == ProfessionalRequestUrgency.urgent
+                    ? AppColors.error
+                    : request.urgency == ProfessionalRequestUrgency.priority
+                    ? AppColors.warning
+                    : AppColors.textSecondary,
+              ),
+              if (request.desiredDate != null)
+                _InfoTag(
+                  icon: Icons.event_rounded,
+                  label: 'Souhaité le ${_formatDate(request.desiredDate!)}',
+                  color: AppColors.cobaltLight,
+                ),
+              if (request.appointmentMode != null)
+                _InfoTag(
+                  icon: Icons.video_call_rounded,
+                  label: request.appointmentMode!.label,
+                  color: AppColors.cobaltLight,
+                ),
+              if (request.attachmentNames.isNotEmpty)
+                _InfoTag(
+                  icon: Icons.attach_file_rounded,
+                  label:
+                      '${request.attachmentNames.length} pièce${request.attachmentNames.length == 1 ? '' : 's'}',
+                  color: AppColors.goldLight,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.deepSlateDeep.withValues(alpha: 0.34),
+              borderRadius: BorderRadius.circular(AppRadius.small),
+              border: Border.all(
+                color: AppColors.textPrimary.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.contact_mail_outlined,
+                  size: 17,
+                  color: AppColors.goldLight,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    '${request.email} · ${request.phone}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            request.details,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          if (request.quoteAmount != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                const Icon(
+                  Icons.request_quote_rounded,
+                  size: 17,
+                  color: AppColors.goldLight,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Devis : ${request.quoteAmount} ${request.quoteCurrency}',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: AppColors.goldLight,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (request.dropoffLocation != null ||
+              request.pickupLocation != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Logistique : ${request.dropoffLocation ?? 'Dépôt à définir'} → ${request.pickupLocation ?? 'Retrait à définir'}',
+              style: textTheme.labelSmall?.copyWith(
+                color: AppColors.textDisabled,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              if (busy) ...[
+                const SizedBox(
+                  width: 15,
+                  height: 15,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ],
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    for (final status in actionStatuses)
+                      AdminFilterChip(
+                        label:
+                            status ==
+                                ProfessionalServiceRequestStatus.quoteReady
+                            ? 'Devis'
+                            : _statusLabel(status),
+                        selected: request.status == status,
+                        onTap: busy ? () {} : () => onStatus(status),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _InfoTag extends StatelessWidget {
-  const _InfoTag({required this.icon, required this.label, required this.color});
+  const _InfoTag({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   final IconData icon;
   final String label;
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs), decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(AppRadius.pill), border: Border.all(color: color.withValues(alpha: 0.25))), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 14, color: color), const SizedBox(width: 4), Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600))]));
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.10),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      border: Border.all(color: color.withValues(alpha: 0.25)),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: color,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
-String _statusLabel(ProfessionalServiceRequestStatus status) => status == ProfessionalServiceRequestStatus.quoteReady ? 'Devis disponible' : status.label;
+String _statusLabel(ProfessionalServiceRequestStatus status) =>
+    status == ProfessionalServiceRequestStatus.quoteReady
+    ? 'Devis disponible'
+    : status.label;
 
 Color _statusColor(ProfessionalServiceRequestStatus status) => switch (status) {
-      ProfessionalServiceRequestStatus.submitted => AppColors.warning,
-      ProfessionalServiceRequestStatus.acknowledged => AdminTheme.accentLight,
-      ProfessionalServiceRequestStatus.quoteReady => AppColors.gold,
-      ProfessionalServiceRequestStatus.scheduled => AppColors.success,
-      ProfessionalServiceRequestStatus.closed => AppColors.textSecondary,
-      ProfessionalServiceRequestStatus.cancelled => AppColors.error,
-    };
+  ProfessionalServiceRequestStatus.submitted => AppColors.warning,
+  ProfessionalServiceRequestStatus.acknowledged => AdminTheme.accentLight,
+  ProfessionalServiceRequestStatus.quoteReady => AppColors.gold,
+  ProfessionalServiceRequestStatus.scheduled => AppColors.success,
+  ProfessionalServiceRequestStatus.closed => AppColors.textSecondary,
+  ProfessionalServiceRequestStatus.cancelled => AppColors.error,
+};
 
 String _formatDate(DateTime date) {
   final local = date.toLocal();

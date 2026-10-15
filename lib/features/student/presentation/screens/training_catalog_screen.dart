@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/widgets/app_shell_menu_button.dart';
 import '../../../../core/widgets/entrance_fade.dart';
 import '../../../../core/widgets/glass_container.dart';
 import '../../../../core/widgets/luxury_scaffold_background.dart';
 import '../../../../models/training/training_category.dart';
+import '../../../../models/student/course_module.dart';
+import '../../../../models/student/student_level.dart';
 import '../../../../theme/app_theme.dart';
+import '../controllers/student_controller.dart';
+import 'module_detail_screen.dart';
+import 'training_enrollment_form.dart';
 import '../../data/datasources/training_catalog_local_datasource.dart';
 
 const _trainingCanvas = Color(0xFFF3F6FA);
@@ -140,10 +146,9 @@ class TrainingOrientationSection extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 720),
           child: Text(
             'JurisIA vous accompagne d’abord par des formations certifiantes thématiques. Le parcours universitaire LMD sera activé dans une prochaine phase.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: _trainingMuted,
-              height: 1.5,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(color: _trainingMuted, height: 1.5),
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
@@ -686,9 +691,7 @@ class _StudentStat extends StatelessWidget {
           const SizedBox(width: 5),
           Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelSmall?.copyWith(
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: onDark
                   ? AppColors.textSecondaryOnDark
                   : AppColors.textSecondary,
@@ -1076,6 +1079,8 @@ class _CategoryDetailContent extends StatelessWidget {
         _CategoryHero(category: category),
         const SizedBox(height: AppSpacing.xl),
         _CategorySnapshot(category: category),
+        const SizedBox(height: AppSpacing.lg),
+        _TrainingFormatChoices(category: category),
         const SizedBox(height: AppSpacing.xl),
         const _CatalogEyebrow('VOTRE PARCOURS'),
         const SizedBox(height: AppSpacing.sm),
@@ -1089,10 +1094,9 @@ class _CategoryDetailContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Apprenez à raisonner, qualifier et agir avec une méthode claire, progressive et directement applicable.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: _trainingMuted,
-            height: 1.5,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: _trainingMuted, height: 1.5),
         ),
         const SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
@@ -1184,6 +1188,198 @@ class _CategoryDetailContent extends StatelessWidget {
   }
 }
 
+class _TrainingFormatChoices extends StatelessWidget {
+  const _TrainingFormatChoices({required this.category});
+
+  final TrainingCategory category;
+
+  Future<void> _startOnline(BuildContext context) async {
+    final student = context.read<StudentController>();
+    final modules = [
+      for (final level in AcademicLevel.values)
+        ...student
+            .modulesForLevel(level)
+            .where((module) => module.domain == category.domain),
+    ];
+    if (modules.isEmpty) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Le parcours en ligne de cette spécialité sera disponible prochainement.',
+          ),
+        ),
+      );
+      return;
+    }
+    final selected = await showDialog<CourseModule>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Débuter ${category.title} en ligne'),
+        content: SizedBox(
+          width: 520,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: modules.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final module = modules[index];
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.menu_book_rounded,
+                  color: AppColors.goldDark,
+                ),
+                title: Text(module.title),
+                subtitle: Text(
+                  '${module.level.shortLabel} · Module ${module.order}',
+                ),
+                trailing: const Icon(Icons.arrow_forward_rounded),
+                onTap: () => Navigator.of(dialogContext).pop(module),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider<StudentController>.value(
+          value: student,
+          child: ModuleDetailScreen(moduleId: selected.id),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final compact = constraints.maxWidth < 700;
+      final online = _TrainingFormatCard(
+        icon: Icons.laptop_mac_rounded,
+        eyebrow: 'À VOTRE RYTHME',
+        title: 'Débuter la formation en ligne',
+        description:
+            'Accédez aux modules disponibles et poursuivez votre apprentissage dans JurisIA.',
+        action: 'Explorer le parcours',
+        onTap: () => _startOnline(context),
+      );
+      final inPerson = _TrainingFormatCard(
+        icon: Icons.groups_2_rounded,
+        eyebrow: 'AVEC UN FORMATEUR',
+        title: 'S’inscrire en présentiel',
+        description:
+            'Transmettez vos coordonnées et vos disponibilités à l’équipe JurisIA.',
+        action: 'Demander une inscription',
+        onTap: () => showTrainingEnrollmentForm(context, category: category),
+      );
+      if (compact) {
+        return Column(
+          children: [
+            online,
+            const SizedBox(height: AppSpacing.sm),
+            inPerson,
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: online),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(child: inPerson),
+        ],
+      );
+    },
+  );
+}
+
+class _TrainingFormatCard extends StatelessWidget {
+  const _TrainingFormatCard({
+    required this.icon,
+    required this.eyebrow,
+    required this.title,
+    required this.description,
+    required this.action,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String eyebrow;
+  final String title;
+  final String description;
+  final String action;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: _trainingPaper,
+    borderRadius: BorderRadius.circular(AppRadius.large),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.large),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.large),
+          border: Border.all(color: _trainingLine),
+          boxShadow: [
+            BoxShadow(
+              color: _trainingInk.withValues(alpha: .05),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: AppColors.goldDark, size: 26),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              eyebrow,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.goldDark,
+                letterSpacing: 1.4,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: _trainingInk,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              description,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: _trainingMuted,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: onTap,
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: Text(action),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class _CategorySnapshot extends StatelessWidget {
   const _CategorySnapshot({required this.category});
 
@@ -1264,9 +1460,7 @@ class _SnapshotItem extends StatelessWidget {
         children: [
           Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800,
               color: _trainingInk,
             ),
@@ -1300,9 +1494,7 @@ class _CategoryRoadmap extends StatelessWidget {
               children: [
                 Text(
                   'Votre feuille de route',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: _trainingInk,
                   ),
@@ -1454,9 +1646,7 @@ class _DetailPillar extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: _trainingInk,
                 ),

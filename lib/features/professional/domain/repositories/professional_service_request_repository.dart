@@ -15,6 +15,7 @@ abstract class ProfessionalServiceRequestRepository {
     required String details,
     required ProfessionalRequestUrgency urgency,
     required List<String> attachmentNames,
+    List<ProfessionalRequestAttachment> attachments = const [],
     required DateTime? desiredDate,
     required ProfessionalAppointmentMode? appointmentMode,
   });

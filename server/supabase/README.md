@@ -53,6 +53,8 @@
    `migration_022_professional_service_categories.sql` remplace la liste
    historique des professions par la typologie complète des services
    professionnels, tout en conservant la compatibilité des anciennes demandes.
+   `migration_042_professional_training_enrollment.sql` autorise les demandes
+   d'inscription aux formations en présentiel dans le même espace de suivi.
    `migration_017_legal_corpus_search.sql` expose la RPC de recherche plein
    texte utilisée par l'application.
    `migration_018_training_catalog_certificates.sql` ajoute le catalogue des
