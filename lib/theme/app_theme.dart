@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Palette JurisIA : cabinet numérique clair, bleu nuit et or sablé.
+/// Palette JurisIA : bleu nuit profond, cobalt en relief et or sablé.
 class AppColors {
   const AppColors._();
 
-  /// Surfaces de travail claires : blanc cassé, blanc pur et bleu-gris léger.
-  static const Color deepSlate = Color(0xFFF7F8FA);
-  static const Color deepSlateDeep = Color(0xFFF0F2F5);
-  static const Color deepSlateElevated = Color(0xFFFFFFFF);
+  /// Couches nuit : fond, profondeur et surfaces de travail.
+  static const Color deepSlate = Color(0xFF0B1220);
+  static const Color deepSlateDeep = Color(0xFF070D17);
+  static const Color deepSlateElevated = Color(0xFF111D2E);
 
-  static const Color cobalt = Color(0xFF213D5B);
-  static const Color cobaltLight = Color(0xFF627A94);
-  static const Color cobaltDeep = Color(0xFFE8EDF2);
+  static const Color cobalt = Color(0xFF1D4C7D);
+  static const Color cobaltLight = Color(0xFF7CA4D0);
+  static const Color cobaltDeep = Color(0xFF0C2340);
 
-  static const Color gold = Color(0xFFA98032);
-  static const Color goldLight = Color(0xFFC3A665);
-  static const Color goldDark = Color(0xFF76551E);
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color goldLight = Color(0xFFFFD978);
+  static const Color goldDark = Color(0xFF9A7A1E);
   static const Color roseGold = Color(0xFFD9A98A);
   static const Color agedGold = Color(0xFF7C6122);
 
@@ -25,26 +25,23 @@ class AppColors {
   static const Color nightBlueDeep = Color(0xFF09182A);
   static const Color legalBlue = Color(0xFF142A45);
   static const Color legalBlueLight = cobalt;
-  // Ancien nom conservé pour limiter les changements d'API ; ces surfaces
-  // de cartes sont désormais bleu-gris clair. Le vrai fond nuit est ci-dessus.
-  static const Color legalBlueDark = Color(0xFFF0F2F5);
+  static const Color legalBlueDark = Color(0xFF0D2745);
 
-  static const Color textPrimary = Color(0xFF172235);
-  static const Color textSecondary = Color(0xFF59677A);
-  static const Color textDisabled = Color(0xFF7C8796);
+  static const Color textPrimary = Color(0xFFF8FAFC);
+  static const Color textSecondary = Color(0xFFAAB8CC);
+  static const Color textDisabled = Color(0xFF718096);
   static const Color textOnDark = Color(0xFFF8FAFC);
   static const Color textSecondaryOnDark = Color(0xFFAAB8CC);
 
-  /// Verre à 10 % : suffisamment présent pour séparer les surfaces, sans
-  /// transformer l'interface en succession de panneaux opaques.
-  static const Color glassFill = Color(0xDFFFFFFF);
-  static const Color glassBorder = Color(0xFFE1E5EA);
-  static const Color glassHighlight = Color(0xFFFFFFFF);
+  /// Reflets bleutés discrets sur les surfaces nuit.
+  static const Color glassFill = Color(0x241B4775);
+  static const Color glassBorder = Color(0x35C7D6E8);
+  static const Color glassHighlight = Color(0x18FFFFFF);
 
   /// Surface « verre fumé » des barres de navigation.
-  static const Color smokedGlass = Color(0xE60B0F19);
+  static const Color smokedGlass = Color(0xF5071220);
 
-  static const Color divider = Color(0xFFDCE3EC);
+  static const Color divider = Color(0x2EB7C3D6);
 
   static const Color success = Color(0xFF3FA772);
   static const Color warning = Color(0xFFE0A93E);
@@ -71,7 +68,7 @@ class AppGradients {
   static const LinearGradient background = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.white, AppColors.deepSlate],
+    colors: [AppColors.deepSlateDeep, AppColors.deepSlate],
   );
 
   /// Or brossé : dégradé à bandes multiples simulant le passage de la
@@ -112,27 +109,27 @@ class AppGradients {
   static const LinearGradient glassCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFFFFF), Color(0xFFFBFCFD)],
+    colors: [Color(0xFF14243A), Color(0xFF0E1929)],
   );
 
   static const LinearGradient heroCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFFFFFF), Color(0xFFF1F4F7)],
+    colors: [Color(0xFF173B63), Color(0xFF0C2340)],
   );
 
-  /// Barre de travail claire, distincte de la navigation bleu nuit.
+  /// En-tête de travail en bleu nuit, légèrement relevé par rapport au fond.
   static const LinearGradient workspaceHeader = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.white, Colors.white],
+    colors: [Color(0xFF101D30), Color(0xFF0B1524)],
   );
 
   /// Surface de verre fumé des barres de navigation.
   static const LinearGradient smokedGlass = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF183653), Color(0xFF0D1C30)],
+    colors: [Color(0xFF0C1A2B), Color(0xFF070D17)],
   );
 }
 
@@ -271,11 +268,11 @@ class AppTheme {
   const AppTheme._();
 
   static ThemeData get lightTheme {
-    final base = ThemeData.light(useMaterial3: true);
+    final base = ThemeData.dark(useMaterial3: true);
     final textTheme = _buildTextTheme(base.textTheme);
 
     return base.copyWith(
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.deepSlate,
       canvasColor: AppColors.deepSlate,
       primaryColor: AppColors.cobalt,
@@ -298,39 +295,39 @@ class AppTheme {
           TargetPlatform.linux: _LuxuryFadeThroughTransitionsBuilder(),
         },
       ),
-      colorScheme: const ColorScheme.light(
-        brightness: Brightness.light,
+      colorScheme: const ColorScheme.dark(
+        brightness: Brightness.dark,
         primary: AppColors.cobalt,
         onPrimary: Colors.white,
         primaryContainer: AppColors.cobaltDeep,
         onPrimaryContainer: AppColors.textPrimary,
         secondary: AppColors.cobalt,
         onSecondary: Colors.white,
-        secondaryContainer: Color(0xFFE9EFF6),
+        secondaryContainer: Color(0xFF18304C),
         onSecondaryContainer: AppColors.textPrimary,
-        surface: Colors.white,
+        surface: AppColors.deepSlateElevated,
         onSurface: AppColors.textPrimary,
-        surfaceContainerHighest: Color(0xFFE9EFF6),
+        surfaceContainerHighest: Color(0xFF1A2A3F),
         error: AppColors.error,
         onError: Colors.white,
         outline: AppColors.divider,
         outlineVariant: AppColors.glassBorder,
-        shadow: Color(0x1A18314D),
+        shadow: Color(0x66000000),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.deepSlateDeep,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.cobalt),
+        iconTheme: const IconThemeData(color: AppColors.cobaltLight),
         titleTextStyle: textTheme.headlineSmall?.copyWith(
           color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: AppColors.deepSlateElevated,
         elevation: 1,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -361,7 +358,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.cobalt,
+          foregroundColor: AppColors.cobaltLight,
           side: BorderSide(color: AppColors.cobalt.withValues(alpha: 0.45), width: 1),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
@@ -370,13 +367,13 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.cobalt,
+          foregroundColor: AppColors.cobaltLight,
           textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.deepSlateElevated,
         hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textDisabled),
         labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
         contentPadding: const EdgeInsets.symmetric(
@@ -408,24 +405,24 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelSmall?.copyWith(
-            color: selected ? AppColors.cobalt : AppColors.textSecondary,
+            color: selected ? AppColors.cobaltLight : AppColors.textSecondary,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
-            color: selected ? AppColors.cobalt : AppColors.textSecondary,
+            color: selected ? AppColors.cobaltLight : AppColors.textSecondary,
             size: 24,
           );
         }),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: Colors.transparent,
-        selectedIconTheme: const IconThemeData(color: AppColors.cobalt, size: 24),
+        selectedIconTheme: const IconThemeData(color: AppColors.cobaltLight, size: 24),
         unselectedIconTheme: const IconThemeData(color: AppColors.textSecondary, size: 24),
         selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
-          color: AppColors.cobalt,
+          color: AppColors.cobaltLight,
           fontWeight: FontWeight.w700,
         ),
         unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
@@ -433,16 +430,16 @@ class AppTheme {
         useIndicator: true,
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFFF0F4F8),
-        selectedColor: AppColors.cobalt.withValues(alpha: 0.12),
+        backgroundColor: const Color(0xFF15263B),
+        selectedColor: AppColors.cobalt.withValues(alpha: 0.34),
         labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.cobalt),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.cobaltLight),
         side: BorderSide(color: AppColors.glassBorder.withValues(alpha: 0.8), width: 0.6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.deepSlateElevated,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.large),
@@ -462,20 +459,20 @@ class AppTheme {
         ),
       ),
       tabBarTheme: TabBarThemeData(
-        labelColor: AppColors.cobalt,
+        labelColor: AppColors.cobaltLight,
         unselectedLabelColor: AppColors.textSecondary,
-        indicatorColor: AppColors.cobalt,
+        indicatorColor: AppColors.cobaltLight,
         labelStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         unselectedLabelStyle: textTheme.labelLarge,
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.cobalt,
-        linearTrackColor: Color(0xFFE1E7EF),
-        circularTrackColor: Color(0xFFE1E7EF),
+        color: AppColors.cobaltLight,
+        linearTrackColor: Color(0xFF263A52),
+        circularTrackColor: Color(0xFF263A52),
       ),
       dividerColor: AppColors.divider,
       listTileTheme: ListTileThemeData(
-        iconColor: AppColors.cobalt,
+        iconColor: AppColors.cobaltLight,
         textColor: AppColors.textPrimary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.medium)),
       ),
@@ -486,7 +483,7 @@ class AppTheme {
         trackColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
               ? AppColors.cobalt.withValues(alpha: 0.4)
-              : const Color(0xFFE1E7EF);
+              : const Color(0xFF263A52);
         }),
       ),
       tooltipTheme: TooltipThemeData(

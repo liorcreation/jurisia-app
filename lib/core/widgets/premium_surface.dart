@@ -41,7 +41,7 @@ class PremiumSurface extends StatelessWidget {
     PremiumSurfaceTone.elevated => const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Colors.white, Color(0xFFF5F8FB)],
+      colors: [Color(0xFF172941), Color(0xFF101C2D)],
     ),
     PremiumSurfaceTone.cobalt => AppGradients.heroCard,
   };

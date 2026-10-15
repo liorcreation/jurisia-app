@@ -5,12 +5,13 @@ import 'package:jurisia_app/core/widgets/premium_surface.dart';
 import 'package:jurisia_app/theme/app_theme.dart';
 
 void main() {
-  test('JurisIA light tokens stay aligned with the visual brief', () {
-    expect(AppColors.deepSlate, const Color(0xFFF7F8FA));
-    expect(AppColors.cobalt, const Color(0xFF213D5B));
-    expect(AppColors.gold, const Color(0xFFA98032));
-    expect(AppColors.textPrimary, const Color(0xFF172235));
-    expect(AppGradients.smokedGlass.colors, const [Color(0xFF183653), Color(0xFF0D1C30)]);
+  test('JurisIA night palette stays deep and high contrast', () {
+    expect(AppColors.deepSlate, const Color(0xFF0B1220));
+    expect(AppColors.cobalt, const Color(0xFF1D4C7D));
+    expect(AppColors.cobaltDeep, const Color(0xFF0C2340));
+    expect(AppColors.gold, const Color(0xFFD4AF37));
+    expect(AppColors.textPrimary, const Color(0xFFF8FAFC));
+    expect(AppGradients.smokedGlass.colors, const [Color(0xFF0C1A2B), Color(0xFF070D17)]);
     expect(AppMotion.standard, const Duration(milliseconds: 300));
     expect(AppBreakpoints.contentMaxWidth, 1200);
   });
