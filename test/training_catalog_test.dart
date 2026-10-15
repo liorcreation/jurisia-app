@@ -1,10 +1,89 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jurisia_app/features/student/data/datasources/training_catalog_local_datasource.dart';
+import 'package:jurisia_app/features/student/presentation/screens/training_catalog_screen.dart';
 import 'package:jurisia_app/features/student/domain/entities/training_certificate.dart';
 import 'package:jurisia_app/models/training/training_category.dart';
+import 'package:jurisia_app/theme/app_theme.dart';
 
 void main() {
+  testWidgets(
+    'le choix du format précède les spécialités et le détail en ligne reste visible',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.darkTheme,
+          home: const TrainingCatalogScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'écran de choix');
+
+      expect(find.text('Débuter la formation en ligne'), findsOneWidget);
+      expect(
+        find.text('S’inscrire pour la formation en présentiel'),
+        findsOneWidget,
+      );
+      expect(find.text('Droit de la famille'), findsNothing);
+
+      await tester.ensureVisible(find.text('Voir les spécialités'));
+      await tester.tap(find.text('Voir les spécialités'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'catalogue en ligne');
+
+      expect(find.text('Formation en ligne'), findsOneWidget);
+      expect(find.text('Droit de la famille'), findsOneWidget);
+      await tester.ensureVisible(find.text('Droit de la famille'));
+      await tester.tap(find.text('Droit de la famille'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'détail de spécialité');
+
+      expect(
+        find.text('Une spécialité pensée pour la pratique.'),
+        findsOneWidget,
+      );
+      expect(find.text('Débuter la formation en ligne'), findsOneWidget);
+    },
+  );
+
+  testWidgets('le parcours reste lisible et sans débordement sur mobile', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.darkTheme,
+        home: const TrainingCatalogScreen(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'choix mobile');
+    expect(find.text('Débuter la formation en ligne'), findsOneWidget);
+    expect(
+      find.text('S’inscrire pour la formation en présentiel'),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.text('Voir les spécialités'));
+    await tester.tap(find.text('Voir les spécialités'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'catalogue mobile');
+
+    await tester.ensureVisible(find.text('Droit de la famille'));
+    await tester.tap(find.text('Droit de la famille'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'spécialité mobile');
+    expect(
+      find.text('Une spécialité pensée pour la pratique.'),
+      findsOneWidget,
+    );
+  });
+
   test(
     'le catalogue distingue les formations disponibles du LMD verrouillé',
     () {

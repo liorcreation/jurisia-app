@@ -27,11 +27,6 @@ class TrainingCatalogScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = const TrainingCatalogLocalDataSource()
-        .getAll()
-        .where((category) => category.trainingType == TrainingType.certifying)
-        .toList();
-
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: _trainingCanvas,
@@ -50,7 +45,82 @@ class TrainingCatalogScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).maybePop(),
           ),
           actions: const [AppShellMenuButton()],
-          title: const Text('Catalogue certifiant'),
+          title: const Text('Formations certifiantes'),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1040),
+                child: _TrainingFormatLanding(
+                  onOnline: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const TrainingCategoryCatalogScreen(
+                        mode: TrainingCatalogMode.online,
+                      ),
+                    ),
+                  ),
+                  onInPerson: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const TrainingCategoryCatalogScreen(
+                        mode: TrainingCatalogMode.inPerson,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum TrainingCatalogMode { online, inPerson }
+
+/// La liste des spécialités n’apparaît qu’après le choix du format.
+class TrainingCategoryCatalogScreen extends StatelessWidget {
+  const TrainingCategoryCatalogScreen({super.key, required this.mode});
+
+  final TrainingCatalogMode mode;
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = const TrainingCatalogLocalDataSource()
+        .getAll()
+        .where((category) => category.trainingType == TrainingType.certifying)
+        .toList();
+
+    return LuxuryScaffoldBackground(
+      child: Scaffold(
+        backgroundColor: _trainingCanvas,
+        appBar: AppBar(
+          backgroundColor: _trainingPaper,
+          foregroundColor: _trainingInk,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(height: 1, color: _trainingLine),
+          ),
+          leading: IconButton(
+            tooltip: 'Retour au choix du format',
+            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+            onPressed: () => Navigator.of(context).maybePop(),
+          ),
+          actions: const [AppShellMenuButton()],
+          title: Text(
+            mode == TrainingCatalogMode.online
+                ? 'Formation en ligne'
+                : 'Formation en présentiel',
+          ),
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -91,14 +161,28 @@ class TrainingCatalogScreen extends StatelessWidget {
                                   child: _TrainingCategoryCard(
                                     category: categories[i],
                                     index: i + 1,
-                                    onOpen: () => Navigator.of(context).push(
-                                      MaterialPageRoute<void>(
-                                        builder: (_) =>
-                                            TrainingCategoryDetailScreen(
-                                              category: categories[i],
-                                            ),
-                                      ),
-                                    ),
+                                    actionLabel:
+                                        mode == TrainingCatalogMode.online
+                                        ? 'Voir le parcours en ligne'
+                                        : 'S’inscrire à cette formation',
+                                    onOpen: () {
+                                      if (mode ==
+                                          TrainingCatalogMode.inPerson) {
+                                        showTrainingEnrollmentForm(
+                                          context,
+                                          category: categories[i],
+                                        );
+                                        return;
+                                      }
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute<void>(
+                                          builder: (_) =>
+                                              TrainingCategoryDetailScreen(
+                                                category: categories[i],
+                                              ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ),
@@ -115,6 +199,106 @@ class TrainingCatalogScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TrainingFormatLanding extends StatelessWidget {
+  const _TrainingFormatLanding({
+    required this.onOnline,
+    required this.onInPerson,
+  });
+
+  final VoidCallback onOnline;
+  final VoidCallback onInPerson;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [_trainingPaper, _trainingPaperSoft],
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.large + 4),
+            border: Border.all(color: _trainingLine),
+            boxShadow: [
+              BoxShadow(
+                color: _trainingInk.withValues(alpha: .06),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _CatalogEyebrow('PARCOURS CERTIFIANTS JURISIA'),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Choisissez votre façon d’apprendre.',
+                style: textTheme.headlineMedium?.copyWith(
+                  fontFamily: 'Libre Caslon Display',
+                  color: _trainingInk,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Commencez immédiatement en ligne ou faites-vous accompagner par un formateur en présentiel.',
+                style: textTheme.bodyLarge?.copyWith(
+                  color: _trainingMuted,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final online = _TrainingFormatCard(
+              icon: Icons.laptop_mac_rounded,
+              eyebrow: 'À VOTRE RYTHME',
+              title: 'Débuter la formation en ligne',
+              description:
+                  'Choisissez une spécialité et explorez les modules disponibles dans JurisIA.',
+              action: 'Voir les spécialités',
+              onTap: onOnline,
+            );
+            final inPerson = _TrainingFormatCard(
+              icon: Icons.groups_2_rounded,
+              eyebrow: 'AVEC UN FORMATEUR',
+              title: 'S’inscrire pour la formation en présentiel',
+              description:
+                  'Sélectionnez votre domaine et transmettez vos coordonnées à l’équipe JurisIA.',
+              action: 'Choisir une spécialité',
+              onTap: onInPerson,
+            );
+            if (constraints.maxWidth < 700) {
+              return Column(
+                children: [
+                  online,
+                  const SizedBox(height: AppSpacing.md),
+                  inPerson,
+                ],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: online),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(child: inPerson),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -154,7 +338,7 @@ class TrainingOrientationSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.xl),
         LayoutBuilder(
           builder: (context, constraints) {
-            final compact = constraints.maxWidth < 700;
+            final compact = constraints.maxWidth < 840;
             final cards = [
               _OrientationCard(
                 icon: Icons.workspace_premium_rounded,
@@ -216,7 +400,7 @@ class _CatalogHero extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 700;
+        final compact = constraints.maxWidth < 840;
         return Container(
           clipBehavior: Clip.antiAlias,
           padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
@@ -836,11 +1020,13 @@ class _TrainingCategoryCard extends StatefulWidget {
   const _TrainingCategoryCard({
     required this.category,
     required this.index,
+    required this.actionLabel,
     required this.onOpen,
   });
 
   final TrainingCategory category;
   final int index;
+  final String actionLabel;
   final VoidCallback onOpen;
 
   @override
@@ -963,7 +1149,7 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
                   Expanded(
                     child: Text(
                       category.isAvailable
-                          ? 'Ouvrir la spécialité'
+                          ? widget.actionLabel
                           : 'Accès prochainement',
                       style: textTheme.labelLarge?.copyWith(
                         color: category.isAvailable
@@ -1261,7 +1447,7 @@ class _TrainingFormatChoices extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
-      final compact = constraints.maxWidth < 700;
+      final compact = constraints.maxWidth < 840;
       final online = _TrainingFormatCard(
         icon: Icons.laptop_mac_rounded,
         eyebrow: 'À VOTRE RYTHME',
@@ -1290,7 +1476,7 @@ class _TrainingFormatChoices extends StatelessWidget {
         );
       }
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(child: online),
           const SizedBox(width: AppSpacing.md),
@@ -1389,7 +1575,7 @@ class _CategorySnapshot extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 700;
+        final compact = constraints.maxWidth < 840;
         final items = [
           const _SnapshotItem(
             icon: Icons.route_rounded,
@@ -1545,7 +1731,7 @@ class _CategoryHero extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact = constraints.maxWidth < 700;
+          final compact = constraints.maxWidth < 840;
           final content = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
