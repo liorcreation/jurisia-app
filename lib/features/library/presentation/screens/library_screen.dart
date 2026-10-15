@@ -21,6 +21,12 @@ import '../widgets/summary_only_badge.dart';
 import 'document_detail_screen.dart';
 import 'pdf_document_screen.dart';
 
+const _libraryPaper = Color(0xFFFFFFFF);
+const _libraryPaperSoft = Color(0xFFF7F9FC);
+const _libraryInk = Color(0xFF10243D);
+const _libraryMuted = Color(0xFF53657A);
+const _libraryHairline = Color(0xFFDCE4ED);
+
 /// Bibliothèque juridique de référence de JurisIA.
 /// Le périmètre est volontairement fermé pendant la phase de constitution du
 /// corpus officiel. Le [LibraryController] est fourni par [AppShell].
@@ -608,13 +614,13 @@ class _PackCardState extends State<_PackCard> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: _hovered
-                      ? const [Color(0xFFFFFFFF), Color(0xFFF0F4F8)]
-                      : const [Color(0xFFFFFFFF), Color(0xFFFBFCFD)],
+                      ? const [_libraryPaper, Color(0xFFF0F4F8)]
+                      : const [_libraryPaper, _libraryPaperSoft],
                 ),
                 border: Border.all(
                   color: _hovered
                       ? AppColors.gold.withValues(alpha: 0.62)
-                      : const Color(0xFFE1E5EA),
+                      : _libraryHairline,
                   width: _hovered ? 1.1 : 0.8,
                 ),
                 boxShadow: [
@@ -690,8 +696,8 @@ class _PackCardState extends State<_PackCard> {
                           Icon(
                             Icons.arrow_outward_rounded,
                             color: _hovered
-                                ? AppColors.goldLight
-                                : AppColors.textDisabled,
+                                ? AppColors.goldDark
+                                : _libraryMuted,
                             size: 19,
                           ),
                         ],
@@ -702,7 +708,7 @@ class _PackCardState extends State<_PackCard> {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
+                          color: _libraryInk,
                           fontFamily: 'Libre Caslon Display',
                           fontWeight: FontWeight.w700,
                           height: 1.14,
@@ -714,7 +720,7 @@ class _PackCardState extends State<_PackCard> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: _libraryMuted,
                           height: 1.35,
                         ),
                       ),
@@ -725,7 +731,7 @@ class _PackCardState extends State<_PackCard> {
                           gradient: LinearGradient(
                             colors: [
                               AppColors.gold.withValues(alpha: 0.46),
-                              AppColors.glassBorder,
+                              _libraryHairline,
                               Colors.transparent,
                             ],
                           ),
@@ -743,7 +749,7 @@ class _PackCardState extends State<_PackCard> {
                           Text(
                             '${widget.count} ${widget.count == 1 ? 'document' : 'documents'}',
                             style: textTheme.labelMedium?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: _libraryInk,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -2088,9 +2094,14 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
         onTap: widget.onOpen,
         borderColor: _hovered
             ? AppColors.gold.withValues(alpha: 0.55)
-            : AppColors.glassBorder,
+            : _libraryHairline,
         borderWidth: _hovered ? 0.9 : 0.5,
         padding: const EdgeInsets.all(14),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_libraryPaper, _libraryPaperSoft],
+        ),
         child: Stack(
           children: [
             Row(
@@ -2110,6 +2121,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.titleSmall?.copyWith(
+                            color: _libraryInk,
                             fontFamily: 'Libre Caslon Display',
                             fontWeight: FontWeight.w600,
                             height: 1.18,
@@ -2122,7 +2134,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: _libraryMuted,
                           height: 1.3,
                         ),
                       ),
@@ -2166,7 +2178,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           Icon(
                             Icons.arrow_outward_rounded,
                             size: 16,
-                            color: AppColors.goldLight.withValues(alpha: 0.8),
+                            color: AppColors.goldDark,
                           ),
                         ],
                       ),
@@ -2289,16 +2301,16 @@ class _DocumentReferenceLine extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.legalBlueDark.withValues(alpha: 0.66),
+        color: const Color(0xFFEAF0F7),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: AppColors.glassBorder),
+        border: Border.all(color: _libraryHairline),
       ),
       child: Text(
         'Réf. $reference',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: _libraryMuted,
           height: 1.25,
         ),
       ),

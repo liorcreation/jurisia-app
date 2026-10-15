@@ -95,6 +95,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Library pack cards use high-contrast text on mobile', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_wrapHomeNavigation(platform: TargetPlatform.iOS));
+    await _settle(tester);
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await _settle(tester);
+    await tester.tap(find.text('Bibliothèque'));
+    await _settle(tester);
+
+    final packTitle = find.text('Droit de la famille et des personnes');
+    expect(packTitle, findsOneWidget);
+    expect(
+      tester.widget<Text>(packTitle).style?.color,
+      const Color(0xFF10243D),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Litigation landing stays usable across phone sizes and text scaling', (
     WidgetTester tester,
   ) async {
