@@ -116,6 +116,19 @@ void main() {
       tester.widget<Text>(packTitle).style?.color,
       const Color(0xFF10243D),
     );
+    final heroTitle = find.text('Le droit, organisé pour éclairer vos décisions.');
+    expect(heroTitle, findsOneWidget);
+    expect(
+      tester.widget<Text>(heroTitle).style?.color,
+      AppColors.textPrimary,
+    );
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is ColoredBox && widget.color == const Color(0xFFF4F7FA),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

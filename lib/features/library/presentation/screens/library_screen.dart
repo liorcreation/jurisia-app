@@ -23,6 +23,7 @@ import 'pdf_document_screen.dart';
 
 const _libraryPaper = Color(0xFFFFFFFF);
 const _libraryPaperSoft = Color(0xFFF7F9FC);
+const _libraryCanvas = Color(0xFFF4F7FA);
 const _libraryInk = Color(0xFF10243D);
 const _libraryMuted = Color(0xFF53657A);
 const _libraryHairline = Color(0xFFDCE4ED);
@@ -127,6 +128,9 @@ class _LibraryPackCatalog extends StatelessWidget {
         ),
         body: Stack(
           children: [
+            const Positioned.fill(
+              child: ColoredBox(color: _libraryCanvas),
+            ),
             const Positioned.fill(
               child: IgnorePointer(child: _LibraryAmbience()),
             ),
@@ -515,12 +519,12 @@ class _CollectionSectionHeading extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SectionLabel('Votre bibliothèque'),
+              const _SectionLabel('Votre bibliothèque', light: true),
               const SizedBox(height: 8),
               Text(
                 'Explorez les packs',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.textPrimary,
+                  color: _libraryInk,
                   fontFamily: 'Libre Caslon Display',
                 ),
               ),
@@ -530,7 +534,7 @@ class _CollectionSectionHeading extends StatelessWidget {
         Text(
           '01 — 06',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: AppColors.goldLight,
+            color: AppColors.goldDark,
             letterSpacing: 1.2,
             fontWeight: FontWeight.w800,
           ),
@@ -547,20 +551,27 @@ class _LibraryCatalogFootnote extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassContainer(
       borderRadius: AppRadius.medium,
+      blurSigma: 0,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [_libraryPaper, _libraryPaperSoft],
+      ),
+      borderColor: _libraryHairline,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       child: Row(
         children: [
           const Icon(
             Icons.tips_and_updates_outlined,
             size: 17,
-            color: AppColors.gold,
+            color: AppColors.goldDark,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Choisissez une matière pour parcourir uniquement ses ressources. Sélectionnez un document pour l’ouvrir dans son lecteur dédié.',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.textSecondary,
+                color: _libraryMuted,
                 height: 1.4,
               ),
             ),
@@ -2094,14 +2105,9 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
         onTap: widget.onOpen,
         borderColor: _hovered
             ? AppColors.gold.withValues(alpha: 0.55)
-            : _libraryHairline,
+            : AppColors.glassBorder,
         borderWidth: _hovered ? 0.9 : 0.5,
         padding: const EdgeInsets.all(14),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_libraryPaper, _libraryPaperSoft],
-        ),
         child: Stack(
           children: [
             Row(
@@ -2121,7 +2127,6 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: textTheme.titleSmall?.copyWith(
-                            color: _libraryInk,
                             fontFamily: 'Libre Caslon Display',
                             fontWeight: FontWeight.w600,
                             height: 1.18,
@@ -2134,7 +2139,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.bodySmall?.copyWith(
-                          color: _libraryMuted,
+                          color: AppColors.textSecondary,
                           height: 1.3,
                         ),
                       ),
@@ -2178,7 +2183,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
                           Icon(
                             Icons.arrow_outward_rounded,
                             size: 16,
-                            color: AppColors.goldDark,
+                            color: AppColors.goldLight.withValues(alpha: 0.8),
                           ),
                         ],
                       ),
@@ -2301,16 +2306,16 @@ class _DocumentReferenceLine extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF0F7),
+        color: AppColors.legalBlueDark.withValues(alpha: 0.66),
         borderRadius: BorderRadius.circular(AppRadius.small),
-        border: Border.all(color: _libraryHairline),
+        border: Border.all(color: AppColors.glassBorder),
       ),
       child: Text(
         'Réf. $reference',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: _libraryMuted,
+          color: AppColors.textSecondary,
           height: 1.25,
         ),
       ),
@@ -2394,9 +2399,10 @@ class _EmptyResults extends StatelessWidget {
 }
 
 class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
+  const _SectionLabel(this.text, {this.light = false});
 
   final String text;
+  final bool light;
 
   @override
   Widget build(BuildContext context) {
@@ -2414,7 +2420,7 @@ class _SectionLabel extends StatelessWidget {
         Text(
           text.toUpperCase(),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: AppColors.textDisabled,
+            color: light ? _libraryMuted : AppColors.textDisabled,
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.caps,
             fontSize: 10.5,
