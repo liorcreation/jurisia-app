@@ -128,9 +128,7 @@ class _LibraryPackCatalog extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            const Positioned.fill(
-              child: ColoredBox(color: _libraryCanvas),
-            ),
+            const Positioned.fill(child: ColoredBox(color: _libraryCanvas)),
             const Positioned.fill(
               child: IgnorePointer(child: _LibraryAmbience()),
             ),
@@ -615,8 +613,11 @@ class _PackCardState extends State<_PackCard> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(AppRadius.large),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
+              duration: AppMotion.duration(
+                context,
+                const Duration(milliseconds: 260),
+              ),
+              curve: AppMotion.premium,
               height: 246,
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
@@ -666,7 +667,10 @@ class _PackCardState extends State<_PackCard> {
                       Row(
                         children: [
                           AnimatedContainer(
-                            duration: const Duration(milliseconds: 240),
+                            duration: AppMotion.duration(
+                              context,
+                              const Duration(milliseconds: 240),
+                            ),
                             transform: Matrix4.rotationZ(_hovered ? 0.045 : 0),
                             transformAlignment: Alignment.center,
                             width: 48,
@@ -848,9 +852,7 @@ class _MobileLibrary extends StatelessWidget {
         ),
         body: Stack(
           children: [
-            const Positioned.fill(
-              child: ColoredBox(color: _libraryCanvas),
-            ),
+            const Positioned.fill(child: ColoredBox(color: _libraryCanvas)),
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
@@ -1019,13 +1021,9 @@ class _MobileFacet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(4, 4, AppSpacing.sm + 2, 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                color: selected
-                    ? const Color(0xFFFFF7E1)
-                    : _libraryPaper,
+                color: selected ? const Color(0xFFFFF7E1) : _libraryPaper,
                 border: Border.all(
-                  color: selected
-                      ? const Color(0xFFE8CD82)
-                      : _libraryHairline,
+                  color: selected ? const Color(0xFFE8CD82) : _libraryHairline,
                   width: selected ? 1 : 0.6,
                 ),
               ),
@@ -1046,9 +1044,7 @@ class _MobileFacet extends StatelessWidget {
                   Text(
                     label,
                     style: textTheme.labelMedium?.copyWith(
-                      color: selected
-                          ? AppColors.goldDark
-                          : _libraryInk,
+                      color: selected ? AppColors.goldDark : _libraryInk,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
@@ -1056,9 +1052,7 @@ class _MobileFacet extends StatelessWidget {
                   Text(
                     '$count',
                     style: textTheme.labelSmall?.copyWith(
-                      color: selected
-                          ? AppColors.goldDark
-                          : _libraryMuted,
+                      color: selected ? AppColors.goldDark : _libraryMuted,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1361,9 +1355,7 @@ class _DesktopLibrary extends StatelessWidget {
         body: SafeArea(
           child: Stack(
             children: [
-              const Positioned.fill(
-                child: ColoredBox(color: _libraryCanvas),
-              ),
+              const Positioned.fill(child: ColoredBox(color: _libraryCanvas)),
               Column(
                 children: [
                   _LibraryHeader(
@@ -1460,12 +1452,7 @@ class _LibraryHeader extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: _libraryPaper,
-        border: Border(
-          bottom: BorderSide(
-            color: _libraryHairline,
-            width: 1,
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: _libraryHairline, width: 1)),
       ),
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -1497,9 +1484,7 @@ class _LibraryHeader extends StatelessWidget {
                   '$total documents dans le pack actif',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: _libraryMuted,
-                  ),
+                  style: textTheme.labelSmall?.copyWith(color: _libraryMuted),
                 ),
               ],
             ),
@@ -1528,7 +1513,10 @@ class _FavoritesToggle extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
+            duration: AppMotion.duration(
+              context,
+              const Duration(milliseconds: 180),
+            ),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: 8,
@@ -1536,13 +1524,9 @@ class _FavoritesToggle extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
               gradient: active ? AppGradients.goldMetallic : null,
-              color: active
-                  ? null
-                  : _libraryPaperSoft,
+              color: active ? null : _libraryPaperSoft,
               border: Border.all(
-                color: active
-                    ? Colors.transparent
-                    : _libraryHairline,
+                color: active ? Colors.transparent : _libraryHairline,
                 width: 0.8,
               ),
             ),
@@ -1558,9 +1542,7 @@ class _FavoritesToggle extends StatelessWidget {
                 Text(
                   'Favoris',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: active
-                        ? AppColors.nightBlueDeep
-                        : _libraryInk,
+                    color: active ? AppColors.nightBlueDeep : _libraryInk,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1596,10 +1578,22 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
   late final AnimationController _sweep = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 7),
-  )..repeat();
+  );
   final FocusNode _focusNode = FocusNode();
   bool _focused = false;
   bool _hasText = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_sweep.isAnimating) _sweep.repeat();
+    } else {
+      _sweep
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   void initState() {
@@ -1669,9 +1663,7 @@ class _RadiantSearchFieldState extends State<_RadiantSearchField>
                   focusNode: _focusNode,
                   onChanged: widget.onChanged,
                   cursorColor: AppColors.cobalt,
-                  style: textTheme.bodyLarge?.copyWith(
-                    color: _libraryInk,
-                  ),
+                  style: textTheme.bodyLarge?.copyWith(color: _libraryInk),
                   decoration: InputDecoration(
                     filled: false,
                     border: InputBorder.none,
@@ -1723,8 +1715,9 @@ class _RadiantBorderPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1
-        ..color = (focused ? AppColors.cobalt : _libraryHairline)
-            .withValues(alpha: focused ? 0.9 : 1),
+        ..color = (focused ? AppColors.cobalt : _libraryHairline).withValues(
+          alpha: focused ? 0.9 : 1,
+        ),
     );
 
     // Éclat qui tourne autour du contour.
@@ -1880,10 +1873,12 @@ class _FacetState extends State<_Facet> {
     if (widget.selected) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.small),
-        child: ShimmerSweep(
-          duration: const Duration(milliseconds: 3400),
-          child: badge,
-        ),
+        child: AppMotion.isEnabled(context)
+            ? ShimmerSweep(
+                duration: const Duration(milliseconds: 3400),
+                child: badge,
+              )
+            : badge,
       );
     }
 
@@ -1897,7 +1892,10 @@ class _FacetState extends State<_Facet> {
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(AppRadius.medium),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: AppMotion.duration(
+                context,
+                const Duration(milliseconds: 180),
+              ),
               width: 156,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -2019,9 +2017,7 @@ class _ResultsBar extends StatelessWidget {
                 count <= 1 ? '$count résultat' : '$count résultats',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: textTheme.titleSmall?.copyWith(
-                  color: _libraryInk,
-                ),
+                style: textTheme.titleSmall?.copyWith(color: _libraryInk),
               ),
             ),
             if (hasFilters) ...[
@@ -2117,7 +2113,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
     final hasPdf = pdfUrlForDocument(doc) != null;
 
     Widget badge = DocumentCategoryBadge(type: doc.type, size: 46);
-    if (_hovered) {
+    if (_hovered && AppMotion.isEnabled(context)) {
       badge = ClipRRect(
         borderRadius: BorderRadius.circular(AppRadius.small),
         child: ShimmerSweep(
@@ -2132,9 +2128,7 @@ class _LibraryDocCardState extends State<_LibraryDocCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: GlassContainer(
         onTap: widget.onOpen,
-        borderColor: _hovered
-            ? const Color(0xFFE8CD82)
-            : _libraryHairline,
+        borderColor: _hovered ? const Color(0xFFE8CD82) : _libraryHairline,
         borderWidth: _hovered ? 0.9 : 0.5,
         blurSigma: 0,
         gradient: const LinearGradient(
@@ -2350,10 +2344,9 @@ class _DocumentReferenceLine extends StatelessWidget {
         'Réf. $reference',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: _libraryMuted,
-          height: 1.25,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: _libraryMuted, height: 1.25),
       ),
     );
   }
@@ -2376,9 +2369,12 @@ class _FavStar extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(12),
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
+                duration: AppMotion.duration(
+                  context,
+                  const Duration(milliseconds: 220),
+                ),
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
                 child: Icon(
@@ -2485,7 +2481,19 @@ class _LibraryAmbienceState extends State<_LibraryAmbience>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 30),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -2495,6 +2503,9 @@ class _LibraryAmbienceState extends State<_LibraryAmbience>
 
   @override
   Widget build(BuildContext context) {
+    if (!AppMotion.isEnabled(context)) {
+      return CustomPaint(painter: _AmbiencePainter(0));
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) =>
