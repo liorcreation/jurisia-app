@@ -132,8 +132,11 @@ class ModuleDetailScreen extends StatelessWidget {
                 builder: (context, _) {
                   final onTutor = tabController.index == 2;
                   return AnimatedSize(
-                    duration: const Duration(milliseconds: 220),
-                    curve: Curves.fastOutSlowIn,
+                    duration: AppMotion.duration(
+                      context,
+                      const Duration(milliseconds: 220),
+                    ),
+                    curve: AppMotion.premium,
                     alignment: Alignment.topCenter,
                     child: onTutor
                         ? const SizedBox(width: double.infinity)
@@ -766,10 +769,7 @@ class _DesktopModuleHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
-          ),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -943,13 +943,13 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
     if (current != _active) setState(() => _active = current);
   }
 
-  void _scrollTo(int index) {
+  void _scrollTo(BuildContext context, int index) {
     final ctx = _keys[index].currentContext;
     if (ctx == null) return;
     Scrollable.ensureVisible(
       ctx,
-      duration: const Duration(milliseconds: 340),
-      curve: Curves.fastOutSlowIn,
+      duration: AppMotion.duration(context, const Duration(milliseconds: 340)),
+      curve: AppMotion.premium,
       alignment: 0.04,
     );
   }
@@ -989,7 +989,7 @@ class _ModuleWorkspaceState extends State<_ModuleWorkspace> {
                 child: _ModuleToc(
                   anchors: _anchors,
                   active: _active,
-                  onTap: _scrollTo,
+                  onTap: (index) => _scrollTo(context, index),
                 ),
               ),
             Expanded(child: scroller),
@@ -1101,7 +1101,10 @@ class _TocItemState extends State<_TocItem> {
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
+          duration: AppMotion.duration(
+            context,
+            const Duration(milliseconds: 140),
+          ),
           margin: const EdgeInsets.only(bottom: 2),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.sm,
@@ -1673,7 +1676,19 @@ class _ModuleAmbienceState extends State<_ModuleAmbience>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 38),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -1683,6 +1698,9 @@ class _ModuleAmbienceState extends State<_ModuleAmbience>
 
   @override
   Widget build(BuildContext context) {
+    if (!AppMotion.isEnabled(context)) {
+      return const CustomPaint(painter: _ModuleAmbiencePainter(0));
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) =>

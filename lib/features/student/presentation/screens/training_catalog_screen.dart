@@ -14,12 +14,12 @@ import 'module_detail_screen.dart';
 import 'training_enrollment_form.dart';
 import '../../data/datasources/training_catalog_local_datasource.dart';
 
-const _trainingCanvas = Color(0xFFF3F6FA);
-const _trainingPaper = Color(0xFFFFFFFF);
-const _trainingPaperSoft = Color(0xFFF8FAFC);
-const _trainingInk = Color(0xFF10243D);
-const _trainingMuted = Color(0xFF53657A);
-const _trainingLine = Color(0xFFDCE4ED);
+const _trainingCanvas = AppSurfaces.lightCanvas;
+const _trainingPaper = AppSurfaces.lightSurface;
+const _trainingPaperSoft = AppSurfaces.lightRaised;
+const _trainingInk = AppSurfaces.lightInk;
+const _trainingMuted = AppSurfaces.lightMuted;
+const _trainingLine = AppSurfaces.lightBorder;
 
 /// Catalogue thématique des formations certifiantes.
 class TrainingCatalogScreen extends StatelessWidget {
@@ -926,11 +926,13 @@ class _OrientationCardState extends State<_OrientationCard> {
       onEnter: widget.available ? (_) => setState(() => _hovered = true) : null,
       onExit: widget.available ? (_) => setState(() => _hovered = false) : null,
       child: AnimatedOpacity(
-        duration: AppMotion.standard,
+        duration: AppMotion.duration(context, AppMotion.standard),
         opacity: widget.available ? 1 : 0.78,
         child: AnimatedSlide(
-          duration: AppMotion.standard,
-          offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
+          duration: AppMotion.duration(context, AppMotion.standard),
+          offset: AppMotion.isEnabled(context) && _hovered
+              ? const Offset(0, -0.012)
+              : Offset.zero,
           child: GlassContainer(
             onTap: widget.available ? widget.onTap : null,
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -1044,8 +1046,10 @@ class _TrainingCategoryCardState extends State<_TrainingCategoryCard> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedSlide(
-        duration: AppMotion.standard,
-        offset: _hovered ? const Offset(0, -0.012) : Offset.zero,
+        duration: AppMotion.duration(context, AppMotion.standard),
+        offset: AppMotion.isEnabled(context) && _hovered
+            ? const Offset(0, -0.012)
+            : Offset.zero,
         child: GlassContainer(
           onTap: category.isAvailable ? widget.onOpen : null,
           padding: const EdgeInsets.all(AppSpacing.lg),

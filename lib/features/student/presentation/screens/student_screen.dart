@@ -64,21 +64,21 @@ class _StudentView extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: selectedLevel == null
-            ? const Color(0xFFF3F6FA)
+            ? AppSurfaces.lightCanvas
             : Colors.transparent,
         appBar: AppBar(
           backgroundColor: selectedLevel == null
-              ? Colors.white
+              ? AppSurfaces.lightSurface
               : Colors.transparent,
           foregroundColor: selectedLevel == null
-              ? const Color(0xFF10243D)
+              ? AppSurfaces.lightInk
               : AppColors.textPrimary,
           surfaceTintColor: Colors.transparent,
           elevation: 0,
           bottom: selectedLevel == null
               ? const PreferredSize(
                   preferredSize: Size.fromHeight(1),
-                  child: Divider(height: 1, color: Color(0xFFDCE4ED)),
+                  child: Divider(height: 1, color: AppSurfaces.lightBorder),
                 )
               : null,
           title: Text(
@@ -187,7 +187,7 @@ class _DesktopStudentView extends StatelessWidget {
     return LuxuryScaffoldBackground(
       child: Scaffold(
         backgroundColor: level == null
-            ? const Color(0xFFF3F6FA)
+            ? AppSurfaces.lightCanvas
             : Colors.transparent,
         body: SafeArea(
           child: Stack(
@@ -253,10 +253,7 @@ class _DesktopStudentHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
-          ),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -1246,7 +1243,19 @@ class _StudentAmbienceState extends State<_StudentAmbience>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 34),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -1256,6 +1265,9 @@ class _StudentAmbienceState extends State<_StudentAmbience>
 
   @override
   Widget build(BuildContext context) {
+    if (!AppMotion.isEnabled(context)) {
+      return const CustomPaint(painter: _StudentAmbiencePainter(0));
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) =>

@@ -202,10 +202,7 @@ class _DesktopEvalHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
-          ),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: EdgeInsets.fromLTRB(
@@ -375,7 +372,19 @@ class _PulsingMarkState extends State<_PulsingMark>
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
-  )..repeat(reverse: true);
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_c.isAnimating) _c.repeat(reverse: true);
+    } else {
+      _c
+        ..stop()
+        ..value = 1;
+    }
+  }
 
   @override
   void dispose() {
@@ -1385,7 +1394,10 @@ class _DesktopOptionState extends State<_DesktopOption> {
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
+          duration: AppMotion.duration(
+            context,
+            const Duration(milliseconds: 140),
+          ),
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.sm + 3,
@@ -2113,7 +2125,19 @@ class _EvalAmbienceState extends State<_EvalAmbience>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 38),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (AppMotion.isEnabled(context)) {
+      if (!_controller.isAnimating) _controller.repeat();
+    } else {
+      _controller
+        ..stop()
+        ..value = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -2123,6 +2147,9 @@ class _EvalAmbienceState extends State<_EvalAmbience>
 
   @override
   Widget build(BuildContext context) {
+    if (!AppMotion.isEnabled(context)) {
+      return const CustomPaint(painter: _EvalAmbiencePainter(0));
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) =>
