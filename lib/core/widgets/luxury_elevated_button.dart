@@ -34,13 +34,17 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _shineController;
   bool _isPressed = false;
+  bool _hasFocus = false;
 
   bool get _enabled => widget.onPressed != null;
 
   @override
   void initState() {
     super.initState();
-    _shineController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _shineController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
   }
 
   @override
@@ -51,13 +55,14 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
 
   void _handleTap() {
     if (!_enabled) return;
-    _shineController.forward(from: 0);
+    if (AppMotion.isEnabled(context)) _shineController.forward(from: 0);
     widget.onPressed!();
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final motionEnabled = AppMotion.isEnabled(context);
 
     final label = DefaultTextStyle.merge(
       style: textTheme.labelLarge?.copyWith(
@@ -87,8 +92,8 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
     );
 
     Widget button = AnimatedScale(
-      scale: _isPressed ? 0.97 : 1.0,
-      duration: AppMotion.quick,
+      scale: motionEnabled && _isPressed ? 0.97 : 1.0,
+      duration: AppMotion.duration(context, AppMotion.quick),
       curve: AppMotion.premium,
       child: Opacity(
         opacity: _enabled ? 1 : 0.45,
@@ -99,6 +104,10 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
           decoration: BoxDecoration(
             gradient: AppGradients.goldMetallic,
             borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(
+              color: _hasFocus ? AppColors.cobaltLight : Colors.transparent,
+              width: 2,
+            ),
             boxShadow: _enabled ? AppShadows.goldGlow : const [],
           ),
           child: ClipRRect(
@@ -112,7 +121,9 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
                   builder: (context, _) {
                     return CustomPaint(
                       size: Size.infinite,
-                      painter: _MetallicShinePainter(progress: _shineController.value),
+                      painter: _MetallicShinePainter(
+                        progress: _shineController.value,
+                      ),
                     );
                   },
                 ),
@@ -124,17 +135,33 @@ class _LuxuryElevatedButtonState extends State<LuxuryElevatedButton>
     );
 
     button = MouseRegion(
-      cursor: _enabled ? SystemMouseCursors.click : SystemMouseCursors.forbidden,
-      child: GestureDetector(
-        onTap: _handleTap,
-        onTapDown: _enabled ? (_) => setState(() => _isPressed = true) : null,
-        onTapCancel: () => setState(() => _isPressed = false),
-        onTapUp: (_) => setState(() => _isPressed = false),
-        child: button,
+      cursor: _enabled
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.forbidden,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Semantics(
+          button: true,
+          enabled: _enabled,
+          child: InkWell(
+            onTap: _enabled ? _handleTap : null,
+            onTapDown: _enabled && motionEnabled
+                ? (_) => setState(() => _isPressed = true)
+                : null,
+            onTapCancel: () => setState(() => _isPressed = false),
+            onTapUp: (_) => setState(() => _isPressed = false),
+            onFocusChange: (focused) => setState(() => _hasFocus = focused),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: button,
+          ),
+        ),
       ),
     );
 
-    return widget.expand ? SizedBox(width: double.infinity, child: button) : button;
+    return widget.expand
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
   }
 }
 
@@ -153,11 +180,7 @@ class _MetallicShinePainter extends CustomPainter {
     final gradient = LinearGradient(
       begin: Alignment(band - 0.4, -1),
       end: Alignment(band, 1),
-      colors: const [
-        Colors.transparent,
-        Color(0x99FFFFFF),
-        Colors.transparent,
-      ],
+      colors: const [Colors.transparent, Color(0x99FFFFFF), Colors.transparent],
       stops: const [0.35, 0.5, 0.65],
     );
 
@@ -166,5 +189,6 @@ class _MetallicShinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MetallicShinePainter oldDelegate) => oldDelegate.progress != progress;
+  bool shouldRepaint(covariant _MetallicShinePainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

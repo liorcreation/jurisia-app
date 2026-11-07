@@ -448,11 +448,23 @@ class _CyclingHeadlineState extends State<_CyclingHeadline> {
   int _wordIndex = 0;
   int _charCount = 0;
   bool _erasing = false;
+  bool _motionPreferenceHandled = false;
 
   @override
   void initState() {
     super.initState();
-    _scheduleNext();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_motionPreferenceHandled) return;
+    _motionPreferenceHandled = true;
+    if (AppMotion.isEnabled(context)) {
+      _scheduleNext();
+    } else {
+      _charCount = widget.words.first.length;
+    }
   }
 
   @override
@@ -529,10 +541,29 @@ class _PulsingCursorMark extends StatefulWidget {
 
 class _PulsingCursorMarkState extends State<_PulsingCursorMark>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat(reverse: true);
+  late final AnimationController _c;
+  bool _motionPreferenceHandled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_motionPreferenceHandled) return;
+    _motionPreferenceHandled = true;
+    if (AppMotion.isEnabled(context)) {
+      _c.repeat(reverse: true);
+    } else {
+      _c.value = 0.5;
+    }
+  }
 
   @override
   void dispose() {
@@ -707,9 +738,7 @@ class _OAuthPillButton extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.pill),
-              color: light
-                  ? Colors.white
-                  : AppColors.nightBlueDeep,
+              color: light ? Colors.white : AppColors.nightBlueDeep,
               border: light
                   ? null
                   : Border.all(
@@ -971,7 +1000,8 @@ class _DesktopAuthView extends StatelessWidget {
                                               .textTheme
                                               .bodySmall
                                               ?.copyWith(
-                                                color: AppColors.textSecondaryOnDark,
+                                                color: AppColors
+                                                    .textSecondaryOnDark,
                                               ),
                                         ),
                                         const SizedBox(height: AppSpacing.lg),

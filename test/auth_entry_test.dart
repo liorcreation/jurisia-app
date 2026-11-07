@@ -57,6 +57,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('auth threshold uses a static headline with reduced motion', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      _app(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: const AuthScreen(),
+        ),
+      ),
+    );
+
+    expect(
+      tester
+          .widgetList<RichText>(find.byType(RichText))
+          .any((text) => text.text.toPlainText().startsWith('Comprendre')),
+      isTrue,
+    );
+    await tester.pump(const Duration(seconds: 5));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'wide sign-in threshold keeps the brand panel and actions balanced',
     (tester) async {

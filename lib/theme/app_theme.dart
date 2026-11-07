@@ -61,6 +61,89 @@ class AppColors {
   static const Color metalDeepGold = gold;
 }
 
+/// Échelles de marque centralisées pour les nouveaux composants et les
+/// évolutions progressives des écrans. Les neutres restent bleutés afin que
+/// les surfaces claires et nuit appartiennent à la même identité JurisIA.
+class AppPalette {
+  const AppPalette._();
+
+  static const primary = <int, Color>{
+    50: Color(0xFFF1F6FC),
+    100: Color(0xFFE2ECF7),
+    200: Color(0xFFC5D9EE),
+    300: Color(0xFF9DBDE0),
+    400: Color(0xFF709BCB),
+    500: Color(0xFF477BAF),
+    600: Color(0xFF315F91),
+    700: Color(0xFF244A75),
+    800: Color(0xFF193657),
+    900: Color(0xFF10243D),
+    950: Color(0xFF09182A),
+  };
+
+  static const accent = <int, Color>{
+    50: Color(0xFFFFFAE9),
+    100: Color(0xFFFFF1C2),
+    200: Color(0xFFFFE38A),
+    300: Color(0xFFFFD978),
+    400: Color(0xFFEBC34E),
+    500: Color(0xFFD4AF37),
+    600: Color(0xFFB8952D),
+    700: Color(0xFF9A7A1E),
+    800: Color(0xFF765C18),
+    900: Color(0xFF584313),
+    950: Color(0xFF34270B),
+  };
+
+  static const neutral = <int, Color>{
+    50: Color(0xFFF8FAFD),
+    100: Color(0xFFF0F4F8),
+    200: Color(0xFFDCE4EE),
+    300: Color(0xFFC3CFDE),
+    400: Color(0xFF9BAAC0),
+    500: Color(0xFF718198),
+    600: Color(0xFF52647C),
+    700: Color(0xFF394D66),
+    800: Color(0xFF243A54),
+    900: Color(0xFF152A43),
+    950: Color(0xFF0B1728),
+  };
+}
+
+/// Surfaces sémantiques dédiées à chaque mode, conçues séparément plutôt
+/// qu'obtenues par inversion automatique.
+class AppSurfaces {
+  const AppSurfaces._();
+
+  static const lightCanvas = Color(0xFFF3F6FA);
+  static const lightSurface = Color(0xFFFFFFFF);
+  static const lightRaised = Color(0xFFF8FAFD);
+  static const lightBorder = Color(0xFFDCE4EE);
+  static const lightInk = Color(0xFF10233F);
+  static const lightMuted = Color(0xFF52647C);
+
+  static const nightCanvas = AppColors.deepSlate;
+  static const nightSurface = AppColors.deepSlateElevated;
+  static const nightRaised = Color(0xFF17263A);
+  static const nightBorder = AppColors.glassBorder;
+  static const nightInk = AppColors.textPrimary;
+  static const nightMuted = AppColors.textSecondary;
+}
+
+/// Échelle typographique (en pixels logiques) utilisée par le thème et les
+/// composants éditoriaux.
+class AppTypeScale {
+  const AppTypeScale._();
+
+  static const double caption = 12;
+  static const double label = 14;
+  static const double body = 16;
+  static const double title = 20;
+  static const double section = 24;
+  static const double heading = 32;
+  static const double display = 48;
+}
+
 /// Dégradés métalliques et d'ambiance utilisés dans toute l'application.
 class AppGradients {
   const AppGradients._();
@@ -180,6 +263,14 @@ class AppMotion {
   static const Duration quick = Duration(milliseconds: 180);
   static const Duration slow = Duration(milliseconds: 520);
   static const Curve premium = Cubic(0.22, 1.0, 0.36, 1.0);
+
+  /// Renvoie une durée nulle si le système ou l'app demande une interface
+  /// sans animations. Les interactions restent immédiates et fonctionnelles.
+  static Duration duration(BuildContext context, Duration value) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : value;
+
+  static bool isEnabled(BuildContext context) =>
+      !MediaQuery.disableAnimationsOf(context);
 }
 
 /// Seuils de mise en page utilisés par les composants réutilisables. Les
@@ -348,45 +439,72 @@ class AppTheme {
           disabledBackgroundColor: AppColors.cobalt.withValues(alpha: 0.28),
           disabledForegroundColor: AppColors.textDisabled,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
           textStyle: textTheme.labelLarge?.copyWith(
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.label,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.cobaltLight,
-          side: BorderSide(color: AppColors.cobalt.withValues(alpha: 0.45), width: 1),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.md),
-          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+          side: BorderSide(
+            color: AppColors.cobalt.withValues(alpha: 0.45),
+            width: 1,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: AppColors.cobaltLight,
-          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.deepSlateElevated,
-        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textDisabled),
-        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textDisabled,
+        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.8),
+          borderSide: const BorderSide(
+            color: AppColors.glassBorder,
+            width: 0.8,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
-          borderSide: const BorderSide(color: AppColors.glassBorder, width: 0.8),
+          borderSide: const BorderSide(
+            color: AppColors.glassBorder,
+            width: 0.8,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.medium),
@@ -419,24 +537,44 @@ class AppTheme {
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: Colors.transparent,
-        selectedIconTheme: const IconThemeData(color: AppColors.cobaltLight, size: 24),
-        unselectedIconTheme: const IconThemeData(color: AppColors.textSecondary, size: 24),
+        selectedIconTheme: const IconThemeData(
+          color: AppColors.cobaltLight,
+          size: 24,
+        ),
+        unselectedIconTheme: const IconThemeData(
+          color: AppColors.textSecondary,
+          size: 24,
+        ),
         selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
           color: AppColors.cobaltLight,
           fontWeight: FontWeight.w700,
         ),
-        unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(color: AppColors.textSecondary),
+        unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
         indicatorColor: Colors.transparent,
         useIndicator: true,
       ),
       chipTheme: ChipThemeData(
         backgroundColor: const Color(0xFF15263B),
         selectedColor: AppColors.cobalt.withValues(alpha: 0.34),
-        labelStyle: textTheme.labelMedium?.copyWith(color: AppColors.textPrimary),
-        secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.cobaltLight),
-        side: BorderSide(color: AppColors.glassBorder.withValues(alpha: 0.8), width: 0.6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+        labelStyle: textTheme.labelMedium?.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: AppColors.cobaltLight,
+        ),
+        side: BorderSide(
+          color: AppColors.glassBorder.withValues(alpha: 0.8),
+          width: 0.6,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.deepSlateElevated,
@@ -445,12 +583,18 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.large),
           side: BorderSide(color: AppColors.glassBorder, width: 0.8),
         ),
-        titleTextStyle: textTheme.titleLarge?.copyWith(color: AppColors.textPrimary),
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: AppColors.textPrimary,
+        ),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.legalBlue,
-        contentTextStyle: textTheme.bodyMedium?.copyWith(color: AppColors.textOnDark),
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.textOnDark,
+        ),
         actionTextColor: AppColors.goldLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -474,11 +618,15 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: AppColors.cobaltLight,
         textColor: AppColors.textPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.medium)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.medium),
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
-          return states.contains(WidgetState.selected) ? AppColors.gold : AppColors.textSecondary;
+          return states.contains(WidgetState.selected)
+              ? AppColors.gold
+              : AppColors.textSecondary;
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           return states.contains(WidgetState.selected)
@@ -507,53 +655,73 @@ class AppTheme {
     return sans
         .copyWith(
           displayLarge: serif.displayLarge?.copyWith(
+            fontSize: AppTypeScale.display,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.display,
           ),
           displayMedium: serif.displayMedium?.copyWith(
+            fontSize: 40,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.display,
           ),
           displaySmall: serif.displaySmall?.copyWith(
+            fontSize: 36,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             letterSpacing: AppLetterSpacing.headline,
           ),
           headlineLarge: serif.headlineLarge?.copyWith(
+            fontSize: AppTypeScale.heading,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.headline,
           ),
           headlineMedium: serif.headlineMedium?.copyWith(
+            fontSize: AppTypeScale.section,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             letterSpacing: AppLetterSpacing.headline,
           ),
           headlineSmall: serif.headlineSmall?.copyWith(
+            fontSize: AppTypeScale.title,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.6,
           ),
           titleLarge: sans.titleLarge?.copyWith(
+            fontSize: AppTypeScale.title,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w700,
             letterSpacing: AppLetterSpacing.title,
           ),
           titleMedium: sans.titleMedium?.copyWith(
+            fontSize: AppTypeScale.body,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             letterSpacing: AppLetterSpacing.title,
           ),
           titleSmall: sans.titleSmall?.copyWith(
+            fontSize: AppTypeScale.label,
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
             letterSpacing: AppLetterSpacing.title,
           ),
-          bodyLarge: sans.bodyLarge?.copyWith(color: AppColors.textPrimary, height: 1.5),
-          bodyMedium: sans.bodyMedium?.copyWith(color: AppColors.textSecondary, height: 1.5),
-          bodySmall: sans.bodySmall?.copyWith(color: AppColors.textSecondary),
+          bodyLarge: sans.bodyLarge?.copyWith(
+            fontSize: AppTypeScale.body,
+            color: AppColors.textPrimary,
+            height: 1.5,
+          ),
+          bodyMedium: sans.bodyMedium?.copyWith(
+            fontSize: AppTypeScale.label,
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+          bodySmall: sans.bodySmall?.copyWith(
+            fontSize: AppTypeScale.caption,
+            color: AppColors.textSecondary,
+          ),
           labelLarge: sans.labelLarge?.copyWith(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
@@ -563,9 +731,15 @@ class AppTheme {
             color: AppColors.textSecondary,
             letterSpacing: 0.2,
           ),
-          labelSmall: sans.labelSmall?.copyWith(color: AppColors.textSecondary, letterSpacing: 0.2),
+          labelSmall: sans.labelSmall?.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.2,
+          ),
         )
-        .apply(bodyColor: AppColors.textPrimary, displayColor: AppColors.textPrimary);
+        .apply(
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
+        );
   }
 }
 
@@ -587,7 +761,10 @@ class _LuxuryFadeThroughTransitionsBuilder extends PageTransitionsBuilder {
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(curved),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.02),
+          end: Offset.zero,
+        ).animate(curved),
         child: child,
       ),
     );

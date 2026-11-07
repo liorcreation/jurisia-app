@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_theme.dart';
+
 /// Léger rebond au tap (0.85× puis retour) pour les boutons d'action
 /// rapide (favoris, bascules) qui n'ont pas déjà le retour tactile de
 /// [GlassContainer]/[LuxuryElevatedButton] — un `IconButton` nu, par
@@ -24,13 +26,14 @@ class _TapScaleState extends State<TapScale> {
 
   @override
   Widget build(BuildContext context) {
+    final motionEnabled = AppMotion.isEnabled(context);
     return Listener(
-      onPointerDown: (_) => _setPressed(true),
-      onPointerUp: (_) => _setPressed(false),
-      onPointerCancel: (_) => _setPressed(false),
+      onPointerDown: motionEnabled ? (_) => _setPressed(true) : null,
+      onPointerUp: motionEnabled ? (_) => _setPressed(false) : null,
+      onPointerCancel: motionEnabled ? (_) => _setPressed(false) : null,
       child: AnimatedScale(
-        scale: _pressed ? 0.85 : 1.0,
-        duration: const Duration(milliseconds: 120),
+        scale: motionEnabled && _pressed ? 0.94 : 1.0,
+        duration: AppMotion.duration(context, AppMotion.quick),
         curve: Curves.easeOut,
         child: widget.child,
       ),

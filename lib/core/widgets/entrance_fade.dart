@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../theme/app_theme.dart';
+
 /// Fondu + glissement d'entrée, joué une seule fois à l'apparition du
 /// widget — généralise le pattern déjà utilisé par `ChatBubble` (un
 /// `AnimationController` par instance, lancé dans `initState`) pour
@@ -37,11 +39,24 @@ class _EntranceFadeSlideState extends State<EntranceFadeSlide>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   Timer? _staggerTimer;
+  bool _started = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+
+    if (!AppMotion.isEnabled(context)) {
+      _controller.value = 1;
+      return;
+    }
 
     final effectiveIndex = widget.index.clamp(
       0,
