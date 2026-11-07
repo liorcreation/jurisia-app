@@ -25,12 +25,12 @@ import '../../../../models/chat/message_model.dart';
 import '../../../../theme/app_theme.dart';
 import '../controllers/litigation_chat_controller.dart';
 
-const _litigationCanvas = Color(0xFFF3F6FA);
-const _litigationPaper = Color(0xFFFFFFFF);
-const _litigationSoftBlue = Color(0xFFEAF0F7);
-const _litigationBorder = Color(0xFFD7E0EA);
-const _litigationInk = Color(0xFF10243D);
-const _litigationMuted = Color(0xFF5B6B80);
+const _litigationCanvas = AppSurfaces.lightCanvas;
+const _litigationPaper = AppSurfaces.lightSurface;
+const _litigationSoftBlue = AppSurfaces.lightTint;
+const _litigationBorder = AppSurfaces.lightBorder;
+const _litigationInk = AppSurfaces.lightInk;
+const _litigationMuted = AppSurfaces.lightMuted;
 const _litigationSurfaceGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
@@ -332,10 +332,7 @@ class _DesktopHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: AppGradients.workspaceHeader,
         border: Border(
-          bottom: BorderSide(
-            color: AppColors.glassBorder,
-            width: 0.6,
-          ),
+          bottom: BorderSide(color: AppColors.glassBorder, width: 0.6),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
@@ -799,8 +796,9 @@ class _HeroMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
+      key: const ValueKey('litigation-hero-mark'),
       tween: Tween(begin: 0.82, end: 1),
-      duration: const Duration(milliseconds: 850),
+      duration: AppMotion.duration(context, AppMotion.slow),
       curve: Curves.easeOutBack,
       builder: (context, scale, child) =>
           Transform.scale(scale: scale, child: child),
@@ -1019,9 +1017,7 @@ class _ConsultationChoices extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Text(
               '6 domaines',
-              style: textTheme.labelSmall?.copyWith(
-                color: _litigationMuted,
-              ),
+              style: textTheme.labelSmall?.copyWith(color: _litigationMuted),
             ),
           ],
         ),
@@ -1154,9 +1150,7 @@ class _JourneyStep extends StatelessWidget {
                 subtitle,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.labelSmall?.copyWith(
-                  color: _litigationMuted,
-                ),
+                style: theme.labelSmall?.copyWith(color: _litigationMuted),
               ),
             ],
           ),
@@ -1350,7 +1344,7 @@ class _DesktopComposerState extends State<_DesktopComposer> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 260),
+                duration: AppMotion.duration(context, AppMotion.standard),
                 curve: Curves.fastOutSlowIn,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(AppRadius.large),
@@ -1476,8 +1470,8 @@ class _SendButton extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Container(
-            width: 30,
-            height: 30,
+            width: 44,
+            height: 44,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -1613,10 +1607,10 @@ class _NewConsultationButton extends StatelessWidget {
               customBorder: const CircleBorder(),
               onTap: onTap,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
+                duration: AppMotion.duration(context, AppMotion.quick),
                 curve: Curves.fastOutSlowIn,
-                width: 38,
-                height: 38,
+                width: 44,
+                height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,

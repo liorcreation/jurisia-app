@@ -118,9 +118,10 @@ class AppSurfaces {
   static const lightCanvas = Color(0xFFF3F6FA);
   static const lightSurface = Color(0xFFFFFFFF);
   static const lightRaised = Color(0xFFF8FAFD);
-  static const lightBorder = Color(0xFFDCE4EE);
-  static const lightInk = Color(0xFF10233F);
-  static const lightMuted = Color(0xFF52647C);
+  static const lightTint = Color(0xFFEAF0F7);
+  static const lightBorder = Color(0xFFD7E0EA);
+  static const lightInk = Color(0xFF10243D);
+  static const lightMuted = Color(0xFF5B6B80);
 
   static const nightCanvas = AppColors.deepSlate;
   static const nightSurface = AppColors.deepSlateElevated;
